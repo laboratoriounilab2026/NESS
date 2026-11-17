@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowLeft, ArrowRight, CircleCheck, LoaderCircle, Send, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, CircleCheck, LoaderCircle, Save, Send, Trash2 } from "lucide-react";
 import type { z } from "zod";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -9,7 +10,7 @@ import {
   type OrderDraft,
 } from "@/domain/order-input";
 import type { Resolution } from "@/fiscal/matrix";
-import { checkOrder, type CheckResult } from "./actions";
+import { checkOrder, saveOrder, type CheckResult } from "./actions";
 
 type Section = keyof OrderDraft;
 const STEPS: { label: string; section?: Section; schema?: z.ZodType }[] = [
@@ -24,6 +25,7 @@ const STEPS: { label: string; section?: Section; schema?: z.ZodType }[] = [
 
 // sessionStorage: some ao fechar a aba (dados pessoais). ponytail: rascunho no servidor quando houver banco.
 const DRAFT_KEY = "ness-draft-pedido";
+const REF_KEY = "ness-draft-ref";
 
 const inputCls = "w-full rounded-xl border border-line bg-bg px-3 py-2.5 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-accent aria-[invalid=true]:border-err";
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
@@ -42,6 +44,8 @@ export function OrderWizard() {
   const [reviewed, setReviewed] = useState(false);
   const [pending, startTransition] = useTransition();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const router = useRouter();
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -102,9 +106,38 @@ export function OrderWizard() {
     go(step + 1);
   }
 
+  // Referência estável do rascunho: torna o salvamento idempotente (clique duplo não cria dois pedidos).
+  function draftRef() {
+    try {
+      const r = sessionStorage.getItem(REF_KEY) ?? crypto.randomUUID();
+      sessionStorage.setItem(REF_KEY, r);
+      return r;
+    } catch {
+      return crypto.randomUUID();
+    }
+  }
+
+  function save() {
+    setSaveError(null);
+    startTransition(async () => {
+      const res = await saveOrder(draft, draftRef());
+      if (!res.ok) {
+        if (res.errors) setErrors(res.errors);
+        setSaveError(res.message ?? "Revise os campos destacados.");
+        return;
+      }
+      try {
+        sessionStorage.removeItem(DRAFT_KEY);
+        sessionStorage.removeItem(REF_KEY);
+      } catch {}
+      router.push(`/pedidos/${res.id}`);
+    });
+  }
+
   function discard() {
     try {
       sessionStorage.removeItem(DRAFT_KEY);
+      sessionStorage.removeItem(REF_KEY);
     } catch {}
     setDraft(EMPTY_DRAFT);
     setErrors({});
@@ -282,6 +315,10 @@ export function OrderWizard() {
               <input type="checkbox" className="size-4 accent-[var(--accent)]" checked={reviewed} onChange={(e) => setReviewed(e.target.checked)} />
               Conferi os dados das duas notas
             </label>
+            <button type="button" onClick={save} disabled={!reviewed || pending} className="inline-flex items-center gap-2 rounded-xl bg-fg px-4 py-3 font-bold text-bg disabled:cursor-not-allowed disabled:opacity-60">
+              {pending ? <LoaderCircle size={18} aria-hidden="true" className="animate-spin" /> : <Save size={18} aria-hidden="true" />} Salvar pedido
+            </button>
+            {saveError && <p role="alert" className="text-sm text-err">{saveError}</p>}
             <button type="button" disabled className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-accent px-4 py-3 font-bold text-accent-fg opacity-70" aria-describedby="emit-why">
               <Send size={18} aria-hidden="true" /> Emitir NFS-e e NF-e
             </button>

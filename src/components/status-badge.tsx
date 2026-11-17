@@ -12,8 +12,9 @@ const MAP: Record<DocStatus, { label: string; Icon: LucideIcon; tone: string; sp
 };
 
 // Sempre ícone + texto: a cor nunca é o único indicador (WCAG 1.4.1).
-export function StatusBadge({ status }: { status: DocStatus }) {
-  const { label, Icon, tone, spin } = MAP[status];
+export function StatusBadge({ status, label: custom }: { status: DocStatus; label?: string }) {
+  const { label: fallback, Icon, tone, spin } = MAP[status];
+  const label = custom ?? fallback;
   return (
     <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border py-0.5 pl-2 pr-2.5 text-[12.5px] font-semibold ${tone}`}>
       <Icon size={14} aria-hidden="true" className={spin ? "animate-spin" : undefined} />
