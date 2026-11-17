@@ -61,3 +61,4 @@ Next.js 16 (App Router, `src/`), React 19, TypeScript estrito, Tailwind 4, lucid
 - Tokens de design em `src/app/globals.css` (direção "Mosaico", tela 10); use só os tokens (`bg-surface`, `text-muted`, `text-ok`…), nunca cores soltas.
 - Status sempre com `StatusBadge` (ícone + texto). Itens de menu sem rota aparecem como "em breve".
 - Fase 1: estados em `src/domain/states.ts` (fonte única, testes em `npm test`); schema em `prisma/schema.prisma` (Prisma 7.10.1 estável — a tag `latest` do npm aponta para rc, não usar). `npm run db:generate` / `npm run db:migrate` (precisa `DATABASE_URL` em `.env.local`).
+- Banco local sem instalação: `npx prisma dev -n ness -d` (Postgres embutido, porta 51214; URL em `.env.local`, fora do git). Testes de integração (`*.test.ts` que usam `@/lib/db`) rodam só com `DATABASE_URL`; no CI são pulados.

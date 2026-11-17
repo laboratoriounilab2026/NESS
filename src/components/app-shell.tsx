@@ -15,8 +15,8 @@ const NAV: NavItem[] = [
   { label: "Emissões", Icon: Send },
   { label: "Documentos", Icon: Files },
   { label: "Rastreio", Icon: Truck, href: "/rastreio" },
-  { label: "Configuração fiscal", Icon: Scale },
-  { label: "Auditoria", Icon: History },
+  { label: "Configuração fiscal", Icon: Scale, href: "/configuracao-fiscal" },
+  { label: "Auditoria", Icon: History, href: "/auditoria" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
