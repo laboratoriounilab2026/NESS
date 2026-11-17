@@ -14,5 +14,6 @@ export default defineConfig({
       "server-only": fileURLToPath(new URL("./src/test/empty.ts", import.meta.url)),
     },
   },
-  test: { include: ["src/**/*.test.ts"] },
+  // Testes de integração compartilham o mesmo banco: arquivos em sequência evitam corrida entre eles.
+  test: { include: ["src/**/*.test.ts"], fileParallelism: false },
 });

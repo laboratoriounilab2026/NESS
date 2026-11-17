@@ -20,12 +20,13 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
   it("bloqueia as duas notas sem estabelecimento/regra e audita sem dados pessoais", async () => {
     const { checkOrder } = await import("./actions");
     const { db } = await import("@/lib/db");
-    const before = await db.auditEvent.count();
+    const mine = { actor: "usuario-teste" };
+    const before = await db.auditEvent.count({ where: mine });
     const r = await checkOrder(valid);
     expect(r.ok && r.nfse.status).toBe("blocked");
     expect(r.ok && r.nfe.status).toBe("blocked");
-    const last = await db.auditEvent.findFirstOrThrow({ orderBy: { at: "desc" } });
-    expect(await db.auditEvent.count()).toBe(before + 1);
+    const last = await db.auditEvent.findFirstOrThrow({ where: mine, orderBy: { at: "desc" } });
+    expect(await db.auditEvent.count({ where: mine })).toBe(before + 1);
     expect(last.result).toBe("bloqueado");
     expect(JSON.stringify(last)).not.toContain("52998224725");
   });
