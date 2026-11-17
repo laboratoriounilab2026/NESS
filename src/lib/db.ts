@@ -8,7 +8,9 @@ const g = globalThis as unknown as { prisma?: PrismaClient };
 function create() {
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL não configurada");
-  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+  // DATABASE_POOL_MAX=1 no `prisma dev` local: o Postgres embutido aceita uma conexão por vez.
+  const max = Number(process.env.DATABASE_POOL_MAX) || undefined;
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url, max }) });
 }
 
 export const db = g.prisma ?? create();
