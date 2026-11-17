@@ -1,6 +1,7 @@
 "use server";
 
 import { audit } from "@/audit/audit";
+import { requireUser } from "@/auth/session";
 import { issuesByPath, orderSchema } from "@/domain/order-input";
 import { resolveRule, type Resolution } from "@/fiscal/matrix";
 import { db } from "@/lib/db";
@@ -13,6 +14,7 @@ const blocked = (reason: string): Resolution => ({ status: "blocked", reason });
 
 /** Revalida o pedido no servidor e consulta a matriz para as duas notas, de forma independente. */
 export async function checkOrder(raw: unknown): Promise<CheckResult> {
+  const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
   const parsed = orderSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, errors: issuesByPath(parsed.error) };
 
@@ -37,7 +39,7 @@ export async function checkOrder(raw: unknown): Promise<CheckResult> {
   }
 
   await audit({
-    actor: "anonimo", // ponytail: vira o usuário da sessão quando houver login
+    actor: user.id,
     action: "pedido.verificacao_fiscal",
     entity: "EmissionOrder",
     entityId: "rascunho",

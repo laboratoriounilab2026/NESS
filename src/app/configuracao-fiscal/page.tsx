@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Building2, CircleCheck, Clock, Scale } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
+import { requireUser } from "@/auth/session";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Configuração fiscal" };
@@ -26,6 +27,7 @@ export default function ConfiguracaoFiscal() {
 }
 
 async function Content() {
+  await requireUser("FISCAL", "ADMIN");
   const [establishments, rules] = await Promise.all([
     db.establishment.findMany({ orderBy: { createdAt: "asc" } }),
     db.fiscalRule.findMany({ orderBy: [{ docType: "asc" }, { version: "desc" }], include: { establishment: { select: { name: true } } } }),

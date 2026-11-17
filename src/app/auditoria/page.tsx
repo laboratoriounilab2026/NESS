@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { requireUser } from "@/auth/session";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = { title: "Auditoria" };
@@ -21,6 +22,7 @@ export default function Auditoria() {
 }
 
 async function Events() {
+  await requireUser("FISCAL", "ADMIN");
   // ponytail: últimos 100, sem paginação; adicionar filtros/paginação quando o volume pedir.
   const events = await db.auditEvent.findMany({ orderBy: { at: "desc" }, take: 100 });
   if (events.length === 0) {

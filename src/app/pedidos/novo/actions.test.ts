@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/auth/session", () => ({ requireUser: async () => ({ id: "usuario-teste", name: "Teste", role: "OPERADOR" }) }));
 
 // Integração com o Postgres local (npx prisma dev). Pulado no CI sem DATABASE_URL.
 describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {

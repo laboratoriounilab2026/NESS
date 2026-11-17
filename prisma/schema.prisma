@@ -168,3 +168,32 @@ model AuditEvent {
 
   @@index([entity, entityId])
 }
+
+enum Role {
+  OPERADOR // cria e verifica pedidos
+  FISCAL   // cadastra e aprova regras fiscais
+  ADMIN    // empresas e usuários
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  passwordHash String    // scrypt; nunca a senha
+  role         Role
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+// Guarda só o hash do token; o token fica no cookie httpOnly do navegador.
+model Session {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

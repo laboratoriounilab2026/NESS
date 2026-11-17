@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Files, History, LayoutDashboard, Scale, Send, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
+import { Files, History, LayoutDashboard, LogOut, Scale, Send, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
+import { logout } from "@/app/login/actions";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -21,6 +22,7 @@ const NAV: NavItem[] = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  if (pathname === "/login") return children;
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[220px_1fr]">
@@ -55,8 +57,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto">
+        <div className="mt-auto grid gap-1">
           <ThemeToggle />
+          <form action={logout}>
+            <button type="submit" className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-muted hover:bg-fg/5 hover:text-fg">
+              <LogOut size={18} aria-hidden="true" /> Sair
+            </button>
+          </form>
         </div>
       </aside>
 
