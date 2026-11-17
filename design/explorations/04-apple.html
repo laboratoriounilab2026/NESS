@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Vitrine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: barra de vidro no topo; hero amplo com as duas notas em leque 3D; cartões grandes de cantos generosos. */
+:root{--bg:#FFFFFF;--surface:#F5F5F7;--fg:#1D1D1F;--muted:#6E6E73;--line:#E5E5EA;--accent:#0071E3;--ok:#1A7F37;--wait:#0071E3;--err:#C9302C;--block:#946200;--draft:#6E6E73;--logo-accent:#0071E3;--logo-sheet:#fff;font-family:"Inter Tight",-apple-system,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#161617;--fg:#F5F5F7;--muted:#A1A1A6;--line:#2C2C2E;--accent:#2997FF;--ok:#30D158;--wait:#2997FF;--err:#FF453A;--block:#FFD60A;--draft:#A1A1A6;--logo-sheet:#1c1c1e;--logo-accent:#2997FF;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000;--surface:#161617;--fg:#F5F5F7;--muted:#A1A1A6;--line:#2C2C2E;--accent:#2997FF;--ok:#30D158;--wait:#2997FF;--err:#FF453A;--block:#FFD60A;--draft:#A1A1A6;--logo-sheet:#1c1c1e;--logo-accent:#2997FF;color-scheme:dark}
+.glass{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)}
+.glass .in{max-width:1080px;margin:0 auto;height:48px;display:flex;align-items:center;gap:20px;padding:0 max(16px,2vw)}
+.brand{display:flex;gap:8px;align-items:center;font-weight:600;letter-spacing:.05em}
+.glass nav{display:flex;gap:2px;overflow-x:auto;flex:1}
+.glass .nav-item{font-size:12.5px;padding:6px 10px;background:none!important}
+.glass .nav-item svg{display:none}
+.glass button{border:0;background:none;padding:6px}
+main{max-width:1080px;margin:0 auto;padding:0 max(16px,2vw) 64px;display:grid;gap:24px}
+.hero{text-align:center;padding:56px 0 8px;display:grid;justify-items:center;gap:14px}
+.kicker{color:var(--accent);font-weight:600;font-size:15px}
+.hero h1{font-size:clamp(38px,6vw,76px);line-height:1.02;letter-spacing:-.045em;font-weight:700;max-width:14ch}
+.hero p{color:var(--muted);font-size:clamp(17px,1.6vw,21px);max-width:36ch;line-height:1.4}
+.ctas{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border-radius:999px;padding:11px 22px;font-size:16px;font-weight:500;transition:transform .3s var(--ease),filter .2s}
+.btn:hover{transform:scale(1.04);filter:brightness(1.08)}
+.link{color:var(--accent);font-size:16px;display:inline-flex;align-items:center;gap:2px}
+.link:hover{text-decoration:underline}
+.stage{perspective:1400px;height:300px;width:100%;display:grid;place-items:center;margin-top:20px}
+.fan{position:relative;width:min(520px,90%);height:260px;transform-style:preserve-3d;transition:transform 1s var(--ease)}
+.stage:hover .fan{transform:rotateX(8deg)}
+.sheet{position:absolute;top:0;width:58%;height:100%;background:var(--bg);border:1px solid var(--line);border-radius:18px;box-shadow:0 40px 80px -30px #0005;padding:20px;text-align:left;display:grid;align-content:start;gap:10px;transition:transform 1s var(--ease)}
+.sheet.a{left:0;transform:rotate(-6deg) translateZ(0)}
+.sheet.b{right:0;transform:rotate(5deg) translateY(16px) translateZ(40px)}
+.stage:hover .sheet.a{transform:rotate(-12deg) translateX(-30px)}
+.stage:hover .sheet.b{transform:rotate(10deg) translate(30px,8px) translateZ(40px)}
+.sheet small{color:var(--muted)}.sheet b{font-size:22px;letter-spacing:-.02em}
+.sheet .ln{height:8px;border-radius:9px;background:var(--surface)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--surface);border-radius:28px;padding:26px;transition:transform .5s var(--ease)}
+.kpi:hover{transform:scale(1.02)}
+.kpi-ic{color:var(--accent)}
+.kpi-label{font-weight:600;margin-top:18px}
+.kpi-v{font-size:48px;font-weight:700;letter-spacing:-.04em;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:14px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.panel{background:var(--surface);border-radius:28px;padding:24px;min-width:0}
+.panel h2{font-size:24px;letter-spacing:-.02em;margin-bottom:10px}
+.tbl th,.tbl td{border-color:var(--line)}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.glass nav{display:none}}
+</style>
+</head>
+<body>
+<div class="glass"><div class="in"><span class="brand"><span data-logo="20"></span>NESS</span><nav data-nav></nav><button data-theme-toggle aria-label="Alternar tema"><i data-lucide="sun-moon"></i></button></div></div>
+<main>
+  <section class="hero" data-reveal>
+    <span class="kicker">Central de emissões</span>
+    <h1>Duas notas. Um só gesto.</h1>
+    <p>Confirme o pedido. A NFS-e do ensaio e a NF-e do álbum saem juntas, prontas para a encomenda.</p>
+    <div class="ctas"><a href="#" class="btn"><i data-lucide="plus"></i>Novo pedido</a><a href="#" class="link">Ver 2 emissões parciais <i data-lucide="chevron-right"></i></a></div>
+    <div class="stage" aria-hidden="true">
+      <div class="fan">
+        <div class="sheet a"><small>NFS-e · nº 883</small><b>Ensaio gestante</b><span class="st st-ok"><i data-lucide="check-circle-2"></i>Autorizada</span><span class="ln"></span><span class="ln" style="width:70%"></span></div>
+        <div class="sheet b"><small>NF-e · nº 1.204</small><b>Álbum 30×30</b><span class="st st-ok"><i data-lucide="check-circle-2"></i>Autorizada</span><span class="ln"></span><span class="ln" style="width:60%"></span></div>
+      </div>
+    </div>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <div class="grid2">
+    <section class="panel" data-reveal><h2>Pedidos recentes.</h2><div data-table></div></section>
+    <section class="panel" data-reveal><h2>Atividade.</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</main>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:1.6})</script>
+</body>
+</html>

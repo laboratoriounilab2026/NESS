@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Caderno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: página-documento com capa, ícone e propriedades; blocos com alça no hover; checklist de pendências. */
+:root{--bg:#FFFFFF;--side:#F7F7F5;--surface:#FBFBFA;--fg:#37352F;--muted:#787774;--line:#E9E9E7;--accent:#2383E2;--hover:#37352F0F;--ok:#448361;--wait:#337EA9;--err:#D44C47;--block:#CB912F;--draft:#787774;--logo-accent:#D9730D;font-family:Inter,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#191919;--side:#202020;--surface:#252525;--fg:#E3E2E0;--muted:#9B9B9B;--line:#2F2F2F;--accent:#529CCA;--hover:#ffffff0e;--ok:#4DAB9A;--wait:#529CCA;--err:#FF7369;--block:#FFDC49;--draft:#9B9B9B;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#191919;--side:#202020;--surface:#252525;--fg:#E3E2E0;--muted:#9B9B9B;--line:#2F2F2F;--accent:#529CCA;--hover:#ffffff0e;--ok:#4DAB9A;--wait:#529CCA;--err:#FF7369;--block:#FFDC49;--draft:#9B9B9B;color-scheme:dark}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+aside{background:var(--side);padding:12px 8px;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.ws{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:6px;font-weight:600}
+.ws:hover{background:var(--hover)}
+aside .nav-item{padding:5px 8px;border-radius:6px;font-size:14px}
+aside .nav-item.active{background:var(--hover)}
+main{min-width:0}
+.cover{height:180px;background:repeating-linear-gradient(135deg,#D9730D22 0 18px,transparent 18px 36px),linear-gradient(90deg,#FBEDDB,#E8F1F8);position:relative}
+:root[data-theme="dark"] .cover{background:repeating-linear-gradient(135deg,#D9730D33 0 18px,transparent 18px 36px),linear-gradient(90deg,#3a2a18,#1f2d38)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cover{background:repeating-linear-gradient(135deg,#D9730D33 0 18px,transparent 18px 36px),linear-gradient(90deg,#3a2a18,#1f2d38)}}
+.cover button{position:absolute;right:16px;bottom:12px;border:0;background:var(--bg);border-radius:6px;padding:4px 10px;font-size:12px;opacity:0;transition:opacity .2s}
+.cover:hover button{opacity:1}
+.page{max-width:900px;margin:0 auto;padding:0 max(16px,4vw) 64px}
+.icon{width:78px;height:78px;margin-top:-40px;display:grid;place-items:center;background:var(--bg);border-radius:12px;color:var(--fg);--logo-sheet:var(--bg)}
+h1{font-family:"Source Serif 4",Georgia,serif;font-size:clamp(30px,4vw,40px);font-weight:700;margin:12px 0 6px;letter-spacing:-.01em}
+.props{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:14px;margin:12px 0 18px}
+.props dt{color:var(--muted);display:flex;gap:6px;align-items:center}
+.props dd{margin:0}
+.block{position:relative;padding:3px 0}
+.block::before{content:"⋮⋮";position:absolute;left:-26px;top:6px;color:var(--muted);opacity:0;letter-spacing:-3px;font-size:13px;transition:opacity .15s;cursor:grab}
+.block:hover::before{opacity:1}
+.callout{display:flex;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;align-items:flex-start}
+.callout .ctas{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:14px;background:var(--bg);transition:background .15s}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.07);background:var(--accent)}
+h2{font-size:20px;font-weight:600;margin:28px 0 8px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{border:1px solid var(--line);border-radius:6px;padding:14px;transition:background .15s,box-shadow .2s}
+.kpi:hover{background:var(--hover);box-shadow:0 4px 14px -6px #0002}
+.kpi-ic{color:var(--muted)}
+.kpi-label{font-size:13px;color:var(--muted);margin-top:6px}
+.kpi-v{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi-note{font-size:12px;color:var(--muted)}
+.todo{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.todo label{display:flex;gap:10px;align-items:center;padding:4px 6px;border-radius:4px;cursor:pointer}
+.todo label:hover{background:var(--hover)}
+.todo input{accent-color:var(--accent);width:16px;height:16px}
+.todo input:checked+span{text-decoration:line-through;color:var(--muted)}
+.tbl th{text-transform:none;letter-spacing:0;font-weight:500}
+.st{border-radius:4px;border:0}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.kpis{grid-template-columns:1fr 1fr}.props{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside><div class="ws"><span data-logo="20"></span>NESS · Estúdio</div><nav data-nav style="display:grid;gap:1px"></nav></aside>
+  <main>
+    <div class="cover"><button data-theme-toggle>Alternar tema</button></div>
+    <article class="page">
+      <div class="icon" data-logo="52"></div>
+      <h1>Central de emissões</h1>
+      <dl class="props"><dt><i data-lucide="calendar"></i>Hoje</dt><dd>terça, 17 de novembro</dd><dt><i data-lucide="building-2"></i>Estabelecimento</dt><dd>Estúdio Matriz · SP</dd><dt><i data-lucide="activity"></i>Serviços</dt><dd><span class="st st-ok"><i data-lucide="check-circle-2"></i>SEFAZ e Emissor Nacional no ar</span></dd></dl>
+      <div class="block callout" data-reveal><i data-lucide="lightbulb"></i><div><b>3 pedidos prontos para emitir.</b> Cada um gera a NFS-e do ensaio e a NF-e do álbum de uma vez.<div class="ctas"><a href="#" class="btn primary"><i data-lucide="plus"></i>Novo pedido</a><a href="#" class="btn">Abrir fila</a></div></div></div>
+      <h2 class="block">Resumo</h2>
+      <section class="kpis block" data-kpis></section>
+      <h2 class="block">Precisa de você</h2>
+      <ul class="todo block">
+        <li><label><input type="checkbox" id="t1"><span>Corrigir CEP do destinatário e reenviar NF-e do PED-2416</span></label></li>
+        <li><label><input type="checkbox" id="t2"><span>Acompanhar NF-e do PED-2417 (transmitindo)</span></label></li>
+        <li><label><input type="checkbox" id="t3"><span>Pedir ao contador a regra para entregas no Paraná</span></label></li>
+      </ul>
+      <h2 class="block">Pedidos recentes</h2>
+      <div class="block" data-table></div>
+      <h2 class="block">Atividade</h2>
+      <ul class="acts block" data-activity></ul>
+    </article>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:1.6})</script>
+</body>
+</html>

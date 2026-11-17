@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Bruto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: neo-brutalismo (Gumroad) — bordas grossas, sombras duras, faixa rolante, sem cantos suaves. */
+:root{--bg:#FFFDF2;--surface:#FFFFFF;--fg:#000;--muted:#333;--line:#000;--accent:#FF90E8;--y:#FFC900;--g:#23A094;--ok:#00704A;--wait:#0044CC;--err:#C4001A;--block:#7A4A00;--draft:#333;--logo-accent:#FF90E8;--logo-sheet:#fff;font-family:"IBM Plex Mono",ui-monospace,monospace}
+.h{font-family:"Archivo Black",Impact,sans-serif;text-transform:uppercase}
+.box{border:3px solid #000;box-shadow:6px 6px 0 #000;background:var(--surface)}
+header{display:flex;align-items:center;gap:16px;padding:14px max(16px,3vw);border-bottom:3px solid #000;background:var(--y)}
+.brand{display:flex;gap:8px;align-items:center;font-size:24px;flex:1}
+header nav{display:flex;gap:6px;overflow-x:auto}
+header .nav-item{border:2px solid #000;border-radius:0;background:#fff!important;color:#000;font-weight:600;white-space:nowrap}
+header .nav-item.active{background:#000!important;color:#fff}
+header .nav-item svg{display:none}
+.marquee{overflow:hidden;border-bottom:3px solid #000;background:#000;color:var(--y);white-space:nowrap;font-weight:600}
+.marquee div{display:inline-block;padding:8px 0;animation:mq 22s linear infinite}
+@keyframes mq{to{transform:translateX(-50%)}}
+main{padding:28px max(16px,3vw) 56px;display:grid;gap:28px}
+.hero{display:grid;grid-template-columns:1.4fr 1fr;gap:24px}
+.hero .box{padding:28px}
+.hero h1{font-size:clamp(36px,6vw,84px);line-height:.9}
+.hero h1 mark{background:var(--accent);padding:0 6px}
+.hero p{margin-top:16px;font-size:15px;max-width:44ch}
+.btn{display:inline-flex;align-items:center;gap:8px;border:3px solid #000;background:var(--accent);color:#000;font-weight:600;padding:12px 18px;box-shadow:4px 4px 0 #000;transition:transform .1s,box-shadow .1s;margin-top:22px}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 #000}
+.btn:active{transform:translate(4px,4px);box-shadow:0 0 0 #000}
+.sticker{background:var(--g);color:#fff;display:grid;align-content:center;gap:8px;rotate:2deg;transition:rotate .3s}
+.sticker:hover{rotate:-1deg}
+.sticker b{font-family:"Archivo Black",sans-serif;font-size:72px;line-height:1}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.kpi{border:3px solid #000;box-shadow:6px 6px 0 #000;padding:18px;background:#fff;transition:transform .15s,box-shadow .15s}
+.kpi:nth-child(2){background:var(--y)}.kpi:nth-child(3){background:var(--accent)}
+.kpi:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 #000}
+.kpi-label{font-weight:600;margin-top:8px}
+.kpi-v{font-family:"Archivo Black",sans-serif;font-size:52px;line-height:1.05}
+.kpi-note{font-size:12px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.grid2 .box{padding:16px;min-width:0}
+.grid2 h2{font-family:"Archivo Black",sans-serif;text-transform:uppercase;margin-bottom:8px}
+.st{border-radius:0;border:2px solid currentColor;background:#fff}
+.tbl th{color:#000;border-bottom:3px solid #000}.tbl td{border-color:#000}
+.act-ic{border-radius:0;border:2px solid #000;background:var(--y);color:#000}
+@media (max-width:900px){.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}header nav{display:none}}
+</style>
+</head>
+<body>
+<header><span class="brand h"><span data-logo="32"></span>NESS</span><nav data-nav></nav></header>
+<div class="marquee" aria-hidden="true"><div>★ 3 PEDIDOS PRONTOS PARA EMITIR ★ 2 EMISSÕES PARCIAIS ★ SEFAZ-SP NO AR ★ EMISSOR NACIONAL NO AR ★ 126 NOTAS NA SEMANA ★ 3 PEDIDOS PRONTOS PARA EMITIR ★ 2 EMISSÕES PARCIAIS ★ SEFAZ-SP NO AR ★ EMISSOR NACIONAL NO AR ★ 126 NOTAS NA SEMANA&nbsp;</div></div>
+<main>
+  <section class="hero">
+    <div class="box" data-reveal><h1 class="h">Duas notas. <mark>Zero</mark> espera.</h1><p>Confirmou o pedido? NFS-e do ensaio e NF-e do álbum saem juntas. O DANFE já fica pronto para despachar.</p><a href="#" class="btn"><i data-lucide="plus"></i>NOVO PEDIDO</a></div>
+    <div class="box sticker" data-reveal><span>PRONTOS PARA EMITIR</span><b data-count="3">3</b><span>clique em novo pedido ou abra a fila →</span></div>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <div class="grid2">
+    <section class="box" data-reveal><h2>Pedidos</h2><div data-table></div></section>
+    <section class="box" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</main>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:2.5})</script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Ateliê</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: revista — régua fina, numerais serifados grandes, hero tipográfico com luz âmbar que acompanha o cursor. Escuro de propósito. */
+:root{--bg:#0E0D0B;--surface:#151411;--fg:#EFE9DD;--muted:#9C9384;--line:#2A2722;--accent:#D9A54A;--ok:#7FC79A;--wait:#9DB8E8;--err:#E8806B;--block:#D9A54A;--draft:#9C9384;--logo-accent:#D9A54A;color-scheme:dark;font-family:Inter,system-ui,sans-serif}
+.serif{font-family:Fraunces,Georgia,serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 max(16px,3vw) 64px}
+header{display:flex;align-items:center;gap:24px;padding:22px 0;border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:10px;align-items:center;font-size:13px;letter-spacing:.4em;font-weight:600;flex:1}
+header nav{display:flex;gap:4px;overflow-x:auto}
+header .nav-item{background:none!important;font-size:12px;letter-spacing:.14em;text-transform:uppercase;position:relative;white-space:nowrap}
+header .nav-item svg{display:none}
+header .nav-item::after{content:"";position:absolute;left:12px;right:12px;bottom:4px;height:1px;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+header .nav-item:hover::after,header .nav-item.active::after{transform:scaleX(1)}
+.hero{position:relative;padding:72px 0 56px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1fr auto;gap:40px;align-items:end;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(420px circle at var(--mx,70%) var(--my,30%),#D9A54A1f,transparent 70%);pointer-events:none}
+.issue{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);margin-bottom:22px}
+.hero h1{font-family:Fraunces,serif;font-weight:300;font-size:clamp(44px,7.5vw,112px);line-height:.95;letter-spacing:-.03em}
+.hero h1 em{font-style:italic;color:var(--accent)}
+.side{display:grid;gap:18px;max-width:300px;position:relative}
+.side p{color:var(--muted)}
+.cta{display:inline-flex;align-items:center;justify-content:space-between;gap:24px;border:1px solid var(--accent);color:var(--accent);padding:14px 18px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;position:relative;overflow:hidden;transition:color .35s}
+.cta::before{content:"";position:absolute;inset:0;background:var(--accent);transform:translateY(101%);transition:transform .45s var(--ease);z-index:-1}
+.cta:hover{color:var(--bg)}.cta:hover::before{transform:none}
+.cta{isolation:isolate}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+.kpi{padding:32px 24px 28px 0;border-right:1px solid var(--line);transition:background .3s}
+.kpi+.kpi{padding-left:24px}.kpi:last-child{border-right:0}
+.kpi:hover .kpi-v{color:var(--accent)}
+.kpi-ic{display:none}
+.kpi-label{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)}
+.kpi-v{font-family:Fraunces,serif;font-weight:300;font-size:72px;line-height:1;margin:14px 0 8px;font-variant-numeric:tabular-nums;transition:color .3s}
+.kpi-note{color:var(--muted);font-size:13px;font-style:italic;font-family:Fraunces,serif}
+.cols{display:grid;grid-template-columns:2fr 1fr;gap:48px;padding-top:40px}
+h2{font-family:Fraunces,serif;font-weight:300;font-size:32px;margin-bottom:14px}
+.tbl th{letter-spacing:.2em;font-size:11px}
+.st{border-radius:0;background:none;border:0;padding:0;letter-spacing:.04em}
+.act-ic{border-radius:0;background:none;border:1px solid var(--line)}
+@media (max-width:900px){.hero,.cols{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.kpi{padding-left:0!important;border-right:0;border-bottom:1px solid var(--line)}header nav{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><span class="brand"><span data-logo="22"></span>NESS</span><nav data-nav></nav></header>
+  <section class="hero" id="hero" data-glow data-reveal>
+    <div><p class="issue">Terça, 17 de novembro · Estúdio Matriz</p><h1>O ensaio e o álbum, <em>numa só emissão.</em></h1></div>
+    <div class="side"><p>Três pedidos aguardam sua confirmação. Duas emissões parciais pedem um olhar atento.</p><a href="#" class="cta">Novo pedido <i data-lucide="arrow-up-right"></i></a></div>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <div class="cols">
+    <section data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+    <section data-reveal><h2>Diário</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:1.25})</script>
+</body>
+</html>

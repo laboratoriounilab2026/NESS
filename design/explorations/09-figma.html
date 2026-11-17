@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Cores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: blocos de cor chapada; hero com formas que reagem ao cursor (parallax); indicadores com inclinação 3D. */
+:root{--bg:#F5F3EE;--surface:#FFFFFF;--fg:#111;--muted:#5E5E5E;--line:#11111122;--accent:#0D99FF;--c1:#FF7262;--c2:#A259FF;--c3:#1ABCFE;--c4:#0ACF83;--c5:#FFC700;--ok:#067A47;--wait:#0B6FC4;--err:#C0331F;--block:#8A5B00;--draft:#5E5E5E;--logo-accent:#FF7262;--logo-sheet:#fff;font-family:Inter,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111;--surface:#1C1C1C;--fg:#F5F3EE;--muted:#A6A6A6;--line:#ffffff22;--accent:#3DB0FF;--ok:#3BD68F;--wait:#5AB8FF;--err:#FF7A66;--block:#FFC700;--draft:#A6A6A6;--logo-sheet:#1C1C1C;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111;--surface:#1C1C1C;--fg:#F5F3EE;--muted:#A6A6A6;--line:#ffffff22;--accent:#3DB0FF;--ok:#3BD68F;--wait:#5AB8FF;--err:#FF7A66;--block:#FFC700;--draft:#A6A6A6;--logo-sheet:#1C1C1C;color-scheme:dark}
+.disp{font-family:"Bricolage Grotesque",Inter,sans-serif}
+header{display:flex;align-items:center;gap:16px;padding:16px max(16px,3vw)}
+.brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:22px;flex:1}
+.navpill{display:flex;gap:2px;background:var(--surface);border:1.5px solid var(--fg);border-radius:999px;padding:4px;overflow-x:auto}
+.navpill .nav-item{border-radius:999px;padding:7px 12px;white-space:nowrap}
+.navpill .nav-item.active{background:var(--fg);color:var(--bg)}
+.navpill svg{display:none}
+.tb{border:1.5px solid var(--fg);background:var(--surface);border-radius:999px;width:40px;height:40px;display:grid;place-items:center}
+main{padding:8px max(16px,3vw) 56px;display:grid;gap:24px}
+.hero{position:relative;background:var(--c5);color:#111;border-radius:32px;padding:clamp(28px,5vw,64px);overflow:hidden;display:grid;gap:18px;min-height:340px;align-content:center;border:1.5px solid #111}
+.hero h1{font-size:clamp(40px,7vw,96px);line-height:.92;letter-spacing:-.04em;font-weight:800;max-width:11ch;position:relative;z-index:1}
+.hero p{max-width:40ch;font-size:17px;position:relative;z-index:1}
+.shape{position:absolute;border:1.5px solid #111;transition:transform .4s var(--ease)}
+.s1{width:150px;height:150px;border-radius:50%;background:var(--c1);right:14%;top:12%}
+.s2{width:120px;height:170px;border-radius:24px;background:var(--c2);right:4%;bottom:-30px;rotate:12deg}
+.s3{width:110px;height:110px;background:var(--c3);right:30%;bottom:10%;border-radius:0 60px 0 60px}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:13px 22px;font-weight:600;border:1.5px solid #111;background:#111;color:#fff;transition:transform .2s var(--ease),box-shadow .2s;justify-self:start;position:relative;z-index:1}
+.btn:hover{transform:translate(-3px,-3px);box-shadow:4px 4px 0 #111}
+.btn.alt{background:#fff;color:#111}
+.ctas{display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{border-radius:24px;padding:22px;border:1.5px solid #111;color:#111;transition:transform .2s;will-change:transform}
+.kpi:nth-child(1){background:var(--c3)}.kpi:nth-child(2){background:var(--c4)}.kpi:nth-child(3){background:var(--c1)}.kpi:nth-child(4){background:var(--c2);color:#fff}
+.kpi-label{font-weight:600;margin-top:12px}
+.kpi-v{font-family:"Bricolage Grotesque",sans-serif;font-size:56px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.kpi-note{font-size:13px;opacity:.85}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.panel{background:var(--surface);border:1.5px solid var(--fg);border-radius:24px;padding:10px 0;min-width:0}
+.panel h2{font-family:"Bricolage Grotesque",sans-serif;font-size:24px;padding:12px 20px}
+.panel .acts{padding:0 20px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.navpill{display:none}.s1,.s3{display:none}}
+</style>
+</head>
+<body>
+<header><span class="brand disp"><span data-logo="30"></span>ness</span><nav class="navpill" data-nav></nav><button class="tb" data-theme-toggle aria-label="Alternar tema"><i data-lucide="contrast"></i></button></header>
+<main>
+  <section class="hero" id="hero" data-reveal>
+    <span class="shape s1" data-depth="30"></span><span class="shape s2" data-depth="-20"></span><span class="shape s3" data-depth="45"></span>
+    <h1 class="disp">Fotografou? Já pode faturar.</h1>
+    <p>NFS-e do ensaio e NF-e do álbum saem do mesmo pedido. A encomenda fica pronta para enviar.</p>
+    <div class="ctas"><a href="#" class="btn"><i data-lucide="plus"></i>Novo pedido</a><a href="#" class="btn alt">2 parciais para resolver</a></div>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <div class="grid2">
+    <section class="panel" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+    <section class="panel" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</main>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+NESS.render({stroke:2,kpi:k=>`<article class="kpi" data-tilt><i data-lucide="${k.icon}"></i><p class="kpi-label">${k.label}</p><p class="kpi-v" data-count="${k.v}">${k.v}</p><p class="kpi-note">${k.note}</p></article>`});
+const hero=document.getElementById('hero');
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches)hero.addEventListener('pointermove',e=>{const r=hero.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;hero.querySelectorAll('.shape').forEach(s=>{const d=+s.dataset.depth;s.style.transform=`translate(${x*d}px,${y*d}px)`})});
+</script>
+</body>
+</html>

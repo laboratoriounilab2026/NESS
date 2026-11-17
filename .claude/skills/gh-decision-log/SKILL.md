@@ -1,0 +1,176 @@
+---
+name: decision-log
+description: Captures and maintains architectural and technical decisions in docs/decisions/ using the ADR format. Keeps the decision index up to date. Triggered whenever a technology is chosen, a pattern is adopted, a trade-off is made, or a proposal is accepted.
+compatibility: opencode
+---
+
+# Decision Log Skill
+
+You capture, format, and maintain architectural and technical decisions made during
+development. You write in the ADR (Architecture Decision Record) format and keep a running
+log in `docs/decisions/` so the team has a traceable history of why the system is built the
+way it is.
+
+**Project facts** (stack, structure, conventions, decisions) are in the project's
+`AGENTS.md`; read it first ([`RULES.md#project-facts`](../RULES.md#project-facts)).
+
+---
+
+## Authoritative Rules
+
+The project-wide engineering conventions live in two layers:
+
+1. The language-agnostic core in [`RULES.md`](../RULES.md).
+2. The active **stack overlay** under [`rules/`](../rules/), pinned by the project's
+   `## Active Skillset` line in `AGENTS.md` — e.g.
+   [`rules/typescript.md`](../rules/typescript.md) or
+   [`rules/dotnet.md`](../rules/dotnet.md).
+
+This skill is the **sole owner of ADR creation** — the architect skill writes proposals and
+hands off to this skill for the corresponding ADR.
+
+If `AGENTS.md` does not declare an active skillset, default to the
+[`typescript`](../rules/typescript.md) overlay for backwards compatibility.
+
+### ADRs that override a rule
+
+If a decision overrides a rule in `RULES.md` **or in the active overlay**, the ADR **must**:
+
+1. Cite the exact file, section, and rule being overridden (e.g.
+   `RULES.md#external-http-clients` — "5s default timeout", or
+   `rules/typescript.md` *TypeScript Conventions* — "never `enum`").
+2. State the override explicitly in the **Decision** section.
+3. Justify the override in the **Rationale** section — what makes this project's
+   constraints different.
+4. List the additional risk and mitigation in **Consequences → Risks**.
+5. Be referenced from the project's `AGENTS.md` "project-specific overrides" table so
+   future skill runs see the deviation.
+
+Never weaken a rule in `RULES.md` or an overlay itself — overrides are per-project and live
+in ADRs.
+
+---
+
+## When to Log a Decision
+
+Log a decision whenever any of the following occur:
+- A technology, library, or framework is chosen or rejected
+- An architectural pattern is adopted or explicitly avoided
+- A domain-specific calculation approach is finalised
+- A trade-off is made between simplicity and flexibility
+- An external API limitation forces a workaround
+- A configuration approach is chosen (per-entity rules vs global defaults)
+- An edge case resolution is agreed
+- A security or auth approach is confirmed
+- A proposal in `docs/proposals/` is accepted
+
+## ADR File Naming Convention
+
+```
+docs/decisions/NNNN-short-kebab-case-title.md
+```
+
+Example: `docs/decisions/0001-cache-external-data-in-postgres.md`
+
+Increment NNNN sequentially from the highest existing number. Start at 0001.
+
+## ADR Format
+
+```markdown
+# NNNN — Decision Title
+
+**Date:** YYYY-MM-DD
+**Status:** Proposed | Accepted | Deprecated | Superseded by [NNNN]
+**Decided by:** who decided, the owner's words quoted and dated; parts an agent chose
+"pending review"
+**Amends / Supersedes:** each ADR this one changes, and what it changes in it ·
+**Amended by:** added later
+**Privacy:** screening all No | PIA link · **Risks:** R-NNN rows raised, accepted or closed
+**Proposal:** link to docs/proposals/ file if this decision originated from a proposal
+
+## Context
+
+What is the problem or situation that requires a decision? Include any relevant
+constraints — technical, operational, or business. Keep this to 3–5 sentences.
+
+## Options Considered
+
+### Option A — [Name]
+- **Summary:** One sentence description
+- **Pros:** bullet list
+- **Cons:** bullet list
+
+### Option B — [Name]
+- **Summary:** One sentence description
+- **Pros:** bullet list
+- **Cons:** bullet list
+
+*(Add further options as needed)*
+
+## Decision
+
+State the chosen option in one sentence. Example:
+> We will cache external API data in Postgres rather than querying live per request.
+
+## Rationale
+
+2–4 sentences explaining why this option was chosen over the alternatives.
+Reference specific constraints from the Context section.
+
+## Consequences
+
+- **Positive:** what this decision enables or simplifies
+- **Negative / trade-offs:** what this decision costs or constrains
+- **Risks:** anything that could cause this decision to be revisited
+
+## Related Decisions
+
+- Links to other ADRs that are affected by or influenced this decision
+```
+
+## Your Workflow
+
+When asked to log a decision:
+1. List `docs/decisions/` to identify the next available NNNN
+2. Create the file at `docs/decisions/NNNN-title.md` using the format above
+3. Set Status to `Accepted` unless explicitly told otherwise
+4. Add a one-line entry to `docs/decisions/README.md` in the decision index table
+5. Link both ends: an ADR that amends or supersedes another adds **Amended by** (or
+   **Superseded by**) to that one in the same change
+6. Add one line to `AGENTS.md`'s Settled Decisions, naming the ADRs it amends or
+   supersedes
+   ([`RULES.md#project-facts`](../RULES.md#project-facts)) and rewrite any row this ADR
+   changes; reconcile the other copies of the rule
+   ([`RULES.md#evidence-corrections--decisions`](../RULES.md#evidence-corrections--decisions))
+7. Write the risk-register rows the decision accepts
+   ([`RULES.md#risk-register`](../RULES.md#risk-register)); claim a behaviour change only
+   if it was observed
+
+## Decision Index Format (docs/decisions/README.md)
+
+```markdown
+# Decision Log
+
+| # | Title | Status | Date |
+|---|---|---|---|
+| [0001](0001-cache-external-data-in-postgres.md) | Cache external data in Postgres | Accepted | YYYY-MM-DD |
+```
+
+## MCP Tools
+
+### filesystem — ADR File Operations
+Use the Filesystem MCP server to:
+
+- List `docs/decisions/` to find the highest existing NNNN before creating a new ADR
+- Read existing ADRs to check for related decisions to link
+- Write new ADR files directly to `docs/decisions/NNNN-title.md`
+- Update the decision index at `docs/decisions/README.md`
+- Read `docs/proposals/` to locate the originating proposal when logging an accepted decision
+
+---
+
+## Out of Scope
+
+This skill does not review code. Flagging an implementation that contradicts an existing
+ADR belongs to the **reviewer** skill, which blocks on it under *Documentation Checks*.
+Your job ends at writing and indexing the ADR itself.

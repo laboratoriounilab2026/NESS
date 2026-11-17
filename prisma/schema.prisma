@@ -1,0 +1,170 @@
+// NESS — modelo de dados (Fase 1). Enums espelham src/domain/states.ts.
+// Nenhum valor fiscal (CFOP, CST, NCM, alíquota) é semeado: entram por FiscalRule aprovada.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DocType {
+  NFSE
+  NFE
+}
+
+enum DocState {
+  PENDENTE
+  ENVIADO
+  INCERTO
+  AUTORIZADO
+  REJEITADO
+  DENEGADO
+  CANCELAMENTO_SOLICITADO
+  CANCELADO
+}
+
+enum OrderState {
+  RASCUNHO
+  VALIDANDO
+  PRONTO_REVISAO
+  BLOQUEADO
+  EMITINDO
+  COMPLETO
+  PARCIAL
+  FALHA
+  CANCELAMENTO_SOLICITADO
+}
+
+enum Environment {
+  HOMOLOGACAO
+  PRODUCAO
+}
+
+model Establishment {
+  id             String      @id @default(uuid())
+  cnpj           String      @unique
+  name           String
+  uf             String      @db.Char(2)
+  municipioIbge  String
+  regime         String
+  environment    Environment @default(HOMOLOGACAO)
+  // Referência ao segredo no secret manager — nunca o certificado ou a senha.
+  certSecretRef  String?
+  createdAt      DateTime    @default(now())
+  orders         EmissionOrder[]
+  fiscalRules    FiscalRule[]
+}
+
+// Tomador do serviço (quem paga). Separado do destinatário físico.
+model Customer {
+  id        String   @id @default(uuid())
+  document  String   // CPF/CNPJ — dado sensível, mascarar em logs
+  name      String
+  email     String?
+  createdAt DateTime @default(now())
+  orders    EmissionOrder[]
+}
+
+model Recipient {
+  id        String   @id @default(uuid())
+  document  String?
+  name      String
+  cep       String
+  street    String
+  number    String
+  district  String
+  city      String
+  uf        String   @db.Char(2)
+  createdAt DateTime @default(now())
+  orders    EmissionOrder[]
+}
+
+model EmissionOrder {
+  id              String        @id @default(uuid())
+  ref             String        @unique
+  state           OrderState    @default(RASCUNHO)
+  establishmentId String
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  customerId      String
+  customer        Customer      @relation(fields: [customerId], references: [id])
+  recipientId     String?
+  recipient       Recipient?    @relation(fields: [recipientId], references: [id])
+  serviceCents    Int
+  goodsCents      Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  documents       EmissionDocument[]
+}
+
+model EmissionDocument {
+  id          String   @id @default(uuid())
+  orderId     String
+  order       EmissionOrder @relation(fields: [orderId], references: [id])
+  type        DocType
+  state       DocState @default(PENDENTE)
+  accessKey   String?  @unique // chave de acesso (NF-e) / chave NFS-e, só após autorização confirmada
+  protocol    String?
+  fiscalRuleId String?
+  fiscalRule  FiscalRule? @relation(fields: [fiscalRuleId], references: [id])
+  updatedAt   DateTime @updatedAt
+  attempts    EmissionAttempt[]
+
+  @@unique([orderId, type])
+}
+
+model EmissionAttempt {
+  id             String   @id @default(uuid())
+  documentId     String
+  document       EmissionDocument @relation(fields: [documentId], references: [id])
+  seq            Int
+  idempotencyKey String   @unique
+  correlationId  String
+  resultState    DocState?
+  // Resposta já sanitizada (sem certificado, token ou dados pessoais completos).
+  responseSummary Json?
+  startedAt      DateTime @default(now())
+  finishedAt     DateTime?
+
+  @@unique([documentId, seq])
+}
+
+// Regra fiscal versionada: só habilita cenário se approvedAt != null e vigente.
+model FiscalRule {
+  id              String    @id @default(uuid())
+  establishmentId String
+  establishment   Establishment @relation(fields: [establishmentId], references: [id])
+  docType         DocType
+  ufDestino       String?   @db.Char(2)
+  municipioIbge   String?
+  purpose         String
+  version         Int
+  params          Json      // CFOP/CST/NCM/códigos de serviço etc. — preenchidos pelo responsável fiscal
+  validFrom       DateTime
+  validTo         DateTime?
+  justification   String
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  approvedBy      String?
+  approvedAt      DateTime?
+  documents       EmissionDocument[]
+
+  @@unique([establishmentId, docType, purpose, ufDestino, municipioIbge, version])
+}
+
+// Append-only: sem update/delete pela aplicação.
+model AuditEvent {
+  id            String   @id @default(uuid())
+  at            DateTime @default(now())
+  actor         String
+  action        String
+  entity        String
+  entityId      String
+  result        String
+  correlationId String
+  data          Json?    // sem segredos; identificadores mascarados
+
+  @@index([entity, entityId])
+}

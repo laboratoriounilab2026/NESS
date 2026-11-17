@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* Design tokens NESS — direção "Mosaico" (tela 10). Fonte da verdade das cores; componentes usam só estes tokens.
+   Tema: claro no :root, escuro por preferência do sistema ou por data-theme="dark" (escolha explícita vence). */
+:root {
+  --bg: #eef0f4;
+  --surface: #ffffff;
+  --fg: #14213d;
+  --muted: #5d6880;
+  --line: #dde1e9;
+  --accent: #e8a33d;
+  --accent-fg: #14213d;
+  --ink: #14213d;
+  --ink-fg: #f4f6fb;
+  --ink-muted: #b9c3d8;
+  /* Estados: sempre acompanhados de ícone + texto (nunca só cor) */
+  --ok: #177a4b;
+  --wait: #2457c5;
+  --err: #b4321f;
+  --block: #8a5a00;
+  --draft: #5d6880;
+  --radius-tile: 22px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a101d; --surface: #121a2c; --fg: #e9eef7; --muted: #97a3ba; --line: #1f2a40;
+    --accent: #f2b65a; --ink: #1a2848; --ok: #4cc38a; --wait: #7aa2ff; --err: #ff6b5b; --block: #f5b54a; --draft: #97a3ba;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a101d; --surface: #121a2c; --fg: #e9eef7; --muted: #97a3ba; --line: #1f2a40;
+  --accent: #f2b65a; --ink: #1a2848; --ok: #4cc38a; --wait: #7aa2ff; --err: #ff6b5b; --block: #f5b54a; --draft: #97a3ba;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-ink: var(--ink);
+  --color-ink-fg: var(--ink-fg);
+  --color-ink-muted: var(--ink-muted);
+  --color-ok: var(--ok);
+  --color-wait: var(--wait);
+  --color-err: var(--err);
+  --color-block: var(--block);
+  --color-draft: var(--draft);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
+  --radius-tile: var(--radius-tile);
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Movimento funcional e curto; desligado com prefers-reduced-motion */
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes ping-soft { 70% { box-shadow: 0 0 0 8px transparent; } }
+.reveal { animation: rise 0.7s var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+.orb { animation: spin-slow 12s linear infinite; }
+.pulse-dot { animation: ping-soft 2s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

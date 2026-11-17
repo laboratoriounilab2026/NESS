@@ -1,0 +1,47 @@
+/* Base comum. Cada direção define seus tokens: --bg --fg --muted --line --surface --accent
+   e os de estado: --ok --wait --err --block --draft (cor de texto/ícone do badge). */
+:root{--ok:#1F7A4D;--wait:#2457C5;--err:#B4321F;--block:#8A5A00;--draft:#5B6170;--radius:12px;--ease:cubic-bezier(.2,.7,.2,1)}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);-webkit-font-smoothing:antialiased;line-height:1.5}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+svg.lucide{width:18px;height:18px;flex:none}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+
+/* Badges de estado: sempre ícone + texto, cor só como reforço */
+.st{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap;color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent);border:1px solid color-mix(in srgb,var(--c) 25%,transparent)}
+.st svg.lucide{width:14px;height:14px}
+.st-ok{--c:var(--ok)}.st-wait{--c:var(--wait)}.st-err{--c:var(--err)}.st-block{--c:var(--block)}.st-draft{--c:var(--draft)}
+.st-wait svg{animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{text-align:left;font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:13px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl tbody tr{transition:background .2s var(--ease)}
+.tbl tbody tr:hover,.tbl tbody tr:focus-visible{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.tbl .num{text-align:right}
+.tbl .ref{font-weight:600}
+.muted{color:var(--muted)}
+
+.act{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+.act:last-child{border-bottom:0}
+.act b{display:block;font-weight:600;font-size:14px}
+.act small{color:var(--muted);font-size:12.5px}
+.act time{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.act-ic{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+ul.acts{list-style:none;margin:0;padding:0}
+
+/* Entrada escalonada (visível em repouso, anima ao carregar) */
+.ready [data-reveal]{animation:rise .7s var(--ease) both;animation-delay:calc(var(--i,0) * 70ms)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;font-size:14px;color:var(--muted);transition:background .2s,color .2s}
+.nav-item:hover{color:var(--fg);background:color-mix(in srgb,var(--fg) 6%,transparent)}
+.nav-item.active{color:var(--fg);background:color-mix(in srgb,var(--fg) 9%,transparent);font-weight:600}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

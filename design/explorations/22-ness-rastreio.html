@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Rastreio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: visual oficial (tela 10 · Mosaico) + menu Rastreio no formato da tela 19: mapa com rotas, lista acessível e painel com linha do tempo. */
+:root{--bg:#EEF0F4;--surface:#FFFFFF;--fg:#14213D;--muted:#5D6880;--line:#DDE1E9;--accent:#E8A33D;--ink:#14213D;--map:#E4E8EF;--dot:#C9D0DC;--ok:#177A4B;--wait:#2457C5;--err:#B4321F;--block:#8A5A00;--draft:#5D6880;--logo-accent:#E8A33D;font-family:Inter,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A101D;--surface:#121A2C;--fg:#E9EEF7;--muted:#97A3BA;--line:#1F2A40;--accent:#F2B65A;--ink:#1A2848;--map:#0E1626;--dot:#24324D;--ok:#4CC38A;--wait:#7AA2FF;--err:#FF6B5B;--block:#F5B54A;--draft:#97A3BA;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0A101D;--surface:#121A2C;--fg:#E9EEF7;--muted:#97A3BA;--line:#1F2A40;--accent:#F2B65A;--ink:#1A2848;--map:#0E1626;--dot:#24324D;--ok:#4CC38A;--wait:#7AA2FF;--err:#FF6B5B;--block:#F5B54A;--draft:#97A3BA;color-scheme:dark}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+aside{padding:20px 12px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;gap:10px;align-items:center;font:700 19px "Space Grotesk",sans-serif;letter-spacing:.06em;padding:0 8px}
+main{padding:20px max(16px,2.5vw) 40px;min-width:0;display:grid;gap:14px;align-content:start}
+.t{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:20px;min-width:0}
+.t h3{font:600 14px "Space Grotesk",sans-serif;color:var(--muted);display:flex;gap:8px;align-items:center}
+.head{background:var(--ink);color:#F4F6FB;border:0;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between;position:relative;overflow:hidden}
+.head .orb{position:absolute;right:-60px;top:-80px;width:240px;height:240px;border-radius:50%;background:conic-gradient(#E8A33D,#E8A33D00 40%,#E8A33D 70%,#E8A33D00);opacity:.3;filter:blur(20px);animation:spin 12s linear infinite}
+.head h1{font:700 clamp(26px,3vw,38px)/1.05 "Space Grotesk",sans-serif;letter-spacing:-.02em}
+.head h1 span{color:#E8A33D}
+.head p{color:#B9C3D8;margin-top:6px}
+.find{display:flex;gap:8px;background:#ffffff14;border-radius:14px;padding:6px 6px 6px 14px;align-items:center;position:relative;min-width:min(340px,100%)}
+.find input{all:unset;flex:1;color:#fff;min-width:0}
+.find input::placeholder{color:#B9C3D8}
+.find button{border:0;background:#E8A33D;color:#14213D;font-weight:700;border-radius:10px;padding:9px 14px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.stat{display:grid;gap:2px;cursor:pointer;text-align:left;font:inherit;color:inherit;transition:transform .3s var(--ease),box-shadow .3s,border-color .2s}
+.stat:hover{transform:translateY(-3px);box-shadow:0 20px 34px -24px #14213D66}
+.stat[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
+.stat b{font:700 34px "Space Grotesk",sans-serif;font-variant-numeric:tabular-nums}
+.stat small{color:var(--muted)}
+.work{display:grid;grid-template-columns:300px 1fr 360px;gap:14px;align-items:start}
+.list{display:grid;gap:6px;margin-top:10px;max-height:560px;overflow:auto}
+.ship{all:unset;box-sizing:border-box;display:grid;gap:4px;padding:12px;border-radius:14px;border:1px solid var(--line);cursor:pointer;transition:background .2s,border-color .2s}
+.ship:hover{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.ship:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ship[aria-current="true"]{border-color:var(--fg);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.ship .r{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted)}
+.ship b{font-size:14.5px}
+.mapbox{padding:0;overflow:hidden;position:relative;min-height:560px;background:var(--map)}
+.mapbox svg{width:100%;height:100%;display:block;min-height:560px}
+.mapbox .cap{position:absolute;left:16px;top:14px;display:flex;gap:8px;align-items:center;font:600 13px "Space Grotesk",sans-serif;color:var(--muted)}
+.mapbox .note{position:absolute;right:14px;bottom:10px;font-size:11px;color:var(--muted)}
+.route{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:6 8;opacity:.35;transition:opacity .3s,stroke .3s}
+.route.on{stroke:var(--accent);stroke-width:3.5;opacity:1;animation:dash 1.1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-28}}
+.city circle.p{fill:var(--surface);stroke:var(--fg);stroke-width:2.5;transition:r .2s,fill .2s}
+.city.on circle.p{fill:var(--accent);r:9}
+.city circle.h{fill:var(--accent);opacity:0;transform-box:fill-box;transform-origin:center}
+.city.on circle.h{animation:halo 2s ease-out infinite}
+@keyframes halo{from{opacity:.5;transform:scale(.6)}to{opacity:0;transform:scale(3)}}
+.city text{font:600 12px Inter,sans-serif;fill:var(--fg);paint-order:stroke;stroke:var(--map);stroke-width:4px}
+.origin rect{fill:var(--fg)}
+.truck{transition:opacity .3s}
+.panel{display:grid;gap:14px}
+.code{display:flex;align-items:center;gap:8px;font:600 18px "Space Grotesk",sans-serif;letter-spacing:.04em}
+.copy{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 9px;font-size:12px;display:inline-flex;gap:4px;align-items:center}
+.eta{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:14px;padding:12px 14px}
+.eta b{font:700 20px "Space Grotesk",sans-serif}
+.tl{list-style:none;margin:0;padding:0;display:grid}
+.tl li{display:grid;grid-template-columns:22px 1fr;gap:12px;position:relative;padding-bottom:16px}
+.tl li::before{content:"";position:absolute;left:10px;top:20px;bottom:0;width:2px;background:var(--line)}
+.tl li:last-child::before{display:none}
+.tl li.done::before{background:var(--accent)}
+.tl .n{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;position:relative;z-index:1}
+.tl li.done .n{background:var(--accent);border-color:var(--accent);color:#14213D}
+.tl li.now .n{border-color:var(--accent);box-shadow:0 0 0 0 var(--accent);animation:ping 1.8s infinite}
+.tl li.now.bad .n{border-color:var(--err);--accent:var(--err)}
+@keyframes ping{70%{box-shadow:0 0 0 8px transparent}}
+.tl .n svg{width:12px;height:12px}
+.tl b{font-size:14px;display:block}.tl small{color:var(--muted);font-size:12.5px}
+.tl li.todo b{color:var(--muted);font-weight:500}
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.docs div{background:var(--bg);border-radius:12px;padding:10px;display:grid;gap:6px;font-size:13px}
+.st-transit{--c:var(--wait)}.st-out{--c:var(--accent)}.st-late{--c:var(--block)}.st-issue{--c:var(--err)}.st-done{--c:var(--ok)}.st-none{--c:var(--draft)}
+.empty{display:grid;gap:10px;justify-items:start}
+.empty input{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);color:var(--fg);font:inherit;width:100%}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--fg);color:var(--bg);font-weight:600;border:0;border-radius:10px;padding:10px 14px;cursor:pointer}
+.upd{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.sk{height:12px;border-radius:6px;background:linear-gradient(90deg,var(--line),var(--bg),var(--line));background-size:200% 100%;animation:sh 1.2s infinite}
+@keyframes sh{to{background-position:-200% 0}}
+@media (max-width:1200px){.work{grid-template-columns:1fr 1fr}.mapbox{grid-column:1/-1;order:-1;min-height:380px}.mapbox svg{min-height:380px}}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.stats{grid-template-columns:1fr 1fr}.work{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside><div class="brand"><span data-logo="26"></span>NESS</div><nav id="nav" style="display:grid;gap:2px"></nav><button class="nav-item" data-theme-toggle style="border:0;background:none;margin-top:auto"><i data-lucide="sun-moon"></i>Tema</button></aside>
+  <main>
+    <section class="t head" data-reveal>
+      <span class="orb" aria-hidden="true"></span>
+      <div style="position:relative"><h1>Rastreio de <span>entregas</span></h1><p>Do estúdio até o destinatário. Status vindo dos Correios, atualizado a cada consulta.</p></div>
+      <form class="find" id="find" role="search"><i data-lucide="search"></i><input id="q" placeholder="Código, pedido ou destinatário" aria-label="Buscar entrega"><button>Buscar</button></form>
+    </section>
+    <div style="display:flex;justify-content:flex-end"><button class="copy" id="demo" aria-pressed="false"><i data-lucide="eye"></i>Ver como empresa sem contrato</button></div>
+    <section class="t" id="off" hidden style="display:grid;gap:14px;justify-items:start;padding:32px">
+      <span class="st st-none"><i data-lucide="lock"></i>Rastreio desativado</span>
+      <h2 style="font:700 26px 'Space Grotesk',sans-serif">Ative o rastreio com o seu contrato dos Correios</h2>
+      <p class="muted" style="max-width:60ch">A API de rastreio dos Correios só funciona para empresas com contrato comercial, e só mostra pacotes postados nesse contrato. Sem contrato, este recurso fica desligado. A emissão das notas funciona normalmente.</p>
+      <ol class="muted" style="margin:0;padding-left:18px;display:grid;gap:4px"><li>Um administrador gera o código de acesso no portal Correios Web Services (CWS).</li><li>Cadastra o contrato e o cartão de postagem em Configurações → Integrações.</li><li>O NESS testa a conexão no ambiente de homologação antes de ativar.</li></ol>
+      <a class="btn" href="#"><i data-lucide="plug"></i>Configurar integração com os Correios</a>
+      <small class="muted">Somente administradores podem fazer essa configuração.</small>
+    </section>
+    <section class="stats" id="stats" aria-label="Filtrar por situação"></section>
+    <div class="work">
+      <section class="t" aria-label="Entregas"><h3><i data-lucide="list"></i>Entregas <span id="count"></span></h3><div class="list" id="list"></div></section>
+      <section class="t mapbox" aria-hidden="true"><span class="cap"><i data-lucide="map"></i>Saindo de São Paulo/SP</span><svg id="map" viewBox="0 0 500 560" preserveAspectRatio="xMidYMid meet"></svg><span class="note">Mapa ilustrativo · só cidade e UF do destinatário</span></section>
+      <section class="t panel" id="panel" aria-live="polite"></section>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+// Dados fictícios. Só pedidos com NF-e autorizada podem ser postados.
+const S={transit:['Em trânsito','truck'],out:['Saiu para entrega','navigation'],late:['Atrasado','clock-alert'],issue:['Com problema','alert-triangle'],done:['Entregue','package-check'],none:['Aguardando postagem','package']};
+const C={'São Paulo/SP':[-46.63,-23.55],'Campinas/SP':[-47.06,-22.9],'Rio de Janeiro/RJ':[-43.2,-22.9],'Porto Alegre/RS':[-51.23,-30.03],'Salvador/BA':[-38.5,-12.97],'Belo Horizonte/MG':[-43.94,-19.92],'Santos/SP':[-46.33,-23.96]};
+const P=([lon,lat])=>[(lon+56)/20*500,(-10-lat)/22*560];
+const ev=(d,t,txt,where)=>({d,t,txt,where});
+const L=[
+ {ref:'PED-2418',cli:'Marina Costa',dest:'Campinas/SP',code:'QB 118 204 735 BR',s:'done',eta:'Entregue 16/11',nfse:'ok',nfe:'ok',ev:[ev('14/11','10:12','Objeto postado','Agência São Paulo/SP'),ev('14/11','22:40','Em trânsito para unidade de distribuição','São Paulo/SP → Campinas/SP'),ev('16/11','08:05','Saiu para entrega ao destinatário','Campinas/SP'),ev('16/11','14:31','Objeto entregue ao destinatário','Campinas/SP')]},
+ {ref:'PED-2413',cli:'Colégio Horizonte',dest:'São Paulo/SP',code:'QB 118 203 991 BR',s:'out',eta:'Hoje até 18h',nfse:'ok',nfe:'ok',ev:[ev('15/11','16:20','Objeto postado','Agência São Paulo/SP'),ev('16/11','06:10','Em trânsito para unidade de distribuição','CDD Vila Mariana'),ev('17/11','07:48','Saiu para entrega ao destinatário','São Paulo/SP')]},
+ {ref:'PED-2410',cli:'Helena Prado',dest:'Rio de Janeiro/RJ',code:'QB 118 202 450 BR',s:'transit',eta:'Previsão 19/11',nfse:'ok',nfe:'ok',ev:[ev('15/11','11:02','Objeto postado','Agência São Paulo/SP'),ev('16/11','03:15','Em trânsito','São Paulo/SP → Rio de Janeiro/RJ')]},
+ {ref:'PED-2408',cli:'Bruno e Lia Martins',dest:'Porto Alegre/RS',code:'QB 118 201 077 BR',s:'late',eta:'Previsto 15/11 · 2 dias de atraso',nfse:'ok',nfe:'ok',ev:[ev('10/11','15:44','Objeto postado','Agência São Paulo/SP'),ev('11/11','23:30','Em trânsito','São Paulo/SP → Curitiba/PR'),ev('13/11','05:12','Em trânsito','Curitiba/PR → Porto Alegre/RS')]},
+ {ref:'PED-2405',cli:'Fernanda Rocha',dest:'Salvador/BA',code:'QB 118 199 812 BR',s:'issue',eta:'Nova tentativa 18/11',nfse:'ok',nfe:'ok',ev:[ev('11/11','09:30','Objeto postado','Agência São Paulo/SP'),ev('13/11','02:20','Em trânsito','São Paulo/SP → Salvador/BA'),ev('16/11','08:40','Saiu para entrega ao destinatário','Salvador/BA'),ev('16/11','13:05','Destinatário ausente · nova tentativa','Salvador/BA')]},
+ {ref:'PED-2416',cli:'Rafael Nogueira',dest:'Santos/SP',code:'',s:'none',eta:'',nfse:'ok',nfe:'err',ev:[]},
+];
+const steps=['Postado','Em trânsito','Saiu para entrega','Entregue'];
+let filter=null,cur=L[1].ref;
+const badge=s=>`<span class="st st-${s}"><i data-lucide="${S[s][1]}"></i>${S[s][0]}</span>`;
+
+document.getElementById('nav').innerHTML=[['Visão geral','layout-dashboard'],['Pedidos','shopping-bag'],['Emissões','send'],['Documentos','files'],['Rastreio','truck',1],['Configuração fiscal','scale'],['Auditoria','history']].map(([n,i,a])=>`<a href="${n==='Visão geral'?'10-bento.html':'#'}" class="nav-item${a?' active':''}"${a?' aria-current="page"':''}><i data-lucide="${i}"></i><span>${n}</span></a>`).join('');
+
+function drawStats(){
+  document.getElementById('stats').innerHTML=['transit','out','late','issue','done'].map(k=>`<button class="t stat" data-k="${k}" aria-pressed="${filter===k}"><span class="st st-${k}" style="justify-self:start"><i data-lucide="${S[k][1]}"></i>${S[k][0]}</span><b>${L.filter(x=>x.s===k).length}</b><small>${k==='done'?'últimos 7 dias':k==='late'||k==='issue'?'pedem atenção':'agora'}</small></button>`).join('');
+}
+function drawMap(){
+  const o=P(C['São Paulo/SP']);
+  let dots='';for(let x=10;x<500;x+=18)for(let y=10;y<560;y+=18)dots+=`<circle cx="${x}" cy="${y}" r="1.6" fill="var(--dot)"/>`;
+  const vis=L.filter(x=>x.code);
+  document.getElementById('map').innerHTML=dots+vis.map(x=>{const p=P(C[x.dest]);return `<path class="route${x.ref===cur?' on':''}" d="M${o[0]} ${o[1]} Q ${(o[0]+p[0])/2+40} ${(o[1]+p[1])/2-60} ${p[0]} ${p[1]}"/>`}).join('')
+   +vis.map(x=>{const p=P(C[x.dest]),on=x.ref===cur;return `<g class="city${on?' on':''}"><circle class="h" cx="${p[0]}" cy="${p[1]}" r="9"/><circle class="p" cx="${p[0]}" cy="${p[1]}" r="6"/>${on?`<text x="${p[0]+12}" y="${p[1]+4}">${x.dest}</text>`:''}</g>`}).join('')
+   +`<g class="origin"><rect x="${o[0]-8}" y="${o[1]-8}" width="16" height="16" rx="4"/><text x="${o[0]-12}" y="${o[1]+26}" style="font:600 12px Inter;fill:var(--fg)">Estúdio</text></g>`;
+}
+function drawList(){
+  const q=document.getElementById('q').value.toLowerCase().replace(/\s/g,'');
+  const vis=L.filter(x=>(!filter||x.s===filter)&&(!q||(x.ref+x.cli+x.code+x.dest).toLowerCase().replace(/\s/g,'').includes(q)));
+  document.getElementById('count').textContent=`(${vis.length})`;
+  document.getElementById('list').innerHTML=vis.map(x=>`<button class="ship" data-ref="${x.ref}" aria-current="${x.ref===cur}"><span class="r"><span>${x.ref}</span><span>${x.code||'sem código'}</span></span><b>${x.cli}</b><span class="r"><span>${x.dest}</span></span>${badge(x.s)}</button>`).join('')||'<p class="muted">Nenhuma entrega com esse filtro.</p>';
+}
+function drawPanel(){
+  const x=L.find(y=>y.ref===cur),el=document.getElementById('panel');
+  const docs=`<div class="docs"><div><span class="muted">NFS-e · serviço</span>${NESS.badge(x.nfse)}</div><div><span class="muted">NF-e · álbum</span>${NESS.badge(x.nfe)}</div></div>`;
+  if(x.s==='none'){el.innerHTML=`<h3><i data-lucide="package"></i>${x.ref} · ${x.cli}</h3><div class="empty"><b>Ainda não pode ser postado.</b><p class="muted">A NF-e foi rejeitada. O pacote só sai com a NF-e autorizada acompanhando. Depois da postagem, informe o código de rastreio aqui.</p><label for="code" class="muted" style="font-size:13px">Código de rastreio</label><input id="code" placeholder="Ex.: QB 000 000 000 BR" disabled><a class="btn" href="#"><i data-lucide="rotate-cw"></i>Corrigir e reenviar NF-e</a></div>${docs}`;lucide.createIcons();return}
+  const reached=x.s==='done'?4:x.s==='out'||x.s==='issue'?3:2;
+  const last=x.ev[x.ev.length-1];
+  el.innerHTML=`<h3><i data-lucide="package"></i>${x.ref} · ${x.cli}</h3>
+   <div class="code">${x.code}<button class="copy" id="cp"><i data-lucide="copy"></i>Copiar</button></div>
+   <div class="eta"><div><small class="muted">${x.s==='done'?'Concluído':'Previsão'}</small><br><b>${x.eta}</b></div>${badge(x.s)}</div>
+   <ol class="tl">${steps.map((s,i)=>{const e=x.ev.filter(v=>v.txt.toLowerCase().startsWith(['objeto postado','em trânsito','saiu','objeto entregue'][i])).pop();const done=i<reached-1||(x.s==='done'),now=i===reached-1&&x.s!=='done';return `<li class="${done?'done':now?'now':'todo'}${now&&(x.s==='issue'||x.s==='late')?' bad':''}"><span class="n">${done?'<i data-lucide="check"></i>':''}</span><div><b>${s}</b>${e?`<small>${e.d} ${e.t} · ${e.where}</small>`:''}${now&&x.s==='issue'?`<small style="color:var(--err)">${last.txt}</small>`:''}${now&&x.s==='late'?'<small style="color:var(--block)">Sem movimentação há 4 dias</small>':''}</div></li>`}).join('')}</ol>
+   ${docs}
+   <p class="upd"><i data-lucide="refresh-cw"></i>Última consulta aos Correios: hoje 09:30 · <a href="#" style="text-decoration:underline">consultar agora</a></p>`;
+  lucide.createIcons();
+  document.getElementById('cp').onclick=async e=>{try{await navigator.clipboard.writeText(x.code.replace(/\s/g,''));e.currentTarget.lastChild.textContent='Copiado'}catch{const r=document.createRange();r.selectNodeContents(e.currentTarget.parentNode.firstChild);getSelection().removeAllRanges();getSelection().addRange(r)}};
+}
+function all(){drawStats();drawList();drawMap();drawPanel();lucide.createIcons({attrs:{'stroke-width':1.8}})}
+document.getElementById('list').onclick=e=>{const b=e.target.closest('.ship');if(!b)return;cur=b.dataset.ref;const el=document.getElementById('panel');el.innerHTML='<div class="sk"></div><div class="sk" style="width:70%"></div><div class="sk" style="width:85%"></div>';drawList();drawMap();lucide.createIcons();setTimeout(()=>{drawPanel()},350)};
+document.getElementById('stats').onclick=e=>{const b=e.target.closest('.stat');if(!b)return;filter=filter===b.dataset.k?null:b.dataset.k;all()};
+document.getElementById('find').onsubmit=e=>{e.preventDefault();drawList();lucide.createIcons()};
+document.getElementById('q').oninput=()=>{drawList();lucide.createIcons()};
+document.getElementById('demo').onclick=e=>{const off=e.currentTarget.getAttribute('aria-pressed')!=='true';e.currentTarget.setAttribute('aria-pressed',off);e.currentTarget.lastChild.textContent=off?'Ver como empresa com contrato':'Ver como empresa sem contrato';document.getElementById('off').hidden=!off;document.getElementById('stats').hidden=off;document.querySelector('.work').hidden=off;document.getElementById('find').hidden=off};
+NESS.render({stroke:1.8});all();
+</script>
+</body>
+</html>

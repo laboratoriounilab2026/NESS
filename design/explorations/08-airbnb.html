@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Acolhedor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: topo com busca em pílula segmentada (o hero é a busca); pedidos como cartões com "foto" do ensaio. */
+:root{--bg:#FFFFFF;--surface:#F7F7F7;--fg:#222222;--muted:#6A6A6A;--line:#EBEBEB;--accent:#E61E4D;--ok:#008A05;--wait:#1A6FD6;--err:#C13515;--block:#9A6100;--draft:#6A6A6A;--logo-accent:#E61E4D;font-family:"Nunito Sans",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#121212;--surface:#1E1E1E;--fg:#F2F2F2;--muted:#A8A8A8;--line:#2C2C2C;--accent:#FF4D6D;--ok:#3DCB6B;--wait:#5AA2FF;--err:#FF6A4D;--block:#F2B544;--draft:#A8A8A8;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121212;--surface:#1E1E1E;--fg:#F2F2F2;--muted:#A8A8A8;--line:#2C2C2C;--accent:#FF4D6D;--ok:#3DCB6B;--wait:#5AA2FF;--err:#FF6A4D;--block:#F2B544;--draft:#A8A8A8;color-scheme:dark}
+header{border-bottom:1px solid var(--line);padding:16px max(16px,4vw) 24px;display:grid;gap:18px}
+.row{display:flex;align-items:center;gap:16px}
+.brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:20px;color:var(--accent);flex:1}
+.pill-nav{display:flex;gap:4px;overflow-x:auto}
+.pill-nav .nav-item{border-radius:999px;font-weight:600;white-space:nowrap}
+.pill-nav svg{display:none}
+.me{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 12px;background:var(--bg);transition:box-shadow .2s}
+.me:hover{box-shadow:0 2px 10px #0002}
+.me .a{width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:grid;place-items:center;font-weight:800;font-size:13px}
+.hero{display:grid;justify-items:center;gap:14px;text-align:center}
+.hero h1{font-size:clamp(24px,3vw,34px);font-weight:800;letter-spacing:-.02em}
+.search{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;align-items:center;width:min(860px,100%);border:1px solid var(--line);border-radius:999px;box-shadow:0 6px 20px #0000001a;background:var(--bg);text-align:left}
+.seg{padding:12px 24px;border-radius:999px;transition:background .2s;cursor:pointer;min-width:0}
+.seg:hover{background:var(--surface)}
+.seg b{display:block;font-size:12px}
+.seg span{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.go{margin:8px;border:0;border-radius:999px;background:linear-gradient(90deg,#E61E4D,#D70466);color:#fff;height:48px;padding:0 20px;display:flex;align-items:center;gap:8px;font-weight:700;transition:transform .2s}
+.go:hover{transform:scale(1.04)}
+main{padding:28px max(16px,4vw) 56px;display:grid;gap:32px}
+h2{font-size:22px;font-weight:800}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:24px}
+.card{display:grid;gap:8px}
+.ph{position:relative;aspect-ratio:1/0.95;border-radius:14px;overflow:hidden;max-width:100%}
+.ph div{position:absolute;inset:0;transition:transform .6s var(--ease)}
+.card:hover .ph div{transform:scale(1.06)}
+.ph .st{position:absolute;left:10px;top:10px;background:var(--bg)}
+.fav{position:absolute;right:10px;top:10px;border:0;background:none;color:#fff;filter:drop-shadow(0 1px 2px #0008);transition:transform .2s}
+.fav:hover{transform:scale(1.15)}
+.fav[aria-pressed="true"] svg{fill:var(--accent);color:var(--accent)}
+.card b{font-weight:700}.card small{color:var(--muted);font-size:14px}
+.card .two{display:flex;gap:6px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:20px;transition:box-shadow .25s}
+.kpi:hover{box-shadow:0 6px 20px #0000001f}
+.kpi-ic{color:var(--accent)}
+.kpi-label{font-weight:700;margin-top:10px}
+.kpi-v{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:13px}
+@media (max-width:900px){.search{grid-template-columns:1fr auto;border-radius:24px}.seg:nth-child(2),.seg:nth-child(3){display:none}.kpis{grid-template-columns:1fr 1fr}.pill-nav{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><span class="brand"><span data-logo="30" style="color:var(--fg)"></span>ness</span><nav class="pill-nav" data-nav></nav><button class="me" data-theme-toggle aria-label="Alternar tema"><i data-lucide="menu"></i><span class="a">EM</span></button></div>
+  <section class="hero" data-reveal>
+    <h1>Qual pedido vamos emitir hoje?</h1>
+    <div class="search" role="search">
+      <div class="seg"><b>Cliente</b><span>Nome, CPF ou CNPJ</span></div>
+      <div class="seg"><b>Pacote</b><span>Ensaio, casamento…</span></div>
+      <div class="seg"><b>Entrega</b><span>Para onde vai o álbum</span></div>
+      <a class="go" href="#"><i data-lucide="plus"></i>Novo pedido</a>
+    </div>
+  </section>
+</header>
+<main>
+  <section><h2 style="margin-bottom:16px">Seus pedidos</h2><div class="cards" id="cards"></div></section>
+  <section><h2 style="margin-bottom:16px">Resumo da semana</h2><div class="kpis" data-kpis></div></section>
+  <section><h2 style="margin-bottom:8px">Atividade</h2><ul class="acts" data-activity></ul></section>
+</main>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+// "Fotos" geradas em CSS, sem imagens de terceiros
+const looks=['radial-gradient(circle at 30% 30%,#FFD3B6,#FF8B94 60%,#A8577E)','radial-gradient(circle at 70% 20%,#FFF1C1,#F7A072 55%,#6D3B47)','linear-gradient(160deg,#B8E1FF,#7FA7D9 50%,#2E3A59)','radial-gradient(circle at 40% 60%,#D5F2E3,#7BC8A4 55%,#2F5D50)','radial-gradient(circle at 60% 40%,#FDE2F3,#E5B3FE 55%,#5E4B8B)'];
+document.getElementById('cards').innerHTML=NESS.orders.map((o,i)=>`<article class="card" data-reveal><div class="ph"><div style="background:${looks[i]}"></div>${NESS.badge(o.nfse==='ok'&&o.nfe==='ok'?'ok':o.nfe==='err'?'err':o.nfse==='block'?'block':o.nfse==='draft'?'draft':'wait')}<button class="fav" aria-label="Fixar pedido" aria-pressed="false"><i data-lucide="heart"></i></button></div><b>${o.cli}</b><small>${o.pac}</small><small>${o.dest} · <b style="color:var(--fg)">${o.val}</b></small></article>`).join('');
+NESS.render({stroke:2});
+document.querySelectorAll('.fav').forEach(b=>b.onclick=()=>b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true'));
+</script>
+</body>
+</html>

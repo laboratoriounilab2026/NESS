@@ -1,0 +1,13 @@
+# UI/UX do NESS
+- Produto B2B de operação contábil/fiscal: transmitir precisão, confiança, clareza e eficiência.
+- Hero section do dashboard deve conter contexto operacional, saudação opcional, CTA primário e resumo de atividade; evitar hero decorativo gigante.
+- Layout sugerido: sidebar fixa/recolhível, topbar com busca/ações/perfil, área de conteúdo com título, descrição, ações e cards.
+- Dashboard: pedidos em andamento, documentos autorizados, emissões parciais, pendências de configuração e atividade recente.
+- Wizard: sete etapas com stepper, salvamento de rascunho, validação inline, resumo final comparativo NFS-e/NF-e e confirmação humana.
+- Estados: rascunho, validando, pronto para revisão, emitindo, completo, emissão parcial, rejeitada/falha, cancelamento solicitado.
+- Cores de estado devem ter texto/ícone além da cor; não usar vermelho/verde como único indicador.
+- Evitar gamificação por pontos, ranking, cronômetro ou velocidade.
+- Usar ícones coerentes e discretos; não misturar outline, filled e 3D.
+- Flaticon requer verificação da licença de cada ativo e atribuição quando exigida. Nunca automatizar scraping.
+- Animações curtas, funcionais e respeitando redução de movimento.
+- Criar componentes reutilizáveis, tokens de cor/spacing/radius/typography e documentação de uso.

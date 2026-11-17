@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Monocromo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: cabeçalho com abas no topo; hero em grade com log de emissão estilo terminal; tudo monocromático. */
+:root{--bg:#FFFFFF;--surface:#FAFAFA;--fg:#0A0A0A;--muted:#666;--line:#EAEAEA;--accent:#0A0A0A;--grid:#00000010;--ok:#0A7A3E;--wait:#0062D1;--err:#C62828;--block:#9A6200;--draft:#666;--logo-accent:currentColor;font-family:Geist,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--surface:#0A0A0A;--fg:#EDEDED;--muted:#A1A1A1;--line:#242424;--accent:#EDEDED;--grid:#ffffff12;--ok:#3FCF8E;--wait:#52A8FF;--err:#FF6166;--block:#F5B000;--draft:#A1A1A1;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#000;--surface:#0A0A0A;--fg:#EDEDED;--muted:#A1A1A1;--line:#242424;--accent:#EDEDED;--grid:#ffffff12;--ok:#3FCF8E;--wait:#52A8FF;--err:#FF6166;--block:#F5B000;--draft:#A1A1A1;color-scheme:dark}
+.mono{font-family:"Geist Mono",ui-monospace,monospace}
+header.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:0 max(16px,3vw)}
+.row1{display:flex;align-items:center;gap:12px;height:56px}
+.brand{display:flex;gap:8px;align-items:center;font-weight:700;letter-spacing:.04em}
+.slash{color:var(--line);font-size:22px}
+.org{display:flex;align-items:center;gap:8px;font-size:14px}
+.spacer{flex:1}
+.ib{border:1px solid var(--line);background:var(--bg);border-radius:999px;width:32px;height:32px;display:grid;place-items:center}
+.tabs{display:flex;gap:4px;overflow-x:auto}
+.tabs .nav-item{border-radius:6px;padding:8px 10px;white-space:nowrap;position:relative}
+.tabs .nav-item.active{background:none}
+.tabs .nav-item.active::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--fg)}
+.tabs svg{display:none}
+main{padding:0 max(16px,3vw) 56px;display:grid;gap:32px;max-width:1240px;margin:0 auto}
+.hero{position:relative;border:1px solid var(--line);border-top:0;display:grid;grid-template-columns:1fr 1fr;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:48px 48px}
+.hero>div{padding:48px clamp(20px,4vw,48px)}
+.hero>div+div{border-left:1px solid var(--line);background:var(--bg)}
+.hero h1{font-size:clamp(32px,4.4vw,56px);line-height:1;letter-spacing:-.05em;font-weight:700}
+.hero p{color:var(--muted);margin-top:16px;max-width:42ch;font-size:16px}
+.ctas{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:6px;font-weight:500;border:1px solid var(--line);background:var(--bg);transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface);border-color:var(--muted)}
+.btn.primary{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn.primary:hover{opacity:.86;background:var(--fg)}
+.log{font-size:13px;display:grid;gap:6px}
+.log .ln{display:grid;grid-template-columns:64px 1fr auto;gap:12px;opacity:0;animation:type .01s forwards;animation-delay:calc(var(--n) * 380ms + 300ms)}
+.log .ln span:first-child{color:var(--muted)}
+@keyframes type{to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.log .ln{opacity:1}}
+.log .ok{color:var(--ok)}.log .w{color:var(--wait)}
+.log-h{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;margin-bottom:12px}
+.cursor{display:inline-block;width:8px;height:15px;background:var(--fg);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kpi{padding:20px;border-left:1px solid var(--line);transition:background .2s}
+.kpi:first-child{border-left:0}
+.kpi:hover{background:var(--surface)}
+.kpi-ic{display:none}
+.kpi-label{color:var(--muted);font-size:13px}
+.kpi-v{font-size:36px;font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums;font-family:"Geist Mono",monospace}
+.kpi-note{color:var(--muted);font-size:12px;font-family:"Geist Mono",monospace}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.panel{border:1px solid var(--line);border-radius:8px;min-width:0}
+.panel h2{font-size:14px;font-weight:600;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel .acts{padding:0 16px}
+.st{border-radius:6px;font-family:"Geist Mono",monospace;font-weight:500;font-size:12px}
+@media (max-width:900px){.hero,.grid2{grid-template-columns:1fr}.hero>div+div{border-left:0;border-top:1px solid var(--line)}.kpis{grid-template-columns:1fr 1fr}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="row1"><span class="brand"><span data-logo="22"></span>NESS</span><span class="slash">/</span><span class="org">Estúdio Matriz <span class="st st-ok"><i data-lucide="circle-dot"></i>Homologação</span></span><span class="spacer"></span><button class="ib" data-theme-toggle aria-label="Alternar tema"><i data-lucide="sun-moon"></i></button><button class="ib" aria-label="Notificações"><i data-lucide="bell"></i></button></div>
+  <nav class="tabs" data-nav></nav>
+</header>
+<main>
+  <section class="hero">
+    <div data-reveal>
+      <h1>Notas emitidas como um deploy.</h1>
+      <p>Confirme o pedido e o NESS transmite NFS-e e NF-e, consulta o retorno e só marca como concluído com o protocolo em mãos.</p>
+      <div class="ctas"><a href="#" class="btn primary"><i data-lucide="plus"></i>Novo pedido</a><a href="#" class="btn"><i data-lucide="terminal"></i>Ver logs</a></div>
+    </div>
+    <div class="mono">
+      <div class="log-h"><span>PED-2418 · emissão</span><span>09:41:52</span></div>
+      <div class="log">
+        <div class="ln" style="--n:0"><span>00.12s</span><span>Validando pedido e regra fiscal</span><span class="ok">ok</span></div>
+        <div class="ln" style="--n:1"><span>00.48s</span><span>Assinando DPS (NFS-e)</span><span class="ok">ok</span></div>
+        <div class="ln" style="--n:2"><span>02.31s</span><span>Emissor Nacional → autorizada nº 883</span><span class="ok">ok</span></div>
+        <div class="ln" style="--n:3"><span>02.60s</span><span>Assinando NF-e 4.00</span><span class="ok">ok</span></div>
+        <div class="ln" style="--n:4"><span>04.95s</span><span>SEFAZ-SP → protocolo 135260…</span><span class="ok">ok</span></div>
+        <div class="ln" style="--n:5"><span>05.10s</span><span>DANFE gerado · pronto para envio</span><span class="w">pronto</span></div>
+        <div class="ln" style="--n:6"><span></span><span><span class="cursor"></span></span><span></span></div>
+      </div>
+    </div>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <div class="grid2">
+    <section class="panel" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+    <section class="panel" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</main>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:1.5})</script>
+</body>
+</html>

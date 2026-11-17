@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Aurora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: visionOS — janelas de vidro flutuando sobre aurora animada; barra de abas flutuante embaixo (ornamento). */
+:root{--bg:#0B0F1E;--glass:#ffffff14;--glass2:#ffffff22;--fg:#FFFFFF;--muted:#C9CEE0;--line:#ffffff24;--accent:#9FE1FF;--ok:#7CF0B2;--wait:#9FE1FF;--err:#FF9A9A;--block:#FFD37A;--draft:#C9CEE0;--logo-accent:#9FE1FF;color-scheme:dark;font-family:Outfit,system-ui,sans-serif}
+body{min-height:100vh;overflow-x:hidden}
+.sky{position:fixed;inset:0;z-index:-1;background:var(--bg);overflow:hidden}
+.sky i{position:absolute;width:55vmax;height:55vmax;border-radius:50%;filter:blur(80px);opacity:.55;animation:float 18s ease-in-out infinite alternate}
+.sky i:nth-child(1){background:#5B5BFF;left:-15vmax;top:-20vmax}
+.sky i:nth-child(2){background:#00C2A8;right:-20vmax;top:10vmax;animation-delay:-6s}
+.sky i:nth-child(3){background:#FF5FA2;left:20vmax;bottom:-30vmax;animation-delay:-12s}
+@keyframes float{to{transform:translate(8vmax,-6vmax) scale(1.15)}}
+.win{background:var(--glass);backdrop-filter:blur(40px) saturate(150%);-webkit-backdrop-filter:blur(40px) saturate(150%);border:1px solid var(--line);border-radius:32px;box-shadow:inset 0 1px 0 #ffffff30,0 30px 60px -20px #0008}
+main{max-width:1180px;margin:0 auto;padding:32px max(16px,3vw) 140px;display:grid;gap:22px}
+.hero{padding:clamp(24px,4vw,44px);display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center}
+.app-ic{width:96px;height:96px;border-radius:50%;background:var(--glass2);display:grid;place-items:center;border:1px solid var(--line);animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.05);box-shadow:0 0 40px #9FE1FF55}}
+.hero h1{font-size:clamp(28px,3.6vw,44px);font-weight:500;letter-spacing:-.02em;line-height:1.1}
+.hero p{color:var(--muted);margin-top:8px;font-weight:300;font-size:17px}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;background:#fff;color:#0B0F1E;padding:14px 22px;font-weight:600;transition:transform .3s var(--ease),box-shadow .3s}
+.btn:hover{transform:scale(1.05);box-shadow:0 0 30px #ffffff66}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--glass);backdrop-filter:blur(40px);border:1px solid var(--line);border-radius:28px;padding:22px;transition:transform .4s var(--ease),background .3s}
+.kpi:hover{transform:translateZ(0) scale(1.04);background:var(--glass2)}
+.kpi-ic{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--glass2)}
+.kpi-label{color:var(--muted);margin-top:14px}
+.kpi-v{font-size:40px;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:13px;font-weight:300}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.grid2 .win{padding:18px 20px;min-width:0}
+.grid2 h2{font-weight:500;font-size:20px;margin-bottom:8px}
+.st{background:#ffffff14;border-color:#ffffff22}
+.tbl tbody tr:hover{background:#ffffff0d}
+.orn{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:4px;padding:8px;border-radius:999px;max-width:calc(100% - 32px);overflow-x:auto}
+.orn .nav-item{border-radius:999px;color:var(--muted);padding:10px 14px;white-space:nowrap}
+.orn .nav-item.active{background:#ffffff26;color:#fff}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.orn .nav-item span{display:none}}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"><i></i><i></i><i></i></div>
+<main>
+  <section class="win hero" data-reveal>
+    <div class="app-ic" data-logo="54"></div>
+    <div><h1>Boa tarde. Duas notas por pedido, num toque.</h1><p>3 pedidos prontos · 2 emissões parciais · serviços fiscais no ar</p></div>
+    <a href="#" class="btn"><i data-lucide="plus"></i>Novo pedido</a>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <div class="grid2">
+    <section class="win" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+    <section class="win" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</main>
+<nav class="win orn" data-nav aria-label="Navegação principal"></nav>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:1.6})</script>
+</body>
+</html>

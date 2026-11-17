@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Comando</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: hero centrado numa paleta de comandos real (digite para filtrar, setas + Enter); vidro escuro sobre brilho quente. */
+:root{--bg:#0C0C0E;--surface:#16161A;--glass:#1B1B20cc;--fg:#F2F2F3;--muted:#9C9CA4;--line:#2A2A30;--accent:#FF6363;--ok:#59D499;--wait:#56C2FF;--err:#FF6363;--block:#FFC531;--draft:#9C9CA4;--logo-accent:#FF6363;color-scheme:dark;font-family:Inter,system-ui,sans-serif}
+body{background:radial-gradient(900px 500px at 50% -10%,#FF636333,transparent 60%),radial-gradient(600px 400px at 90% 10%,#FFC53118,transparent 60%),var(--bg)}
+.app{display:grid;grid-template-columns:72px 1fr;min-height:100vh}
+aside{border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 0}
+aside .nav-item{width:44px;height:44px;justify-content:center;padding:0;position:relative}
+aside .nav-item span{position:absolute;left:54px;background:var(--surface);border:1px solid var(--line);padding:4px 8px;border-radius:6px;font-size:12px;white-space:nowrap;opacity:0;pointer-events:none;transform:translateX(-4px);transition:.2s;color:var(--fg);z-index:3}
+aside .nav-item:hover span,aside .nav-item:focus-visible span{opacity:1;transform:none}
+main{padding:40px max(16px,4vw) 48px;display:grid;gap:28px;min-width:0}
+.hero{display:grid;justify-items:center;text-align:center;gap:12px}
+.hero h1{font-size:clamp(28px,4vw,48px);letter-spacing:-.03em;font-weight:700;line-height:1.05}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,#FF6363,#FFC531);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);max-width:48ch}
+.palette{width:min(640px,100%);margin-top:14px;background:var(--glass);backdrop-filter:blur(24px);border:1px solid var(--line);border-radius:14px;box-shadow:0 40px 100px -20px #000,inset 0 1px 0 #ffffff10;text-align:left;overflow:hidden}
+.pin{display:flex;gap:10px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.pin input{all:unset;flex:1;font-size:16px}
+.pin input::placeholder{color:var(--muted)}
+.pl{list-style:none;margin:0;padding:6px;max-height:260px;overflow:auto}
+.pl li{display:flex;gap:12px;align-items:center;padding:9px 10px;border-radius:8px;cursor:pointer}
+.pl li[aria-selected="true"]{background:#ffffff12}
+.pl .ic{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;background:var(--c,#333);color:#fff}
+.pl small{margin-left:auto;color:var(--muted);font-size:12px}
+.pfoot{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+kbd{font:11px Inter;background:#ffffff14;border-radius:4px;padding:2px 6px;color:var(--fg)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--surface);border:1px solid var(--line);padding:10px 14px;border-radius:10px;transition:.3s var(--ease);display:flex;gap:8px;align-items:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;overflow:hidden;transition:transform .25s var(--ease),border-color .25s}
+.kpi::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:radial-gradient(180px circle at var(--mx,50%) var(--my,50%),#FF6363,transparent 70%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .3s}
+.kpi:hover{transform:translateY(-3px)}.kpi:hover::after{opacity:1}
+.kpi-ic{color:var(--accent)}
+.kpi-label{color:var(--muted);margin-top:12px;font-size:13px}
+.kpi-v{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0}
+.panel h2{font-size:14px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel .acts{padding:0 16px}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside><span data-logo="28"></span><nav data-nav style="display:grid;gap:6px"></nav></aside>
+  <main>
+    <section class="hero" data-reveal>
+      <h1>Emita tudo <em>sem tirar a mão do teclado.</em></h1>
+      <p>Abra com <kbd>Ctrl</kbd> <kbd>K</kbd>, digite o cliente ou a ação e confirme. NFS-e e NF-e seguem juntas.</p>
+      <div class="palette" role="dialog" aria-label="Paleta de comandos">
+        <div class="pin"><i data-lucide="search"></i><input id="cmd" placeholder="Buscar pedido, cliente ou ação…" aria-controls="cmdlist" autocomplete="off"><kbd>Esc</kbd></div>
+        <ul class="pl" id="cmdlist" role="listbox"></ul>
+        <div class="pfoot"><span style="display:flex;gap:6px;align-items:center"><span data-logo="16"></span>NESS</span><span><kbd>↑</kbd> <kbd>↓</kbd> navegar · <kbd>Enter</kbd> abrir</span></div>
+      </div>
+    </section>
+    <section class="kpis" data-kpis></section>
+    <div class="grid2">
+      <section class="panel" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+      <section class="panel" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"><i data-lucide="check"></i><span></span></div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+const cmds=[
+  ['Novo pedido','plus','#FF6363','Ação'],
+  ['Emitir PED-2414 · Ana e Pedro Lima','send','#56C2FF','Pronto'],
+  ['Reenviar NF-e · PED-2416','rotate-cw','#FFC531','Parcial'],
+  ['Consultar retorno · PED-2417','radar','#59D499','SEFAZ'],
+  ['Baixar DANFE · PED-2418','file-down','#8B7CFF','Documento'],
+  ['Regras fiscais pendentes','scale','#FF8A3D','Admin'],
+];
+const list=document.getElementById('cmdlist'),inp=document.getElementById('cmd'),toast=document.getElementById('toast');
+let sel=0,shown=cmds;
+function draw(){list.innerHTML=shown.map((c,i)=>`<li role="option" aria-selected="${i===sel}" data-i="${i}"><span class="ic" style="--c:${c[2]}"><i data-lucide="${c[1]}"></i></span>${c[0]}<small>${c[3]}</small></li>`).join('')||'<li>Nada encontrado</li>';lucide.createIcons()}
+function run(){const c=shown[sel];if(!c)return;toast.querySelector('span').textContent=c[0]+' — exemplo, nada foi emitido';toast.classList.add('on');setTimeout(()=>toast.classList.remove('on'),2200)}
+inp.addEventListener('input',()=>{const q=inp.value.toLowerCase();shown=cmds.filter(c=>c[0].toLowerCase().includes(q));sel=0;draw()});
+inp.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){sel=Math.min(sel+1,shown.length-1);draw();e.preventDefault()}if(e.key==='ArrowUp'){sel=Math.max(sel-1,0);draw();e.preventDefault()}if(e.key==='Enter')run();if(e.key==='Escape'){inp.value='';inp.dispatchEvent(new Event('input'))}});
+list.addEventListener('mousemove',e=>{const li=e.target.closest('li[data-i]');if(li&&+li.dataset.i!==sel){sel=+li.dataset.i;draw()}});
+list.addEventListener('click',run);
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();inp.focus()}});
+NESS.render({stroke:1.8});draw();
+</script>
+</body>
+</html>

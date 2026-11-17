@@ -1,0 +1,101 @@
+<title>NESS Direções Visuais</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: lista de direções à esquerda, prévia ao vivo à direita com troca de largura (desktop/tablet/celular). */
+:root{--bg:#F2F3F6;--surface:#FFFFFF;--fg:#14213D;--muted:#5D6880;--line:#DDE1E9;--accent:#E8A33D;--sel:#14213D;--self:#F4F6FB}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A101D;--surface:#121A2C;--fg:#E9EEF7;--muted:#97A3BA;--line:#1F2A40;--accent:#F2B65A;--sel:#F2B65A;--self:#14213D;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0A101D;--surface:#121A2C;--fg:#E9EEF7;--muted:#97A3BA;--line:#1F2A40;--accent:#F2B65A;--sel:#F2B65A;--self:#14213D;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:Manrope,system-ui,sans-serif;margin:0}
+.shell{display:grid;grid-template-columns:300px 1fr;gap:16px;height:100%;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+aside{display:flex;flex-direction:column;gap:14px;min-height:0}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800;letter-spacing:.08em}
+.brand svg{color:var(--fg)}
+h1{font-size:20px;margin:0;line-height:1.2;letter-spacing:-.01em}
+.lead{color:var(--muted);font-size:13.5px;margin:0}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:6px;overflow:auto;min-height:0}
+.opt{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:10px 12px;display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;cursor:pointer;font:inherit;transition:border-color .2s,transform .2s}
+.opt:hover{transform:translateX(2px);border-color:var(--muted)}
+.opt[aria-current="true"]{border-color:var(--sel);box-shadow:inset 3px 0 0 var(--sel)}
+.opt .n{font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.opt b{display:block;font-size:14px}
+.opt small{color:var(--muted);font-size:12px;display:block}
+.star{color:var(--accent);font-size:12px;font-weight:800}
+.stage{display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bar .t{font-weight:800;flex:1;min-width:0}
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button,.act{border:0;background:none;color:var(--fg);font:inherit;font-size:13px;font-weight:600;padding:6px 10px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.act{border:1px solid var(--line);background:var(--surface);display:inline-flex;gap:6px;align-items:center;text-decoration:none}
+.act.fav[aria-pressed="true"]{background:var(--accent);color:#14213D;border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.frame{flex:1;min-height:420px;display:grid;place-items:start center;background:var(--self);border:1px solid var(--line);border-radius:16px;overflow:auto;padding:12px}
+iframe{width:100%;height:100%;min-height:600px;border:0;border-radius:10px;background:#fff;box-shadow:0 20px 50px -30px #0006;transition:width .4s cubic-bezier(.2,.7,.2,1)}
+.note{color:var(--muted);font-size:12px;margin:0}
+@media (max-width:860px){.shell{grid-template-columns:1fr;height:auto}.list{grid-template-columns:1fr 1fr;max-height:none}.frame{min-height:70vh}}
+@media (max-width:480px){.list{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<div class="shell">
+  <aside>
+    <div class="brand"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="4" width="30" height="42" rx="5" fill="none" stroke="currentColor" stroke-width="3.5"/><rect x="28" y="18" width="30" height="42" rx="5" fill="var(--bg)" stroke="currentColor" stroke-width="3.5"/><path d="M16 38V14L48 50V26" fill="none" stroke="#E8A33D" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>NESS</div>
+    <h1>21 direções visuais para o painel</h1>
+    <p class="lead">Mesmo conteúdo, estilos diferentes. Passe o mouse, clique e troque a largura. Marque sua favorita com a estrela.</p>
+    <ul class="list" id="list"></ul>
+    <p class="note">Dados fictícios. Inspiração de estilo apenas; nenhuma marca, logo ou arte de terceiros foi usada.</p>
+  </aside>
+  <section class="stage">
+    <div class="bar">
+      <span class="t" id="title"></span>
+      <div class="seg" role="group" aria-label="Largura da prévia"><button data-w="100%" aria-pressed="true">Desktop</button><button data-w="820px" aria-pressed="false">Tablet</button><button data-w="390px" aria-pressed="false">Celular</button></div>
+      <button class="act fav" id="fav" aria-pressed="false">☆ Favorita</button>
+      <a class="act" id="open" href="#" target="_blank" rel="noopener">Abrir em tela cheia ↗</a>
+    </div>
+    <div class="frame"><iframe id="pv" title="Prévia da direção visual"></iframe></div>
+  </section>
+</div>
+<script>
+const D=[
+ ['01-linear','Precisão','Linear · escuro, brilho que segue o cursor, fluxo animado'],
+ ['02-stripe','Fluxo','Stripe · faixa em gradiente vivo, cartões flutuantes'],
+ ['03-vercel','Monocromo','Vercel · grade, tipografia forte, log de emissão'],
+ ['04-apple','Vitrine','Apple · vidro, títulos enormes, notas em leque 3D'],
+ ['05-notion','Caderno','Notion · página-documento, checklist de pendências'],
+ ['06-raycast','Comando','Raycast · paleta Ctrl+K funcional, vidro escuro'],
+ ['07-fintech','Saldo','Nubank/Revolut · cartão de faturamento, atalhos'],
+ ['08-airbnb','Acolhedor','Airbnb · busca em pílula, cartões com foto'],
+ ['09-figma','Cores','Figma/Framer · blocos de cor, formas com parallax, 3D'],
+ ['10-bento','Mosaico','Bento · marca NESS, blocos com micro-animações'],
+ ['11-luxo','Ateliê','Editorial de luxo · serifa, âmbar, numerais grandes'],
+ ['12-brutal','Bruto','Gumroad · neo-brutalismo, sombras duras, faixa rolante'],
+ ['13-suico','Suíço','Braun/Swiss · grade rígida, vermelho único, números gigantes'],
+ ['14-aurora','Aurora','visionOS · janelas de vidro sobre aurora, abas flutuantes'],
+ ['15-hardware','Console','Teenage Engineering · teclas físicas, visor LCD, LEDs'],
+ ['16-material','Material','Google Material 3 · trilho, formas que mudam, cor escolhível'],
+ ['17-kanban','Quadro','Trello/Asana · kanban por estado, arrastar com regra'],
+ ['18-spotify','Estúdio','Spotify · prateleiras, capa em degradê, player de emissão'],
+ ['19-mapa','Rotas','Uber · mapa com rotas de entrega animadas, clique nos pinos'],
+ ['20-conversa','Conversa','ChatGPT · peça em texto, confirme no cartão'],
+ ['21-recibo','Carimbo','Papel · cupom imprimindo, notas grampeadas, carimbo'],
+ ['22-ness-rastreio','★ Rastreio (escolhida)','Visual da 10 + mapa da 19 · rastreio até o destinatário'],
+];
+const $=id=>document.getElementById(id),pv=$('pv');
+let fav=null;try{fav=localStorage.getItem('ness-fav')}catch(e){}
+function cur(){const h=location.hash.slice(1);return D.find(d=>'d'+d[0].slice(0,2)===h)||D[0]}
+function draw(){
+  const c=cur();
+  $('list').innerHTML=D.map(d=>`<li><button class="opt" aria-current="${d===c}" data-id="${d[0]}"><span class="n">${d[0].slice(0,2)}</span><span><b>${d[1]}</b><small>${d[2]}</small></span>${fav===d[0]?'<span class="star" aria-label="favorita">★</span>':''}</button></li>`).join('');
+  $('title').textContent=c[0].slice(0,2)+' · '+c[1];
+  if(!pv.src.endsWith(c[0]+'.html'))pv.src=c[0]+'.html';
+  $('open').href=c[0]+'.html';
+  const f=fav===c[0];$('fav').setAttribute('aria-pressed',f);$('fav').textContent=(f?'★':'☆')+' Favorita';
+}
+$('list').onclick=e=>{const b=e.target.closest('.opt');if(b)location.hash='d'+b.dataset.id.slice(0,2)};
+$('fav').onclick=()=>{const c=cur()[0];fav=fav===c?null:c;try{fav?localStorage.setItem('ness-fav',fav):localStorage.removeItem('ness-fav')}catch(e){}draw()};
+document.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{pv.style.width=b.dataset.w;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+addEventListener('hashchange',draw);draw();
+</script>

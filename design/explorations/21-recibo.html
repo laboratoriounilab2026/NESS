@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Carimbo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Libre+Franklin:wght@500;700;900&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: mesa de trabalho com papéis — cupom que "imprime" no hero, pares de notas grampeadas, carimbo que desce ao clicar. */
+:root{--bg:#D8D2C4;--desk:#CFC8B8;--paper:#FFFEF8;--surface:#FFFEF8;--fg:#1E1C18;--muted:#6E685C;--line:#D9D3C3;--accent:#C2410C;--ink:#1F3A93;--ok:#1F6B3A;--wait:#1F3A93;--err:#B42318;--block:#8A5300;--draft:#6E685C;--logo-accent:#C2410C;--logo-sheet:#FFFEF8;font-family:"Libre Franklin",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1D1A16;--desk:#24201B;--paper:#ECE6D6;--surface:#2A2620;--fg:#EFE9DA;--muted:#B3AA97;--line:#3A342B;--ok:#4CC37E;--wait:#8EA8FF;--err:#FF7B6B;--block:#F5B54A;--draft:#B3AA97;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1D1A16;--desk:#24201B;--paper:#ECE6D6;--surface:#2A2620;--fg:#EFE9DA;--muted:#B3AA97;--line:#3A342B;--ok:#4CC37E;--wait:#8EA8FF;--err:#FF7B6B;--block:#F5B54A;--draft:#B3AA97;color-scheme:dark}
+body{background:radial-gradient(circle at 20% 10%,#ffffff22,transparent 40%),repeating-linear-gradient(90deg,#0000000a 0 2px,transparent 2px 7px),var(--desk)}
+.mono{font-family:"Courier Prime",ui-monospace,monospace}
+header{display:flex;align-items:center;gap:16px;padding:16px max(16px,3vw)}
+.brand{display:flex;gap:8px;align-items:center;font-weight:900;font-size:20px;letter-spacing:.06em;flex:1}
+header nav{display:flex;gap:2px;overflow-x:auto}
+header .nav-item svg{display:none}
+header .nav-item{white-space:nowrap}
+.tg{border:0;background:var(--surface);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;box-shadow:0 2px 6px #0003}
+main{padding:8px max(16px,3vw) 64px;display:grid;gap:32px;max-width:1240px;margin:0 auto}
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:32px;align-items:start}
+.hero h1{font-size:clamp(34px,5vw,64px);font-weight:900;line-height:.95;letter-spacing:-.03em}
+.hero h1 u{text-decoration-color:var(--accent);text-decoration-thickness:6px;text-underline-offset:6px}
+.hero p{margin-top:16px;font-size:17px;max-width:42ch;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;gap:10px;margin-top:22px;background:var(--accent);color:#fff;font-weight:700;padding:14px 20px;border-radius:4px;box-shadow:0 3px 0 #7A2A08;transition:transform .1s,box-shadow .1s}
+.btn:active{transform:translateY(3px);box-shadow:none}
+.slot{position:relative;padding-top:10px}
+.slot::before{content:"";position:absolute;top:0;left:-10px;right:-10px;height:14px;background:#2A2723;border-radius:8px;z-index:2;box-shadow:inset 0 3px 4px #000a}
+.receipt{background:var(--paper);color:#1E1C18;padding:22px 22px 30px;font-family:"Courier Prime",monospace;font-size:14px;position:relative;margin:0 6px;animation:print 2.4s steps(24) both;transform-origin:top;--z:radial-gradient(circle at 8px 0,transparent 8px,var(--paper) 8.5px);box-shadow:0 12px 24px -12px #0006}
+.receipt::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:var(--z);background-size:16px 8px}
+@keyframes print{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 -10px 0)}}
+.receipt .c{text-align:center}
+.receipt hr{border:0;border-top:1px dashed #1E1C1888;margin:10px 0}
+.receipt .l{display:flex;justify-content:space-between;gap:10px}
+.pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:36px 28px}
+.pair{position:relative;height:220px;cursor:pointer}
+.pair .doc{position:absolute;inset:0;background:var(--paper);color:#1E1C18;padding:16px;box-shadow:0 10px 20px -10px #0007;transition:transform .35s var(--ease);display:grid;align-content:start;gap:6px;font-size:14px}
+.pair .doc:first-child{transform:rotate(-3deg) translate(-6px,6px)}
+.pair .doc:last-child{transform:rotate(2deg)}
+.pair:hover .doc:first-child{transform:rotate(-7deg) translate(-26px,10px)}
+.pair:hover .doc:last-child{transform:rotate(5deg) translate(14px,-6px)}
+.doc small{font-family:"Courier Prime",monospace;color:#6E685C}
+.doc b{font-size:17px}
+.clip{position:absolute;top:-12px;left:28px;width:16px;height:46px;border:3px solid #9AA0A6;border-radius:8px;z-index:3}
+.stamp{position:absolute;right:16px;bottom:22px;z-index:4;border:3px solid var(--c);color:var(--c);padding:6px 12px;font:700 18px "Courier Prime",monospace;letter-spacing:.08em;rotate:-12deg;opacity:.85;mix-blend-mode:multiply;display:flex;gap:6px;align-items:center}
+.pair.pressed .stamp{animation:stamp .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes stamp{from{transform:scale(2.4);opacity:0}}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.kpi{background:var(--paper);color:#1E1C18;padding:18px;box-shadow:0 8px 16px -10px #0007;rotate:var(--r,0deg);transition:rotate .3s,transform .3s}
+.kpi:nth-child(odd){--r:-1deg}.kpi:nth-child(even){--r:1deg}
+.kpi:hover{rotate:0deg;transform:translateY(-4px)}
+.kpi-ic{color:var(--accent)}.kpi-label{font-family:"Courier Prime",monospace;font-size:13px;margin-top:6px}
+.kpi-v{font-size:42px;font-weight:900;font-variant-numeric:tabular-nums}.kpi-note{font-size:12.5px;color:#6E685C}
+h2{font-size:22px;font-weight:900;margin-bottom:12px}
+@media (max-width:900px){.hero{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}header nav{display:none}}
+</style>
+</head>
+<body>
+<header><span class="brand"><span data-logo="30"></span>NESS</span><nav data-nav></nav><button class="tg" data-theme-toggle aria-label="Alternar tema"><i data-lucide="sun-moon"></i></button></header>
+<main>
+  <section class="hero">
+    <div data-reveal><h1>Saiu a nota do ensaio? <u>A do álbum</u> sai junto.</h1><p>Cada pedido vira um par grampeado: NFS-e e NF-e. Só ganha o carimbo de autorizada quando o governo devolve o protocolo.</p><a href="#" class="btn"><i data-lucide="plus"></i>Novo pedido</a></div>
+    <div class="slot"><div class="receipt" aria-label="Resumo do dia"><div class="c"><b>NESS · ESTÚDIO MATRIZ</b><br>RESUMO DE 17/11</div><hr><div class="l"><span>PRONTOS P/ EMITIR</span><span>03</span></div><div class="l"><span>AUTORIZADAS HOJE</span><span>08</span></div><div class="l"><span>PARCIAIS</span><span>02</span></div><div class="l"><span>SEM REGRA FISCAL</span><span>01</span></div><hr><div class="l"><b>FATURADO</b><b>R$ 12.430,00</b></div><hr><div class="c">obrigado e bom trabalho</div></div></div>
+  </section>
+  <section><h2>Pares de hoje <small class="muted" style="font-weight:500;font-size:14px">· clique para carimbar</small></h2><div class="pairs" id="pairs"></div></section>
+  <section><h2>Semana</h2><div class="kpis" data-kpis></div></section>
+</main>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+const lab={ok:['AUTORIZADA','#1F6B3A'],wait:['EM TRÂNSITO','#1F3A93'],err:['REJEITADA','#B42318'],block:['BLOQUEADA','#8A5300'],draft:['RASCUNHO','#6E685C']};
+const overall=o=>o.nfse==='ok'&&o.nfe==='ok'?'ok':o.nfe==='err'||o.nfse==='err'?'err':o.nfse==='block'?'block':o.nfse==='draft'?'draft':'wait';
+document.getElementById('pairs').innerHTML=NESS.orders.map(o=>{const s=overall(o);return `<article class="pair" tabindex="0" aria-label="${o.ref}, ${lab[s][0].toLowerCase()}"><span class="clip"></span><div class="doc"><small>NFS-e · SERVIÇO</small><b>${o.pac.split('+')[0]}</b><small>${o.cli}</small>${NESS.badge(o.nfse)}</div><div class="doc"><small>NF-e · ${o.ref}</small><b>${(o.pac.split('+')[1]||'Mercadoria').trim()}</b><small>${o.dest} · ${o.val}</small>${NESS.badge(o.nfe)}</div><span class="stamp" style="--c:${lab[s][1]}">${lab[s][0]}</span></article>`}).join('');
+document.getElementById('pairs').addEventListener('click',e=>{const p=e.target.closest('.pair');if(!p)return;p.classList.remove('pressed');void p.offsetWidth;p.classList.add('pressed')});
+NESS.render({stroke:2});
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Fluxo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: faixa diagonal com gradiente vivo no topo; cartões flutuantes sobre ela; sidebar clara. */
+:root{--bg:#F6F9FC;--surface:#FFFFFF;--fg:#0A2540;--muted:#5B6B82;--line:#E3E8EF;--accent:#635BFF;--shadow:0 30px 60px -12px #32325d40,0 18px 36px -18px #0000004d;--logo-accent:#635BFF;--logo-sheet:#fff;font-family:"Plus Jakarta Sans",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0B1220;--surface:#111A2E;--fg:#E8EEF7;--muted:#93A1B8;--line:#1F2A40;--accent:#8C85FF;--shadow:0 30px 60px -12px #000a;--logo-sheet:#111A2E;--ok:#3DD68C;--wait:#8C85FF;--err:#FF6B6B;--block:#F5B54A;--draft:#93A1B8;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0B1220;--surface:#111A2E;--fg:#E8EEF7;--muted:#93A1B8;--line:#1F2A40;--accent:#8C85FF;--shadow:0 30px 60px -12px #000a;--logo-sheet:#111A2E;--ok:#3DD68C;--wait:#8C85FF;--err:#FF6B6B;--block:#F5B54A;--draft:#93A1B8;color-scheme:dark}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+aside{background:var(--surface);border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800;font-size:18px;letter-spacing:.06em;padding:0 8px}
+main{position:relative;min-width:0;overflow:hidden}
+.band{position:absolute;inset:0 0 auto;height:420px;transform:skewY(-6deg);transform-origin:0;background:linear-gradient(115deg,#635BFF,#00D4FF,#FF5996,#FFB547,#635BFF);background-size:300% 300%;animation:flow 14s ease-in-out infinite alternate}
+@keyframes flow{to{background-position:100% 50%}}
+.inner{position:relative;padding:28px max(16px,4vw) 48px;display:grid;gap:28px}
+.top{display:flex;justify-content:flex-end;gap:10px}
+.icon-btn{border:0;background:#ffffff33;color:#fff;border-radius:999px;width:38px;height:38px;display:grid;place-items:center;backdrop-filter:blur(8px);transition:background .2s}
+.icon-btn:hover{background:#ffffff55}
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;align-items:center;color:#fff;padding-top:8px}
+.hero h1{font-size:clamp(30px,4vw,52px);line-height:1.05;letter-spacing:-.035em;font-weight:800}
+.hero p{max-width:44ch;margin-top:14px;font-size:16px;opacity:.92}
+.ctas{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:11px 18px;font-weight:700;border:0;transition:transform .2s var(--ease),box-shadow .2s}
+.btn.primary{background:#0A2540;color:#fff}
+.btn.primary:hover{transform:translateY(-2px);box-shadow:0 10px 24px -8px #0A2540aa}
+.btn.ghost{background:#ffffff26;color:#fff}
+.btn .arrow{transition:transform .2s}.btn:hover .arrow{transform:translateX(3px)}
+.float{background:var(--surface);color:var(--fg);border-radius:16px;box-shadow:var(--shadow);padding:20px;display:grid;gap:14px;animation:bob 6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.float header{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pair div{border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px}
+.pair small{color:var(--muted)}
+.bar{height:6px;border-radius:9px;background:var(--line);overflow:hidden}.bar span{display:block;height:100%;width:100%;background:linear-gradient(90deg,#635BFF,#00D4FF);animation:fill 1.6s var(--ease)}
+@keyframes fill{from{width:0}}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--surface);border-radius:14px;padding:20px;box-shadow:0 2px 5px -1px #32325d1a,0 1px 3px -1px #0000001a;transition:transform .3s var(--ease),box-shadow .3s}
+.kpi:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.kpi-ic{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.kpi-label{color:var(--muted);margin-top:12px;font-size:13px;font-weight:600}
+.kpi-v{font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:12.5px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.panel{background:var(--surface);border-radius:14px;box-shadow:0 2px 5px -1px #32325d1a;min-width:0;padding:6px 0}
+.panel h2{font-size:16px;font-weight:700;padding:14px 18px}
+.panel .acts{padding:0 18px}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside><div class="brand"><span data-logo="26"></span>NESS</div><nav data-nav style="display:grid;gap:2px"></nav></aside>
+  <main>
+    <div class="band" aria-hidden="true"></div>
+    <div class="inner">
+      <div class="top"><button class="icon-btn" aria-label="Buscar"><i data-lucide="search"></i></button><button class="icon-btn" data-theme-toggle aria-label="Alternar tema"><i data-lucide="moon"></i></button><button class="icon-btn" aria-label="Notificações"><i data-lucide="bell"></i></button></div>
+      <section class="hero">
+        <div data-reveal>
+          <h1>Emita o serviço e o álbum no mesmo clique.</h1>
+          <p>A NFS-e e a NF-e saem juntas do pedido. Você só confere e confirma. O DANFE fica pronto para a encomenda.</p>
+          <div class="ctas"><a href="#" class="btn primary"><i data-lucide="plus"></i>Novo pedido <i data-lucide="arrow-right" class="arrow"></i></a><a href="#" class="btn ghost">Ver parciais (2)</a></div>
+        </div>
+        <div class="float" data-reveal>
+          <header><span>PED-2417 · Studio Lume</span><span class="st st-wait"><i data-lucide="loader"></i>Emitindo</span></header>
+          <div class="pair">
+            <div><small>NFS-e · serviço</small><b>R$ 4.900,00</b><span class="st st-ok"><i data-lucide="check-circle-2"></i>Autorizada</span></div>
+            <div><small>NF-e · álbum duplo</small><b>R$ 2.000,00</b><span class="st st-wait"><i data-lucide="loader"></i>Transmitindo</span></div>
+          </div>
+          <div class="bar"><span></span></div>
+          <small style="color:var(--muted)">Belo Horizonte/MG · destinatário diferente do tomador</small>
+        </div>
+      </section>
+      <section class="kpis" data-kpis></section>
+      <div class="grid2">
+        <section class="panel" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+        <section class="panel" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:2})</script>
+</body>
+</html>

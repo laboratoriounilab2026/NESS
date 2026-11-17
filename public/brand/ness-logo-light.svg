@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" role="img" aria-label="NESS">
+  <style>:root{--ink:#14213D;--sheet:#FFFFFF;--accent:#E8A33D}</style>
+  <rect x="6" y="4" width="30" height="42" rx="5" fill="var(--sheet)" stroke="var(--ink)" stroke-width="3"/>
+  <rect x="28" y="18" width="30" height="42" rx="5" fill="var(--sheet)" stroke="var(--ink)" stroke-width="3"/>
+  <path d="M16 38V14L48 50V26" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="74" y="46" font-family="'Manrope','Inter','Segoe UI',system-ui,sans-serif" font-size="38" font-weight="800" letter-spacing="4" fill="var(--ink)">NESS</text>
+</svg>

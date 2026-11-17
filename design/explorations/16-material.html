@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Material</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,700;8..144,800&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: Material 3 Expressive (Google) — trilho de navegação, superfícies tonais, FAB, formas que mudam no hover, ripple e cor dinâmica escolhível. */
+:root{--h:262;--bg:hsl(var(--h) 30% 98%);--surface:hsl(var(--h) 40% 94%);--surface2:hsl(var(--h) 45% 90%);--fg:hsl(var(--h) 20% 12%);--muted:hsl(var(--h) 10% 38%);--line:hsl(var(--h) 20% 84%);--accent:hsl(var(--h) 55% 42%);--on:#fff;--cont:hsl(var(--h) 80% 88%);--oncont:hsl(var(--h) 60% 18%);--ok:#1E6B35;--wait:hsl(var(--h) 55% 38%);--err:#B3261E;--block:#7A5300;--draft:hsl(var(--h) 10% 38%);--logo-accent:var(--accent);font-family:"Roboto Flex",Roboto,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:hsl(var(--h) 15% 8%);--surface:hsl(var(--h) 15% 13%);--surface2:hsl(var(--h) 15% 18%);--fg:hsl(var(--h) 20% 92%);--muted:hsl(var(--h) 10% 70%);--line:hsl(var(--h) 10% 26%);--accent:hsl(var(--h) 80% 80%);--on:hsl(var(--h) 60% 18%);--cont:hsl(var(--h) 45% 30%);--oncont:hsl(var(--h) 80% 92%);--ok:#7DDB97;--wait:hsl(var(--h) 80% 80%);--err:#FFB4AB;--block:#F6C35B;--draft:hsl(var(--h) 10% 70%);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:hsl(var(--h) 15% 8%);--surface:hsl(var(--h) 15% 13%);--surface2:hsl(var(--h) 15% 18%);--fg:hsl(var(--h) 20% 92%);--muted:hsl(var(--h) 10% 70%);--line:hsl(var(--h) 10% 26%);--accent:hsl(var(--h) 80% 80%);--on:hsl(var(--h) 60% 18%);--cont:hsl(var(--h) 45% 30%);--oncont:hsl(var(--h) 80% 92%);--ok:#7DDB97;--wait:hsl(var(--h) 80% 80%);--err:#FFB4AB;--block:#F6C35B;--draft:hsl(var(--h) 10% 70%);color-scheme:dark}
+body{transition:background .4s}
+.app{display:grid;grid-template-columns:96px 1fr;min-height:100vh}
+.rail{display:flex;flex-direction:column;align-items:center;gap:14px;padding:16px 0}
+.fab{width:56px;height:56px;border-radius:16px;background:var(--cont);color:var(--oncont);display:grid;place-items:center;border:0;transition:border-radius .3s var(--ease),transform .2s;box-shadow:0 3px 8px -2px #0004}
+.fab:hover{border-radius:28px}
+.rail nav{display:grid;gap:10px}
+.rail .nav-item{flex-direction:column;gap:4px;padding:0;background:none!important;font-size:11.5px;font-weight:500;text-align:center;width:80px}
+.rail .nav-item svg{width:56px;height:32px;padding:4px 16px;border-radius:999px;box-sizing:border-box;transition:background .25s,width .25s}
+.rail .nav-item.active svg{background:var(--cont);color:var(--oncont)}
+.rail .nav-item:hover svg{background:var(--surface2)}
+.rail .nav-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+main{padding:16px max(16px,2vw) 40px 0;display:grid;gap:16px;min-width:0}
+.hero{background:var(--surface);border-radius:28px;padding:clamp(22px,3vw,40px);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;position:relative;overflow:hidden}
+.blob{position:absolute;right:6%;top:50%;width:220px;height:220px;translate:0 -50%;background:var(--cont);animation:morph 10s ease-in-out infinite;border-radius:42% 58% 63% 37%/41% 44% 56% 59%}
+@keyframes morph{50%{border-radius:63% 37% 41% 59%/58% 63% 37% 42%;rotate:40deg}}
+.hero>*{position:relative}
+.hero h1{font-size:clamp(30px,4vw,52px);font-weight:800;letter-spacing:-.02em;line-height:1.05;font-variation-settings:"wdth" 110}
+.hero p{color:var(--muted);margin-top:10px;font-size:16px;max-width:44ch}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.seed{width:32px;height:32px;border-radius:50%;border:3px solid var(--bg);background:var(--c);transition:transform .2s;box-shadow:0 0 0 1px var(--line)}
+.seed:hover{transform:scale(1.15)}
+.seed[aria-pressed="true"]{box-shadow:0 0 0 2px var(--fg)}
+.efab{display:inline-flex;align-items:center;gap:12px;height:64px;padding:0 24px;border-radius:20px;background:var(--accent);color:var(--on);font-weight:600;font-size:16px;transition:border-radius .3s var(--ease);position:relative;overflow:hidden}
+.efab:hover{border-radius:32px}
+.rip{position:absolute;border-radius:50%;background:currentColor;opacity:.25;transform:scale(0);animation:rip .6s ease-out forwards;pointer-events:none}
+@keyframes rip{to{transform:scale(4);opacity:0}}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--surface);border-radius:24px;padding:20px;transition:border-radius .35s var(--ease),background .25s}
+.kpi:hover{border-radius:48px 24px;background:var(--surface2)}
+.kpi-ic{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--cont);color:var(--oncont)}
+.kpi-label{margin-top:14px;font-weight:500}
+.kpi-v{font-size:40px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:13px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.card{background:var(--surface);border-radius:24px;padding:14px 18px;min-width:0}
+.card h2{font-size:20px;font-weight:600;padding:6px 0 8px}
+.st{border:0}
+@media (max-width:900px){.app{grid-template-columns:1fr}.rail{display:none}main{padding-left:0}.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}.blob{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="rail"><span data-logo="30"></span><button class="fab" aria-label="Novo pedido"><i data-lucide="pencil"></i></button><nav data-nav></nav><button class="fab" data-theme-toggle aria-label="Alternar tema" style="margin-top:auto;background:var(--surface2)"><i data-lucide="sun-moon"></i></button></div>
+  <main>
+    <section class="hero" data-reveal>
+      <span class="blob" aria-hidden="true"></span>
+      <div><h1>Emita serviço e álbum de uma vez.</h1><p>NFS-e e NF-e saem do mesmo pedido, cada uma com seu acompanhamento.</p>
+        <div class="chips" role="group" aria-label="Cor do tema"><button class="seed" style="--c:hsl(262 55% 50%)" data-h="262" aria-pressed="true" aria-label="Violeta"></button><button class="seed" style="--c:hsl(200 70% 42%)" data-h="200" aria-pressed="false" aria-label="Azul"></button><button class="seed" style="--c:hsl(150 50% 35%)" data-h="150" aria-pressed="false" aria-label="Verde"></button><button class="seed" style="--c:hsl(25 80% 50%)" data-h="25" aria-pressed="false" aria-label="Laranja"></button><button class="seed" style="--c:hsl(340 60% 50%)" data-h="340" aria-pressed="false" aria-label="Rosa"></button></div>
+      </div>
+      <a href="#" class="efab" id="efab"><i data-lucide="plus"></i>Novo pedido</a>
+    </section>
+    <section class="kpis" data-kpis></section>
+    <div class="grid2">
+      <section class="card" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+      <section class="card" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+NESS.render({stroke:2});
+document.querySelectorAll('.seed').forEach(b=>b.onclick=()=>{document.documentElement.style.setProperty('--h',b.dataset.h);document.querySelectorAll('.seed').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+document.querySelectorAll('.efab,.fab,.kpi').forEach(el=>{el.style.position=el.style.position||'relative';el.style.overflow='hidden';el.addEventListener('pointerdown',e=>{const r=el.getBoundingClientRect(),s=Math.max(r.width,r.height),d=document.createElement('span');d.className='rip';d.style.cssText=`width:${s}px;height:${s}px;left:${e.clientX-r.left-s/2}px;top:${e.clientY-r.top-s/2}px`;el.appendChild(d);setTimeout(()=>d.remove(),600)})});
+</script>
+</body>
+</html>

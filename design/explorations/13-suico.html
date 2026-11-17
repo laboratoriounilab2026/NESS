@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Suíço</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: estilo tipográfico internacional (Braun/Swiss) — grade de 12 colunas, vermelho único, assimetria, números gigantes. */
+:root{--bg:#F1F0EC;--surface:#F1F0EC;--fg:#111;--muted:#6B6B6B;--line:#111;--accent:#E3000F;--ok:#111;--wait:#111;--err:#E3000F;--block:#E3000F;--draft:#6B6B6B;--logo-accent:#E3000F;font-family:"Inter Tight","Helvetica Neue",Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111;--surface:#111;--fg:#F1F0EC;--muted:#9A9A9A;--line:#F1F0EC;--accent:#FF2D2D;--ok:#F1F0EC;--wait:#F1F0EC;--err:#FF2D2D;--block:#FF2D2D;--draft:#9A9A9A;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111;--surface:#111;--fg:#F1F0EC;--muted:#9A9A9A;--line:#F1F0EC;--accent:#FF2D2D;--ok:#F1F0EC;--wait:#F1F0EC;--err:#FF2D2D;--block:#FF2D2D;--draft:#9A9A9A;color-scheme:dark}
+.wrap{padding:0 max(16px,3vw) 64px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);column-gap:20px}
+header{border-bottom:2px solid var(--line);padding:16px 0;align-items:baseline}
+.brand{grid-column:1/4;display:flex;gap:8px;align-items:center;font-weight:900;font-size:18px}
+header nav{grid-column:4/12;display:flex;gap:0;flex-wrap:wrap}
+header .nav-item{background:none!important;padding:4px 14px 4px 0;font-size:13px;color:var(--muted)}
+header .nav-item.active{color:var(--fg);font-weight:700}
+header .nav-item svg{display:none}
+header button{grid-column:12;justify-self:end;border:0;background:none;font-size:13px;font-weight:700}
+.hero{padding:48px 0 40px;border-bottom:2px solid var(--line)}
+.hero .idx{grid-column:1/4;font-size:13px;color:var(--muted);display:grid;gap:4px;align-content:start}
+.hero .idx b{color:var(--accent)}
+.hero h1{grid-column:4/13;font-size:clamp(44px,8vw,128px);line-height:.88;letter-spacing:-.055em;font-weight:900}
+.hero .copy{grid-column:4/9;margin-top:28px;font-size:18px;line-height:1.35}
+.hero .cta{grid-column:10/13;align-self:end;justify-self:end;margin-top:28px}
+.cta{display:inline-flex;align-items:center;gap:14px;background:var(--accent);color:#fff;font-weight:700;padding:16px 22px;transition:gap .3s var(--ease)}
+.cta:hover{gap:28px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--line)}
+.kpi{padding:22px 20px 26px 0;border-right:1px solid var(--line)}
+.kpi+.kpi{padding-left:20px}.kpi:last-child{border-right:0}
+.kpi-ic{display:none}
+.kpi-label{font-size:13px;font-weight:700}
+.kpi-v{font-size:clamp(64px,8vw,120px);font-weight:900;letter-spacing:-.06em;line-height:.9;margin:14px 0 6px;font-variant-numeric:tabular-nums}
+.kpi:nth-child(3) .kpi-v{color:var(--accent)}
+.kpi-note{font-size:13px;color:var(--muted)}
+.body{padding-top:32px}
+.body h2{grid-column:1/4;font-size:13px;font-weight:700}
+.body .t{grid-column:4/13;min-width:0}
+.body+.body{margin-top:40px}
+.tbl th{color:var(--fg);border-bottom:2px solid var(--line);text-transform:none;letter-spacing:0}
+.tbl td{border-color:color-mix(in srgb,var(--line) 25%,transparent)}
+.st{background:none;border:0;padding:0}
+.act-ic{background:none;color:var(--fg)}
+@media (max-width:900px){.grid{grid-template-columns:1fr}.grid>*{grid-column:1/-1!important}header nav{display:none}.kpis{grid-template-columns:1fr 1fr}.hero .cta{justify-self:start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="grid"><span class="brand"><span data-logo="22"></span>NESS</span><nav data-nav></nav><button data-theme-toggle>Tema</button></header>
+  <section class="hero grid" data-reveal>
+    <div class="idx"><span>Central de emissões</span><span>17.11</span><span><b>●</b> 2 parciais</span></div>
+    <h1>Pedido → NFS-e + NF-e.</h1>
+    <p class="copy">Uma confirmação. Dois documentos fiscais, cada um com seu status. Nada é dado como autorizado sem protocolo.</p>
+    <a class="cta" href="#">Novo pedido <i data-lucide="arrow-right"></i></a>
+  </section>
+  <section class="kpis" data-kpis></section>
+  <section class="body grid" data-reveal><h2>Pedidos recentes</h2><div class="t" data-table></div></section>
+  <section class="body grid" data-reveal><h2>Atividade</h2><ul class="acts t" data-activity></ul></section>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:2})</script>
+</body>
+</html>

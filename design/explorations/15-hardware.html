@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@500;700&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: aparelho físico (Teenage Engineering/Braun) — painel com parafusos, visor LCD, teclas que afundam, LEDs de estado. */
+:root{--bg:#D9D9D4;--surface:#ECECE7;--panel:#F4F4EF;--fg:#1A1A1A;--muted:#6F6F69;--line:#C6C6BF;--accent:#FF5A00;--lcd:#B8C4A6;--lcdfg:#22301A;--ok:#1C6B2E;--wait:#1F4FA8;--err:#B3261E;--block:#8A5300;--draft:#6F6F69;--logo-accent:#FF5A00;font-family:Inter,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1B1B1A;--surface:#262624;--panel:#2E2E2B;--fg:#ECECE7;--muted:#A5A59E;--line:#3B3B37;--lcd:#0F1A10;--lcdfg:#7CFF8A;--ok:#5FD47A;--wait:#7FA8FF;--err:#FF7A6E;--block:#FFB13D;--draft:#A5A59E;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1B1B1A;--surface:#262624;--panel:#2E2E2B;--fg:#ECECE7;--muted:#A5A59E;--line:#3B3B37;--lcd:#0F1A10;--lcdfg:#7CFF8A;--ok:#5FD47A;--wait:#7FA8FF;--err:#FF7A6E;--block:#FFB13D;--draft:#A5A59E;color-scheme:dark}
+.m{font-family:"Space Mono",monospace}
+.dev{max-width:1180px;margin:24px auto;background:var(--surface);border-radius:20px;padding:22px;box-shadow:0 1px 0 #fff8 inset,0 30px 60px -30px #0007;display:grid;gap:18px;position:relative}
+.dev::before,.dev::after{content:"";position:absolute;top:10px;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#999);box-shadow:inset 0 0 0 1px #0003}
+.dev::before{left:10px}.dev::after{right:10px}
+@media (max-width:1240px){.dev{margin:16px max(16px,env(safe-area-inset-left,0px)) 16px max(16px,env(safe-area-inset-right,0px))}}
+.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;gap:8px;align-items:center;font-family:"Space Mono",monospace;font-weight:700;font-size:20px}
+.model{font-family:"Space Mono",monospace;font-size:11px;color:var(--muted);flex:1}
+.keys{display:flex;gap:8px;flex-wrap:wrap}
+.key{width:56px;height:56px;border-radius:12px;background:var(--panel);border:0;display:grid;place-items:center;box-shadow:0 4px 0 var(--line),0 6px 10px -4px #0005;transition:transform .08s,box-shadow .08s;position:relative}
+.key:active,.key[aria-pressed="true"]{transform:translateY(4px);box-shadow:0 0 0 var(--line)}
+.key.or{background:var(--accent);color:#fff}
+.key small{position:absolute;bottom:-18px;font:10px "Space Mono",monospace;color:var(--muted);white-space:nowrap}
+.row{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+.lcd{background:var(--lcd);color:var(--lcdfg);border-radius:10px;padding:20px;font-family:"Space Mono",monospace;box-shadow:inset 0 2px 8px #0005;position:relative;overflow:hidden}
+.lcd::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,#0000000d 0 2px,transparent 2px 4px);pointer-events:none}
+.lcd h1{font-size:clamp(22px,3vw,34px);line-height:1.1;font-weight:700}
+.lcd p{margin-top:10px;font-size:13px}
+.blink{animation:bl 1s steps(1) infinite}@keyframes bl{50%{opacity:0}}
+.leds{background:var(--panel);border-radius:10px;padding:18px;display:grid;gap:12px;font-family:"Space Mono",monospace;font-size:12px}
+.led{display:flex;align-items:center;gap:10px}
+.led i{width:12px;height:12px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+.led.p i{animation:pl 1.4s infinite}@keyframes pl{50%{opacity:.25}}
+.go{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--accent);color:#fff;border-radius:12px;padding:16px;font-family:"Space Mono",monospace;font-weight:700;box-shadow:0 5px 0 #B33F00;transition:transform .08s,box-shadow .08s}
+.go:active{transform:translateY(5px);box-shadow:0 0 0 #B33F00}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--panel);border-radius:12px;padding:16px;display:grid;gap:4px;transition:background .2s}
+.kpi:hover{background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
+.kpi-ic{color:var(--accent)}
+.kpi-label{font:11px "Space Mono",monospace;text-transform:uppercase;color:var(--muted)}
+.kpi-v{font:700 40px "Space Mono",monospace;font-variant-numeric:tabular-nums}
+.kpi-note{font-size:12px;color:var(--muted)}
+.panel{background:var(--panel);border-radius:12px;padding:14px;min-width:0}
+.panel h2{font:700 12px "Space Mono",monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.st{border-radius:4px;font-family:"Space Mono",monospace;font-size:11px}
+.nav{display:flex;gap:6px;flex-wrap:wrap}
+.nav .nav-item{background:var(--panel);font:12px "Space Mono",monospace;border-radius:8px}
+.nav .nav-item.active{background:var(--fg);color:var(--surface)}
+@media (max-width:900px){.row{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="dev">
+  <div class="top"><span class="brand"><span data-logo="28"></span>NESS</span><span class="model">MODELO NS-2 · EMISSOR DUPLO NFS-e/NF-e</span><nav class="nav" data-nav></nav></div>
+  <div class="row">
+    <div class="lcd" data-reveal><h1>PRONTO P/ EMITIR: 03<span class="blink">_</span></h1><p>&gt; PED-2414 ANA E PEDRO LIMA · NFS-e + NF-e<br>&gt; 2 PARCIAIS AGUARDANDO OPERADOR<br>&gt; PRESSIONE [NOVO] OU [EMITIR]</p></div>
+    <div class="leds" data-reveal>
+      <div class="led"><i style="--c:#3CD15E"></i>SEFAZ-SP · ONLINE</div>
+      <div class="led"><i style="--c:#3CD15E"></i>EMISSOR NACIONAL · ONLINE</div>
+      <div class="led p"><i style="--c:#FFB000"></i>SEFAZ-PR · LENTA</div>
+      <a href="#" class="go"><i data-lucide="plus"></i>NOVO PEDIDO</a>
+    </div>
+  </div>
+  <div class="keys" aria-label="Teclas de atalho" style="padding-bottom:18px">
+    <button class="key or" aria-label="Novo"><i data-lucide="plus"></i><small>NOVO</small></button>
+    <button class="key" aria-label="Emitir"><i data-lucide="send"></i><small>EMITIR</small></button>
+    <button class="key" aria-label="Reenviar"><i data-lucide="rotate-cw"></i><small>REENVIAR</small></button>
+    <button class="key" aria-label="DANFE"><i data-lucide="printer"></i><small>DANFE</small></button>
+    <button class="key" data-theme-toggle aria-label="Tema"><i data-lucide="sun-moon"></i><small>TEMA</small></button>
+  </div>
+  <section class="kpis" data-kpis></section>
+  <div class="row">
+    <section class="panel" data-reveal><h2>Pedidos</h2><div data-table></div></section>
+    <section class="panel" data-reveal><h2>Registro</h2><ul class="acts" data-activity></ul></section>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>NESS.render({stroke:2})</script>
+</body>
+</html>

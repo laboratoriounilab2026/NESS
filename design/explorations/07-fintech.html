@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Saldo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: hero em cartão de "saldo" com valor faturado (ocultável) e atalhos circulares; cartões arredondados vibrantes. */
+:root{--bg:#F4F2F8;--surface:#FFFFFF;--fg:#1B1530;--muted:#6B6580;--line:#E7E3EF;--accent:#7A2BF5;--hero1:#5B16D9;--hero2:#9B4DFF;--ok:#127A4A;--wait:#5B16D9;--err:#C42B4B;--block:#9A5A00;--draft:#6B6580;--logo-accent:#C9F15D;font-family:Manrope,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F0B1A;--surface:#1A1428;--fg:#F1EDFA;--muted:#A79FBD;--line:#2A2240;--accent:#A06BFF;--hero1:#3D0E99;--hero2:#7A2BF5;--ok:#4BD593;--wait:#B48CFF;--err:#FF6B88;--block:#FFC44D;--draft:#A79FBD;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F0B1A;--surface:#1A1428;--fg:#F1EDFA;--muted:#A79FBD;--line:#2A2240;--accent:#A06BFF;--hero1:#3D0E99;--hero2:#7A2BF5;--ok:#4BD593;--wait:#B48CFF;--err:#FF6B88;--block:#FFC44D;--draft:#A79FBD;color-scheme:dark}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+aside{padding:22px 16px;display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:800;font-size:20px;color:var(--accent)}
+aside .nav-item{border-radius:14px;padding:11px 14px;font-weight:600}
+aside .nav-item.active{background:var(--surface);color:var(--accent);box-shadow:0 6px 20px -10px #5B16D955}
+main{padding:22px max(16px,3vw) 48px;display:grid;gap:22px;min-width:0}
+.top{display:flex;align-items:center;gap:12px}
+.hello{font-weight:700;font-size:18px;flex:1}
+.av{width:40px;height:40px;border-radius:50%;background:var(--surface);display:grid;place-items:center;border:0}
+.hero{position:relative;overflow:hidden;color:#fff;background:linear-gradient(135deg,var(--hero1),var(--hero2));border-radius:28px;padding:28px clamp(20px,3vw,36px);display:grid;grid-template-columns:1.3fr 1fr;gap:24px;align-items:end}
+.hero::after{content:"";position:absolute;right:-80px;top:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,#C9F15D55,transparent 65%);animation:drift 9s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(-60px,60px) scale(1.2)}}
+.lbl{display:flex;align-items:center;gap:8px;opacity:.85;font-weight:600}
+.eye{border:0;background:#ffffff26;color:#fff;border-radius:999px;width:32px;height:32px;display:grid;place-items:center;transition:background .2s}
+.eye:hover{background:#ffffff40}
+.big{font-size:clamp(34px,5vw,56px);font-weight:800;letter-spacing:-.03em;margin:6px 0;font-variant-numeric:tabular-nums;transition:filter .3s}
+.hidden .big{filter:blur(12px)}
+.hero p{opacity:.85}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;position:relative;z-index:1}
+.q{display:grid;justify-items:center;gap:8px;font-size:12.5px;font-weight:600;text-align:center}
+.q span{width:56px;height:56px;border-radius:50%;background:#ffffff1f;display:grid;place-items:center;transition:transform .25s var(--ease),background .2s}
+.q:hover span{transform:translateY(-4px) scale(1.06);background:#C9F15D;color:#1B1530}
+.q.main span{background:#C9F15D;color:#1B1530}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13px;transition:.2s}
+.chip:hover,.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{background:var(--surface);border-radius:22px;padding:20px;transition:transform .3s var(--ease),box-shadow .3s}
+.kpi:hover{transform:translateY(-4px);box-shadow:0 20px 40px -20px #5B16D966}
+.kpi-ic{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:14px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}
+.kpi-label{color:var(--muted);font-weight:600;margin-top:14px;font-size:13px}
+.kpi-v{font-size:34px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi-note{color:var(--muted);font-size:12.5px}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.panel{background:var(--surface);border-radius:22px;padding:8px 0;min-width:0}
+.panel h2{font-size:17px;font-weight:800;padding:14px 20px}
+.panel .acts{padding:0 20px}
+@media (max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.hero,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside><div class="brand"><span data-logo="28" style="color:var(--fg)"></span>NESS</div><nav data-nav style="display:grid;gap:4px"></nav></aside>
+  <main>
+    <div class="top"><span class="hello">Bom dia</span><button class="av" data-theme-toggle aria-label="Alternar tema"><i data-lucide="moon"></i></button><button class="av" aria-label="Notificações"><i data-lucide="bell"></i></button></div>
+    <section class="hero" id="hero" data-reveal>
+      <div>
+        <div class="lbl">Faturado com notas autorizadas hoje <button class="eye" id="eye" aria-label="Ocultar valor" aria-pressed="false"><i data-lucide="eye"></i></button></div>
+        <div class="big">R$ 12.430,00</div>
+        <p>8 notas autorizadas · 2 emissões parciais esperando você</p>
+      </div>
+      <nav class="quick" aria-label="Atalhos">
+        <a href="#" class="q main"><span><i data-lucide="plus"></i></span>Novo pedido</a>
+        <a href="#" class="q"><span><i data-lucide="rotate-cw"></i></span>Reenviar</a>
+        <a href="#" class="q"><span><i data-lucide="file-down"></i></span>DANFE</a>
+        <a href="#" class="q"><span><i data-lucide="search"></i></span>Consultar</a>
+      </nav>
+    </section>
+    <div class="chips" role="group" aria-label="Filtro"><button class="chip" aria-pressed="true">Todos</button><button class="chip" aria-pressed="false">Parciais</button><button class="chip" aria-pressed="false">Autorizados</button><button class="chip" aria-pressed="false">Sem regra fiscal</button><button class="chip" aria-pressed="false">Rascunhos</button></div>
+    <section class="kpis" data-kpis></section>
+    <div class="grid2">
+      <section class="panel" data-reveal><h2>Pedidos recentes</h2><div data-table></div></section>
+      <section class="panel" data-reveal><h2>Atividade</h2><ul class="acts" data-activity></ul></section>
+    </div>
+  </main>
+</div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+NESS.render({stroke:2});
+document.getElementById('eye').onclick=e=>{const h=document.getElementById('hero').classList.toggle('hidden');e.currentTarget.setAttribute('aria-pressed',h);e.currentTarget.setAttribute('aria-label',h?'Mostrar valor':'Ocultar valor')};
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>document.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===c)));
+</script>
+</body>
+</html>

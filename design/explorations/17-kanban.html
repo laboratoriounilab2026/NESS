@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Quadro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: quadro kanban (Trello/Asana) — colunas pelos estados do pedido; arrastar só onde a regra permite. */
+:root{--bg:#EEF1F6;--surface:#FFFFFF;--col:#E3E8F0;--fg:#172B4D;--muted:#5E6C84;--line:#DCE1EA;--accent:#0C66E4;--ok:#1F7A4D;--wait:#0C66E4;--err:#C9372C;--block:#8F5700;--draft:#5E6C84;--logo-accent:#0C66E4;font-family:"DM Sans",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161A1D;--surface:#22272B;--col:#1D2125;--fg:#DEE4EA;--muted:#9FADBC;--line:#2C333A;--accent:#579DFF;--ok:#4BCE97;--wait:#579DFF;--err:#F87168;--block:#F5CD47;--draft:#9FADBC;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161A1D;--surface:#22272B;--col:#1D2125;--fg:#DEE4EA;--muted:#9FADBC;--line:#2C333A;--accent:#579DFF;--ok:#4BCE97;--wait:#579DFF;--err:#F87168;--block:#F5CD47;--draft:#9FADBC;color-scheme:dark}
+header{display:flex;align-items:center;gap:14px;padding:12px max(16px,2vw);background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:8px;align-items:center;font-weight:700;font-size:17px}
+header nav{display:flex;gap:2px;overflow-x:auto;flex:1}
+header .nav-item svg{display:none}
+header .nav-item{white-space:nowrap}
+.ib{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:36px;height:36px;display:grid;place-items:center}
+.hero{display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:22px max(16px,2vw) 6px}
+.hero h1{font-size:clamp(22px,2.6vw,30px);font-weight:700;letter-spacing:-.01em}
+.hero p{color:var(--muted)}
+.hero .sp{flex:1;min-width:200px}
+.prog{display:flex;height:10px;border-radius:9px;overflow:hidden;width:min(320px,100%);background:var(--col)}
+.prog i{display:block;height:100%;animation:grow 1.2s var(--ease) both;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;border-radius:8px;padding:10px 16px;font-weight:700;transition:filter .2s,transform .2s}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(260px,1fr);gap:12px;overflow-x:auto;padding:16px max(16px,2vw) 32px;align-items:start}
+.colm{background:var(--col);border-radius:12px;padding:10px;display:grid;gap:8px;min-height:200px;transition:outline-color .2s;outline:2px dashed transparent;outline-offset:-2px}
+.colm.over{outline-color:var(--accent)}
+.colm.no{outline-color:var(--err)}
+.colm h2{font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;padding:4px 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.colm h2 span{background:var(--surface);border-radius:999px;padding:1px 8px;font-size:12px}
+.card{background:var(--surface);border-radius:10px;padding:12px;box-shadow:0 1px 1px #091e4240,0 0 1px #091e424f;display:grid;gap:8px;cursor:grab;transition:transform .2s var(--ease),box-shadow .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 16px -6px #091e4255}
+.card.drag{opacity:.5;rotate:2deg}
+.card .r{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.card b{font-size:14.5px}
+.card .docs{display:flex;gap:6px;flex-wrap:wrap}
+.card .st{font-size:11.5px}
+.lock{cursor:not-allowed}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;transition:.3s var(--ease);max-width:calc(100% - 32px);font-size:14px}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:700px){header nav{display:none}}
+</style>
+</head>
+<body>
+<header><span class="brand"><span data-logo="24"></span>NESS</span><nav data-nav></nav><button class="ib" data-theme-toggle aria-label="Alternar tema"><i data-lucide="sun-moon"></i></button></header>
+<section class="hero" data-reveal>
+  <div class="sp"><h1>Quadro de emissões</h1><p>Arraste um rascunho para "Pronto para revisão". Autorização só o governo dá: essas colunas andam sozinhas.</p></div>
+  <div style="display:grid;gap:6px"><small class="muted">Semana: 126 autorizadas · 2 parciais · 1 bloqueado</small><div class="prog" aria-hidden="true"><i style="width:88%;background:var(--ok)"></i><i style="width:6%;background:var(--err);animation-delay:.2s"></i><i style="width:6%;background:var(--block);animation-delay:.3s"></i></div></div>
+  <a href="#" class="btn"><i data-lucide="plus"></i>Novo pedido</a>
+</section>
+<div class="board" id="board"></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+const cols=[['draft','Rascunho'],['review','Pronto para revisão'],['sending','Emitindo'],['partial','Emissão parcial'],['done','Completo'],['blocked','Bloqueado']];
+const O=NESS.orders, place={'PED-2414':'draft','PED-2417':'sending','PED-2416':'partial','PED-2418':'done','PED-2415':'blocked'};
+const extra=[{ref:'PED-2419',cli:'Júlia Andrade',pac:'Ensaio família + álbum 25×25',dest:'Campinas/SP',val:'R$ 1.900,00',nfse:'draft',nfe:'draft'},{ref:'PED-2413',cli:'Colégio Horizonte',pac:'Formatura + álbuns',dest:'São Paulo/SP',val:'R$ 9.800,00',nfse:'ok',nfe:'ok'}];
+place['PED-2419']='review';place['PED-2413']='done';
+const all=[...O,...extra];
+function draw(){
+  document.getElementById('board').innerHTML=cols.map(([k,n])=>{const cs=all.filter(o=>place[o.ref]===k);return `<section class="colm" data-col="${k}" aria-label="${n}"><h2>${n}<span>${cs.length}</span></h2>${cs.map(o=>`<article class="card${k==='draft'?'':' lock'}" draggable="${k==='draft'}" data-ref="${o.ref}" tabindex="0"><div class="r"><span>${o.ref}</span><span>${o.val}</span></div><b>${o.cli}</b><small class="muted">${o.pac} · ${o.dest}</small><div class="docs"><span class="muted" style="font-size:12px">NFS-e</span>${NESS.badge(o.nfse)}<span class="muted" style="font-size:12px">NF-e</span>${NESS.badge(o.nfe)}</div></article>`).join('')}</section>`}).join('');
+  lucide.createIcons({attrs:{'stroke-width':2}});
+}
+const toast=m=>{const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)};
+let dragRef=null;
+document.addEventListener('dragstart',e=>{const c=e.target.closest('.card');if(!c)return;dragRef=c.dataset.ref;c.classList.add('drag');e.dataTransfer.setData('text/plain',dragRef)});
+document.addEventListener('dragend',()=>document.querySelectorAll('.colm').forEach(c=>c.classList.remove('over','no')));
+document.addEventListener('dragover',e=>{const c=e.target.closest('.colm');if(!c||!dragRef)return;e.preventDefault();document.querySelectorAll('.colm').forEach(x=>x.classList.remove('over','no'));c.classList.add(c.dataset.col==='review'||c.dataset.col==='draft'?'over':'no')});
+document.addEventListener('drop',e=>{const c=e.target.closest('.colm');if(!c||!dragRef)return;e.preventDefault();if(c.dataset.col==='review'){place[dragRef]='review';toast(dragRef+' pronto para revisão (exemplo)')}else if(c.dataset.col!=='draft'){toast('Só o retorno da SEFAZ / Emissor Nacional move o pedido para essa coluna.')}dragRef=null;draw()});
+document.addEventListener('mousedown',e=>{const c=e.target.closest('.lock');if(c)toast('Este pedido anda sozinho conforme o retorno do governo.')});
+NESS.render();draw();
+</script>
+</body>
+</html>

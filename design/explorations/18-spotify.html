@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NESS · Estúdio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* Layout: app de mídia (Spotify) — biblioteca à esquerda, cabeçalho em degradê, prateleiras com rolagem horizontal, "player" de emissão fixo embaixo. */
+:root{--bg:#000;--surface:#121212;--card:#181818;--hover:#282828;--fg:#FFFFFF;--muted:#B3B3B3;--line:#2A2A2A;--accent:#1ED760;--ok:#1ED760;--wait:#5EA8FF;--err:#FF6B6B;--block:#FFC864;--draft:#B3B3B3;--logo-accent:#1ED760;color-scheme:dark;font-family:Figtree,system-ui,sans-serif}
+.app{display:grid;grid-template-columns:280px 1fr;gap:8px;padding:8px;height:100vh;padding-bottom:96px}
+.pane{background:var(--surface);border-radius:10px;overflow:auto;min-width:0}
+aside.pane{padding:16px 10px;display:flex;flex-direction:column;gap:16px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:900;font-size:20px;padding:0 10px}
+aside .nav-item{font-weight:700;padding:10px}
+.lib{display:grid;gap:4px}
+.lib a{display:flex;gap:12px;align-items:center;padding:8px 10px;border-radius:6px;transition:background .2s}
+.lib a:hover{background:var(--hover)}
+.lib i{width:44px;height:44px;border-radius:6px;flex:none}
+.lib b{display:block;font-size:14px}.lib small{color:var(--muted);font-size:12.5px}
+.head{padding:28px clamp(16px,2.5vw,28px) 20px;background:linear-gradient(180deg,#2F6B48,var(--surface));display:flex;gap:24px;align-items:flex-end;flex-wrap:wrap}
+.cover{width:min(200px,40vw);aspect-ratio:1;max-width:100%;border-radius:6px;background:conic-gradient(from 200deg,#1ED760,#0F5B30,#E8A33D,#1ED760);box-shadow:0 20px 50px #0009;display:grid;place-items:center;color:#fff}
+.head small{font-weight:700;font-size:13px}
+.head h1{font-size:clamp(32px,5vw,72px);font-weight:900;letter-spacing:-.04em;line-height:1}
+.head p{color:#ddd;margin-top:8px}
+.actions{display:flex;align-items:center;gap:18px;padding:18px clamp(16px,2.5vw,28px)}
+.play{width:56px;height:56px;border-radius:50%;background:var(--accent);color:#000;display:grid;place-items:center;transition:transform .2s;box-shadow:0 8px 20px #0007}
+.play:hover{transform:scale(1.07)}
+.play svg{width:24px;height:24px}
+.actions span{color:var(--muted);font-weight:700}
+.shelf{padding:8px clamp(16px,2.5vw,28px) 20px}
+.shelf h2{font-size:22px;font-weight:900;margin-bottom:12px}
+.row{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(170px,190px);gap:14px;overflow-x:auto;padding-bottom:6px}
+.tile{background:var(--card);border-radius:8px;padding:12px;display:grid;gap:8px;transition:background .25s;position:relative}
+.tile:hover{background:var(--hover)}
+.art{aspect-ratio:1;border-radius:6px;position:relative;max-width:100%}
+.mini{position:absolute;right:8px;bottom:8px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#000;display:grid;place-items:center;opacity:0;transform:translateY(8px);transition:.25s var(--ease);box-shadow:0 8px 16px #0008}
+.tile:hover .mini,.tile:focus-within .mini{opacity:1;transform:none}
+.tile b{font-size:14.5px}.tile small{color:var(--muted);font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--card);border-radius:8px;padding:16px;transition:background .2s}
+.kpi:hover{background:var(--hover)}
+.kpi-ic{color:var(--accent)}.kpi-label{color:var(--muted);font-size:13px;margin-top:8px}
+.kpi-v{font-size:32px;font-weight:900;font-variant-numeric:tabular-nums}.kpi-note{color:var(--muted);font-size:12px}
+.player{position:fixed;left:0;right:0;bottom:0;height:88px;padding:0 max(16px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(16px,env(safe-area-inset-left,0px));display:grid;grid-template-columns:1fr 2fr 1fr;align-items:center;gap:16px;background:#000}
+.now{display:flex;gap:12px;align-items:center;min-width:0}
+.now i{width:52px;height:52px;border-radius:4px;background:conic-gradient(#1ED760,#0F5B30,#1ED760);flex:none}
+.now b{display:block;font-size:14px}.now small{color:var(--muted);font-size:12px}
+.track{display:grid;gap:6px;justify-items:center}
+.track .bar{width:100%;height:4px;border-radius:9px;background:#4D4D4D;overflow:hidden}
+.track .bar span{display:block;height:100%;width:62%;background:#fff;animation:prog 6s linear infinite}
+.track:hover .bar span{background:var(--accent)}
+@keyframes prog{from{width:5%}to{width:100%}}
+.track small{color:var(--muted);font-size:12px}
+.eq{display:flex;gap:3px;align-items:flex-end;height:18px;justify-self:end}
+.eq i{width:3px;background:var(--accent);animation:eq .9s ease-in-out infinite alternate}
+.eq i:nth-child(2){animation-delay:-.3s}.eq i:nth-child(3){animation-delay:-.6s}
+@keyframes eq{from{height:3px}to{height:18px}}
+@media (max-width:900px){.app{grid-template-columns:1fr;height:auto}aside.pane{display:none}.kpis{grid-template-columns:1fr 1fr}.player{grid-template-columns:1fr}.track,.eq{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="pane"><div class="brand"><span data-logo="28"></span>NESS</div><nav data-nav></nav>
+    <div class="lib"><a href="#"><i style="background:linear-gradient(135deg,#E8A33D,#9A4D00)"></i><div><b>Parciais</b><small>2 pedidos</small></div></a><a href="#"><i style="background:linear-gradient(135deg,#5EA8FF,#1A3B8F)"></i><div><b>Prontos para emitir</b><small>3 pedidos</small></div></a><a href="#"><i style="background:linear-gradient(135deg,#FF6B9A,#7A1F44)"></i><div><b>Casamentos 2026</b><small>14 pedidos</small></div></a></div>
+  </aside>
+  <main class="pane">
+    <section class="head" data-reveal>
+      <div class="cover" data-logo="96"></div>
+      <div><small>Central de emissões</small><h1>Hoje no estúdio</h1><p>3 prontos para emitir · 2 parciais · 126 notas na semana</p></div>
+    </section>
+    <div class="actions"><a href="#" class="play" aria-label="Novo pedido"><i data-lucide="plus"></i></a><span>Novo pedido</span></div>
+    <section class="shelf"><h2>Pedidos da semana</h2><div class="row" id="row"></div></section>
+    <section class="shelf"><h2>Sua semana</h2><div class="kpis" data-kpis></div></section>
+    <section class="shelf"><h2>Pedidos recentes</h2><div data-table></div></section>
+  </main>
+</div>
+<footer class="player" aria-label="Emissão em andamento">
+  <div class="now"><i></i><div><b>PED-2417 · Studio Lume</b><small>NFS-e autorizada · NF-e transmitindo</small></div></div>
+  <div class="track"><div class="bar"><span></span></div><small>Aguardando retorno da SEFAZ-MG</small></div>
+  <div class="eq" aria-hidden="true"><i></i><i></i><i></i></div>
+</footer>
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+<script src="shared.js"></script>
+<script>
+const g=['linear-gradient(135deg,#FFB199,#FF0844)','linear-gradient(135deg,#A1FFCE,#0F5B30)','linear-gradient(135deg,#FCE38A,#F38181)','linear-gradient(135deg,#9AC5F4,#3E54AC)','linear-gradient(135deg,#E0C3FC,#8EC5FC)'];
+document.getElementById('row').innerHTML=NESS.orders.map((o,i)=>`<article class="tile" tabindex="0"><div class="art" style="background:${g[i]}"><a href="#" class="mini" aria-label="Emitir ${o.ref}"><i data-lucide="send"></i></a></div><b>${o.cli}</b><small>${o.pac}</small></article>`).join('');
+NESS.render({stroke:2});
+</script>
+</body>
+</html>

@@ -1,0 +1,921 @@
+---
+name: project-onboard
+description: Interactive onboarding for an existing codebase. Investigates the repository to infer the answers that project-bootstrap would normally ask the user, then produces a complete AGENTS.md (and the CLAUDE.md that imports it). Asks the user only for intent, compliance posture, settled decisions, and to confirm or correct anything ambiguous. Run this once when adopting these skills on an existing project.
+compatibility: opencode
+---
+
+# Project Onboard Skill
+
+You are the Project Onboard agent. Your job is to **investigate an existing
+codebase** and produce two ready-to-use outputs: a complete, filled-in **`AGENTS.md`**
+for the project, and a **`CLAUDE.md`** that only imports it. `AGENTS.md` is the only home
+of project facts; skills carry no per-project block
+([`RULES.md#project-facts`](../RULES.md#project-facts)).
+
+This skill is the existing-project counterpart to `project-bootstrap`. The shape
+of the output is identical, but the input is different: instead of interviewing
+the user from scratch, **read the code first** and only ask the user for things
+that cannot be discovered from the repository (intent, audience, compliance
+posture, data classifications, settled decisions, known gotchas) or to confirm
+and correct ambiguous findings.
+
+---
+
+## Authoritative Rules
+
+The standard rules this skill checks the codebase against (and records as gaps in
+the Onboarding Notes section) are defined in [`RULES.md`](../RULES.md)
+(language-agnostic core) plus the active **stack overlay** in [`rules/`](../rules/).
+The active overlay is determined in Phase 1.5 — typically by auto-detection.
+
+The "gap analysis" performed during each phase is effectively a diff between the
+existing codebase and (`RULES.md` + the active overlay). When recording findings,
+cite the relevant section so the user can see exactly which rule the gap maps to.
+
+Available profiles:
+
+| Identifier | Overlay | Auto-detect signals |
+|---|---|---|
+| `typescript` | [`rules/typescript.md`](../rules/typescript.md) | `package.json` with `next`/`@nestjs/*`/`typeorm`, root `tsconfig.json` |
+| `dotnet` | [`rules/dotnet.md`](../rules/dotnet.md) | `*.sln`, `*.csproj`, `global.json`, `Directory.Build.props`, `appsettings.json` |
+
+---
+
+## Operating Principles
+
+1. **Code is the source of truth.** Prefer evidence from files in the repo over
+   assumptions. Cite evidence as `file_path:line_number` whenever you can.
+2. **Investigate before asking.** Do the research for each phase before
+   addressing the user. Do not ask the user a question that the code already
+   answers.
+3. **Per-phase summary table.** After investigating each phase, present the
+   findings as one compact table with columns: *Question / Inferred answer /
+   Confidence (high/medium/low) / Evidence*. Ask the user to confirm or correct
+   in bulk, and to fill in anything marked `[TBD]`.
+4. **Use the explore subagent.** For broad searches across the repo, delegate to
+   the `explore` subagent. Reserve `Read` for targeted file reads and `Grep`/
+   `Glob` for narrow lookups.
+5. **Never invent values.** If the code is silent on something and the user
+   doesn't know either, write `[TBD]` in the output so it stands out for later.
+6. **Record the gaps.** Keep a running list of *observed gaps between the code
+   and the standard rules* — these become the `## Onboarding Notes` section at
+   the end.
+
+---
+
+## Phase 0 — Orientation
+
+### Step 0.1 — Detect existing AI setup
+
+Before saying anything else, scan the project root for existing AI configuration files
+and directories:
+
+- `AGENTS.md`, `CLAUDE.md`, `CLAUDE.local.md`
+- `.claude/` (Claude Code agents, commands, settings — produced by `scripts/install-claude-agents.sh`)
+- `.github/agents/` (GitHub Copilot agents — produced by `scripts/install-copilot-agents.sh`)
+- `.github/copilot-instructions.md`
+- `.opencode/` (OpenCode skills, agents, commands)
+- `cursor/` or `.cursor/` (Cursor rules)
+- Any other AI assistant instruction files (`.aider*`, `codeium*`, etc.)
+
+`AGENTS.md`, `CLAUDE.md` and `CLAUDE.local.md` are never offered for removal: they may
+hold the project's facts. Handle them in Step 0.1a.
+
+If **any** others are found, list them to the user and ask:
+
+> "I found the following existing AI configuration in this project:
+>
+> - [list each file/directory found]
+>
+> Would you like me to remove any of these before we start? This is useful if you're
+> replacing an existing setup with these skills.
+>
+> Reply with the numbers or names of items to remove, or 'none' to keep everything
+> as-is."
+
+Wait for the user's response. Remove only the items they confirm. If they confirm
+removal, delete the files/directories and tell the user what was removed.
+
+If **nothing** is found, skip this step silently and proceed.
+
+### Step 0.1a — Move an existing CLAUDE.md to AGENTS.md
+
+Project facts belong in `AGENTS.md`, with `CLAUDE.md` only importing it. If the root has
+a `CLAUDE.md` whose first line that is not blank or an HTML comment is not `@AGENTS.md`,
+offer the same migration `update-skills` runs:
+
+> "This project keeps its instructions in `CLAUDE.md`. These skills keep them in
+> `AGENTS.md`, which every coding agent reads, and make `CLAUDE.md` a one-line import of
+> it so Claude Code still loads them. I'll back `CLAUDE.md` up under
+> `.opencode/skills/.agents-md-backup/`, copy it unchanged to `AGENTS.md`, and replace
+> it with the import. OK?"
+
+On yes, run `bash .opencode/skills/scripts/migrate-agents-md.sh` (from any directory;
+it finds the project root from the skills dir) and show the user its output. It changes
+nothing, and says why, when both files hold content, either is a symlink, `CLAUDE.md` is
+private to the checkout (git-ignored, skip-worktree or assume-unchanged), or the root is
+unclear: relay those items and ask the user how to merge. On no, leave `CLAUDE.md`
+exactly as it is (never copy the template over it), read it as the existing facts, and
+write `AGENTS.md` anyway; tell the user that Claude Code ignores `AGENTS.md` until
+`CLAUDE.md` is the import, and that the next `update-skills` run will report "both
+exist" until they merge it. Either way, the existing content is input to every phase
+below: keep each fact it holds unless the user drops it, never discard it. An
+`AGENTS.md` alone gets its `CLAUDE.md` in Output 2.
+
+---
+
+### Step 0.2 — Orientation
+
+Tell the user:
+
+> "I'll onboard this existing codebase by reading it first. There are **10 phases**
+> covering project identity, skillset profile, application stack, infrastructure-as-code,
+> repository structure, conventions, observability, security/compliance, domain, and Jira
+> integration (optional).
+>
+> For each phase I'll investigate the repo, then show you a summary table of what
+> I found with a confidence level and the file/line evidence. You confirm,
+> correct, or fill in the blanks. I'll only ask open questions for things the
+> code can't tell me — project intent, audience, compliance posture, data
+> classifications, and any settled architectural decisions.
+>
+> Anything I genuinely can't find will be marked `[TBD]` in the final output.
+> I'll also keep a running list of gaps between what the code does today and the
+> standard rules these skills assume — that becomes an *Onboarding Notes*
+> section in your AGENTS.md to seed your follow-up backlog.
+>
+> Starting investigation now."
+
+Then begin Phase 1. Do **not** wait for the user to acknowledge — start working.
+
+---
+
+## Phase 1 — Project Identity
+
+### Investigate
+
+The exact files to read depend on the active profile chosen in Phase 1.5;
+since Phase 1 runs first, check both stacks and use whichever signals are
+present.
+
+**Project name** — try in order:
+
+- Root `package.json` `name`
+- In a JS workspaces monorepo with no root `name`, use the workspace root
+  directory name; do not pick an individual workspace package's `name` as
+  the project name (record those as component names in Phase 4 instead)
+- `*.sln` filename at the repo root
+- Root `*.csproj` `<AssemblyName>` (or the `.csproj` filename if absent)
+- `pyproject.toml` `[project].name` or `setup.cfg` `[metadata].name`
+  (future-proofing — not a currently supported profile, but worth checking)
+- Repo directory name as the final fallback
+
+**Description / overview**:
+
+- Root `README.md` (and any `docs/README.md`) is the primary source for the
+  elevator pitch.
+- Also check `package.json` `description` and `*.csproj` `<Description>` /
+  `<PackageDescription>` as secondary signals.
+
+**Monorepo detection** — any of:
+
+- JS/TS: `workspaces` field in `package.json`, `pnpm-workspace.yaml`,
+  `turbo.json`, `nx.json`, `lerna.json`.
+- .NET: a `*.sln` that references **multiple** `*.csproj` files, or multiple
+  top-level app folders each with their own `*.csproj`.
+- Generic: multiple top-level directories that each look like an app root
+  (their own build/manifest file — `package.json`, `*.csproj`,
+  `pyproject.toml`, `go.mod`, etc.).
+
+### Infer
+
+- Project name (high confidence from any of the primary sources above —
+  `package.json`, `*.sln`, root `*.csproj`, `pyproject.toml`/`setup.cfg`;
+  medium confidence when falling back to the repo directory name).
+- A draft 1–3 sentence overview from the README, if one exists; otherwise
+  from a `description` field in `package.json` or `*.csproj`.
+
+### Ask the user
+
+Only the things the repo can't answer:
+
+- "Here's the overview I drafted from your README: *[draft]*. Is this still
+  accurate? Anything to add about who uses it and what problem it solves?"
+- (If no README exists.) "I couldn't find a project description. In 1–3
+  sentences: what does this system do, who uses it, and what problem does it
+  solve?"
+
+Reflect back: "Got it — *[name]: [one-line summary]*. Moving on."
+
+---
+
+## Phase 1.5 — Skillset Profile
+
+### Investigate
+
+Look for unambiguous stack markers:
+
+- **`dotnet`** — any of: `*.sln` at root, `**/*.csproj`, `global.json`,
+  `Directory.Build.props`, `Directory.Packages.props`, `appsettings.json` adjacent
+  to a `*.csproj`.
+- **`typescript`** — any of: root `package.json` containing `next`, `@nestjs/*`,
+  `typeorm`, `vite`, `react`, `vue`, `svelte`; root `tsconfig.json`.
+
+If both sets of markers are present (e.g. ASP.NET Core API with a Next.js SPA), pick
+**one** profile based on the backend host language — that overlay is the active one,
+since `AGENTS.md` carries a single `## Active Skillset`. Note any secondary stack in
+the Onboarding Notes so the user knows it exists, but the worker skills will still
+apply only the chosen overlay. Multi-overlay activation is a future enhancement.
+
+### Present
+
+> "Detected stack: **`{profile}`** (evidence: *{file paths}*).
+>
+> The skills will use:
+> - `RULES.md` (language-agnostic core)
+> - `rules/{profile}.md` (stack overlay)
+>
+> Override with another identifier if you want to use a different profile."
+
+If detection is ambiguous (no markers, or many languages), ask the user to pick.
+
+### Record
+
+Capture `{profile}` for use in every subsequent phase. Each phase compares the
+existing code against `rules/{profile}.md` (not just `RULES.md`).
+
+---
+
+## Phase 2 — Application Tech Stack
+
+### Investigate
+
+The exact things to investigate depend on the active profile from Phase 1.5. If
+the profile is `dotnet`, swap the backend investigation to: `*.csproj`
+`PackageReference` lines (ASP.NET Core, EF Core, FluentValidation, Serilog, xUnit),
+`Program.cs` for host setup, `appsettings*.json` for config shape, `Directory.Packages.props`
+for centrally-pinned versions, EF Core migrations under `Migrations/`. The list below
+covers the `typescript` profile.
+
+**Backend (`typescript`):**
+- `package.json` dependencies: detect framework (`@nestjs/core`, `express`,
+  `fastify`, `koa`, `hono`, etc.) and language (presence of `typescript`,
+  `tsconfig.json`).
+- ORM / data layer: `typeorm`, `@prisma/client` + `prisma/schema.prisma`,
+  `drizzle-orm` + `drizzle.config.*`, `sequelize`, `mongoose`, `kysely`, raw `pg`/`mysql2`.
+- Database: from ORM config, Docker Compose services, IaC (`aws_db_instance`,
+  `google_sql_database`), or env examples.
+- Auth: `@nestjs/jwt`, `passport`, `next-auth`, `@auth/core`, `clerk`, `lucia`,
+  custom guards. Grep for guard usage on controllers.
+- API docs: `@nestjs/swagger`, `swagger-ui-express`, `@fastify/swagger`,
+  `redoc`, OpenAPI YAML files.
+- Testing: `jest.config.*`, `vitest.config.*`, `playwright.config.*`,
+  `supertest` in deps, `__tests__/` or `*.spec.ts` patterns.
+- Migrations: `typeorm migration:*` scripts, `prisma/migrations/`,
+  `drizzle/` migration folder, `db/migrate/`.
+- Validation: `class-validator` + `class-transformer`, `zod`, `joi`, `yup`,
+  `valibot`, `@hapi/joi`.
+- Logging: `pino`, `winston`, `bunyan`, `@nestjs/common` `Logger`, `console.*`.
+
+**Frontend (skip if no frontend detected):**
+- Detect frontend via `next`, `react`, `vue`, `svelte`, `@remix-run/*`,
+  `astro`, `solid-js` in deps.
+- Styling: `tailwindcss` + `tailwind.config.*` or `@theme` in `*.css`,
+  `styled-components`, `emotion`, CSS modules.
+- State: `zustand`, `@reduxjs/toolkit`, `jotai`, `valtio`, `mobx`,
+  React Context patterns.
+- Frontend testing: `vitest.config.*`, `jest.config.*`,
+  `@testing-library/react`, `playwright`, `cypress`.
+- HTTP: search for a single API client (`lib/api.ts`, `services/api.ts`,
+  `axios` instance file, `fetch` wrappers). Note if `fetch`/`axios` is called
+  ad-hoc throughout the codebase instead.
+- Data fetching: Server Components usage in `app/`, `@tanstack/react-query`,
+  `swr`, `useEffect`-based fetching (record as a gap).
+
+### Present
+
+Show one summary table for backend, one for frontend (if present):
+
+```
+| Concern        | Inferred                          | Confidence | Evidence                       |
+|----------------|-----------------------------------|------------|--------------------------------|
+| Framework      | NestJS 11                         | high       | package.json:24                |
+| Language       | TypeScript (strict)               | high       | tsconfig.json:5                |
+| Database       | PostgreSQL 16                     | medium     | docker-compose.yml:8           |
+| ORM            | TypeORM                           | high       | src/data-source.ts:3           |
+| Auth           | JWT via @nestjs/jwt               | high       | src/auth/jwt.guard.ts:12       |
+| ...            | ...                               | ...        | ...                            |
+```
+
+Ask: "Any corrections? Anything I marked `[TBD]` you want to fill in now?"
+
+---
+
+## Phase 3 — Infrastructure-as-Code & Deployment
+
+### Investigate
+
+- Local dev: `docker-compose.yml`, `compose.yaml`, `Makefile`, `Procfile`,
+  `bin/dev`, `scripts/dev*`.
+- IaC tool: `*.tf` (Terraform/OpenTofu — distinguish via the provider source
+  registry in `.terraform.lock.hcl`, or `tofu` references in CI),
+  `Pulumi.yaml`, `cdk.json`, `serverless.yml`, `sam template.yaml`,
+  `bicep` files, `kustomization.yaml`.
+- Cloud provider: from IaC providers (`aws`, `google`, `azurerm`),
+  ECR/ECS/Lambda/RDS/CloudFront references, GCP equivalents.
+- IaC state backend: `backend "s3"` / `backend "gcs"` / `backend "remote"`
+  blocks in `.tf`, Pulumi backend config.
+- Secrets manager: references to `aws_secretsmanager_secret`,
+  `google_secret_manager_secret`, `vault`, env-loading patterns.
+- CI/CD: `.github/workflows/*.yml`, `.gitlab-ci.yml`, `.circleci/config.yml`,
+  `buildkite/*`, `Jenkinsfile`. Note which jobs run lint/test/plan/apply, whether CI runs
+  on pull requests (the `on:` triggers), and any local CI runner (`act`, `make ci`).
+- Tags: scan IaC modules for a common `tags = { ... }` or `default_tags` block.
+- Config / env: `.env.example`, `.env.*.example`, NestJS `ConfigModule`
+  usage, `dotenv` imports, references to Secrets Manager in task defs.
+- Task runner: `Makefile`, `Taskfile.yml`, `justfile`, npm scripts in root
+  `package.json`.
+
+### Present
+
+```
+| Concern         | Inferred                                  | Confidence | Evidence                  |
+|-----------------|-------------------------------------------|------------|---------------------------|
+| Local dev       | Docker Compose (postgres:16)              | high       | docker-compose.yml        |
+| Cloud           | AWS (ECS Fargate + RDS + CloudFront)      | high       | infra/envs/prod/main.tf   |
+| IaC tool        | OpenTofu 1.8                              | medium     | .github/workflows/iac.yml |
+| State backend   | S3 + DynamoDB lock                        | high       | infra/envs/prod/backend.tf|
+| Secrets         | AWS Secrets Manager                       | high       | infra/modules/app/main.tf |
+| CI/CD           | GitHub Actions (plan on PR, apply on main)| high       | .github/workflows/*.yml   |
+| Task runner     | Makefile                                  | high       | Makefile                  |
+| CI on PRs       | yes (`on: pull_request`)                  | high       | .github/workflows/ci.yml  |
+| Local CI        | none found                                | high       | —                         |
+```
+
+With no local runner, propose the commands CI runs (listed in the README); with no CI,
+ask which commands are run instead.
+
+Ask the user to confirm; ask explicitly about anything `[TBD]` (e.g. "I see
+multiple AWS accounts referenced — do prod and staging live in separate
+accounts?").
+
+---
+
+## Phase 4 — Repository Structure
+
+### Investigate
+
+- List the top two levels of directories from disk.
+- Detect monorepo and identify each app/package.
+- For each main app, sample its `src/` (or equivalent) structure: list module
+  names / feature folders, and identify common subfolders (`controllers/`,
+  `services/`, `dto/`, `entities/`, `migrations/`, `components/`, `app/`,
+  `store/`, `lib/`, `hooks/`).
+- Locate docs: `docs/`, `architecture/`, `adr/`, `decisions/`, `proposals/`,
+  `features/`, `design/`.
+
+### Present
+
+Build a **real** file tree from the actual disk contents, not a template. Show
+it to the user and ask: "Does this match how you think about the project?
+Anything to add or any directories I should ignore (e.g. generated output)?"
+
+If `docs/proposals/`, `docs/decisions/`, `docs/features/`, or (for frontend projects)
+`docs/design/` are missing, note this as an onboarding gap (see Phase 8 / Onboarding
+Notes).
+
+---
+
+## Phase 5 — Architecture Rules & Conventions
+
+### Investigate
+
+- **Thin controllers:** open 2–3 controller files; check whether they delegate
+  to services or contain business logic inline.
+- **Single external API client:** grep for direct `fetch(`, `axios.`,
+  `httpService.` usage in domain services. Look for a dedicated
+  `*Client*Service` or `lib/api.ts` wrapper.
+- **Config access:** grep `process.env` across the codebase. Anything outside
+  a `config/` module or `ConfigService` is a gap.
+- **Query patterns:** grep for `.find(` / `.findAll(` calls without `where` or
+  pagination on large entities.
+- **Frontend rules:** grep for `useEffect` containing `fetch`/data calls; check
+  whether all API calls go through `lib/api.ts`; check for direct store
+  mutation outside defined actions.
+- **Design system & accessibility** (skip if backend-only): locate the token
+  source (`@theme` block in a CSS file, `tailwind.config.*`, CSS custom
+  properties, `_variables.scss`) and note whether one exists at all. Grep for
+  arbitrary Tailwind values (`-\[#`, `-\[\d`), inline `style=` attributes, raw
+  hex outside the token file, remote font `<link>`/`@import url(`, and CDN
+  `<script src="http`. Grep for `outline-none` / `outline: none` without a
+  focus-visible replacement, `prefers-reduced-motion` (present or absent),
+  `aria-`/`alt=` usage, and click handlers on non-interactive elements
+  (`<div onClick`, `<span onClick`). Note any existing `docs/design/` plans.
+- **TypeScript strictness:** read `tsconfig.json` — `strict`, `noImplicitAny`,
+  `noImplicitReturns`, `noUncheckedIndexedAccess`. Grep for `: any` and `as any`.
+  Check for barrel `index.ts` files.
+- **Rate limiting:** grep for `@nestjs/throttler`, `express-rate-limit`,
+  `@fastify/rate-limit`, or middleware doing rate limiting.
+- **Idempotency:** grep for `Idempotency-Key` header handling.
+
+### Present
+
+Two columns of findings, side by side:
+
+```
+Rules observed in code            | Rules NOT yet enforced (candidate gaps)
+----------------------------------|----------------------------------------
+- Thin controllers (sampled 3/3)  | - process.env used outside config (12 files)
+- Strict mode on                  | - No global rate limiter wired up
+- Single API client in lib/api.ts | - No Idempotency-Key handling
+- ...                             | - useEffect data fetching in 4 components
+```
+
+Ask: "I'll write the *observed* rules into AGENTS.md as project conventions.
+The *not yet enforced* items will go into the Onboarding Notes as a backlog.
+Anything to move between columns? Any project-specific rules I should add that
+the code wouldn't reveal?"
+
+---
+
+## Phase 6 — Observability
+
+### Investigate
+
+- Logger config: pino transport / formatters, redaction config, log levels,
+  correlation/request-ID middleware (search for `correlationId`, `requestId`,
+  `x-request-id`, `AsyncLocalStorage`).
+- Metrics: OpenTelemetry SDK setup, CloudWatch EMF, Prometheus client,
+  Datadog `dd-trace`, StatsD.
+- Tracing: `@opentelemetry/*`, AWS X-Ray SDK, Datadog APM, Sentry.
+- Backends: from IaC — CloudWatch log groups, Datadog provider, Grafana,
+  Honeycomb, Sentry DSN env vars.
+- Alarms: `aws_cloudwatch_metric_alarm` blocks, Datadog monitor resources,
+  alerting modules.
+
+### Present
+
+Summary table with what was found vs what the standard rules require. Ask the
+user only for: log retention values (if not in IaC), key SLIs they care about,
+and alert thresholds (if not codified). Mark missing observability primitives
+as Onboarding Notes.
+
+---
+
+## Phase 7 — Security & Compliance
+
+### Investigate
+
+- **Vulnerability scanning:** `.github/dependabot.yml`, Snyk/Trivy/`npm audit`
+  steps in CI, `renovate.json`.
+- **Secrets handling:** confirm no secrets in `.tf`/`.tfvars`, no hardcoded
+  tokens (quick grep for likely patterns: `AKIA`, `sk_live_`, `-----BEGIN`,
+  long base64 strings near `password`/`token`/`secret` keys). Note: this is a
+  smoke test, not a full audit — flag concerns for the `infosec` skill.
+- **Encryption at rest:** `storage_encrypted = true`, KMS key references in
+  IaC for RDS/S3/EBS.
+- **Encryption in transit:** ALB/CloudFront TLS policy, HSTS headers,
+  `force_ssl` on buckets.
+- **Auth model:** JWT TTLs from auth module config; presence of refresh-token
+  rotation; rate limit on login routes.
+- **Public endpoints:** list controllers/routes without an auth guard (this is
+  a high-value finding — present it explicitly).
+- **IAM:** grep IaC for `Action = "*"` and `Resource = "*"`; flag findings.
+- **Network exposure:** grep for `0.0.0.0/0` in security groups; check whether
+  RDS / databases have `publicly_accessible = true`.
+- **Audit logging:** look for an audit log table/service, CloudTrail config.
+- **Privacy:** privacy policy, existing PIAs or data inventory; every entity and log line
+  holding data about a person, what deletes it and which processors receive it. This
+  seeds `docs/privacy/data-inventory.md` (a file per row, `unverified` where unknown).
+  Gaps between what the product says and what the code does (deletion that leaves rows,
+  purge jobs that never run, no export) go into the inventory's *What the seeding found*
+  and into Onboarding Notes.
+- **Changelog and risk records:** `CHANGELOG.md`, any accepted-risk list or lessons log.
+
+### Present
+
+Summary table; ask the user for:
+
+- Compliance framework(s) — repo can't tell us this. Suggest "none" if no
+  evidence and the user is unsure.
+- Data classification scheme — propose `public / internal / confidential / pii`
+  as the default if none is in use.
+- Who makes privacy and risk decisions; whether to install the optional
+  privacy-screening guard (default no); the changelog limit (default 300).
+
+Anything risky discovered (public endpoints, `*:*` IAM, `0.0.0.0/0` ingress,
+plaintext secrets, missing scanning) goes into Onboarding Notes and should be
+flagged as work for the `infosec` skill.
+
+---
+
+## Phase 8 — Domain & Settled Decisions
+
+### Investigate
+
+- **Domain entities:** list all `*.entity.ts`, `prisma/schema.prisma` models,
+  Drizzle schema tables, Mongoose schemas.
+- **Existing ADRs / proposals:** scan `docs/decisions/`, `docs/adr/`,
+  `architecture/decisions/`, `docs/proposals/` for anything resembling ADRs
+  (look for status fields, decision/context/consequences headings). If found,
+  enumerate them.
+- **Recent commit history (optional, if useful):** scan the last ~50 commit
+  messages for evidence of recent significant decisions.
+
+### Present
+
+A draft Domain Model table:
+
+```
+| Entity   | Inferred from           | Data Class |
+|----------|-------------------------|------------|
+| User     | src/users/user.entity.ts| [TBD]      |
+| Order    | src/orders/order.entity.ts| [TBD]    |
+```
+
+Ask the user to assign a data class to each entity using the Phase 7 scheme.
+
+If existing ADRs were found, list them and ask: "Should I import these into
+the Settled Decisions table?" (Suggest also running the `decision-log` skill
+to add them to its index.)
+
+Ask:
+- "Any other significant decisions already made that aren't written down?"
+- "Any known edge cases or gotchas? (timezone handling, external API rate
+  limits, partial domain objects, idempotency on retried mutations, etc.)"
+
+---
+
+## Phase 9 — Jira Integration (optional)
+
+### Investigate
+
+- Look for Jira references in the repo: `.github/workflows/*.yml` steps calling the
+  Jira API, `JIRA_HOST` / `JIRA_EMAIL` / `JIRA_API_TOKEN` in `.env.example` or CI
+  environment variables, any existing `opencode.json` with a `jira` MCP entry.
+
+> Note: `JIRA_HOST` / `JIRA_EMAIL` / `JIRA_API_TOKEN` env vars are a legacy pattern.
+> The current Jira MCP server (`@rui.branco/jira-mcp`, configured by `mcp-setup`) reads
+> credentials from `~/.config/jira-mcp/config.json` instead. If you find the env-var
+> pattern, treat it as evidence Jira is in use, but the MCP setup will not consume
+> those vars — the user runs `npx -y @rui.branco/jira-mcp setup ...` once to populate
+> the config file.
+
+### Present
+
+If Jira evidence is found, show it to the user and ask to confirm the details.
+
+If no evidence is found, ask:
+
+> "Does your team use Jira to track work? The `jira-feature` skill can load ticket
+> details automatically if I know your instance and project keys.
+>
+> - **Jira instance URL** — e.g. `https://your-org.atlassian.net`
+> - **Default project key(s)** — e.g. `PLAT, API, FE`
+> - **Where are acceptance criteria written?** — e.g. a custom field named
+>   'Acceptance Criteria', or a `## Acceptance Criteria` heading in the Description
+>
+> Reply **skip** if your team doesn't use Jira or you'd rather configure this later."
+
+If the user skips, record `jira: none` and move on.
+
+If details are provided or confirmed, show:
+
+```
+Jira instance:         {url}
+Default project keys:  {keys}
+AC location:           {custom field / heading / pattern}
+```
+
+Ask: "Does this look right?"
+
+---
+
+## Output Generation
+
+Once all phases are complete, produce the following outputs.
+
+**Important:** When the code provided an answer, write the **specific observed
+value** into the output (e.g. "PostgreSQL 16 + TypeORM" — not "default"). When
+the user supplied an answer, write that. Use `[TBD]` only for things genuinely
+unknown after both investigation and user input.
+
+### Output 1 — AGENTS.md
+
+Generate a complete, filled-in `AGENTS.md` using the template structure below. If the
+project already has an `AGENTS.md` (from Step 0.1a or before), merge into it: keep its
+content, show the user each change, never drop a fact without their say-so.
+
+```markdown
+# AGENTS.md — {project name}
+
+## Active Skillset: {profile}
+
+This project follows the language-agnostic core rules in
+[`RULES.md`](https://github.com/garethrhughes/skills/blob/main/RULES.md) plus the
+**`{profile}`** stack overlay in
+[`rules/{profile}.md`](https://github.com/garethrhughes/skills/blob/main/rules/{profile}.md).
+Skills (`architect`, `design`, `developer`, `reviewer`, `infosec`) read both when applying
+conventions to this project.
+
+---
+
+## Project Overview
+
+{project overview from Phase 1}
+
+---
+
+## Tech Stack
+
+### Backend
+| Concern | Choice |
+|---|---|
+| Framework | {backend framework} |
+| Language | {language} |
+| ORM / Data layer | {ORM} |
+| Auth | {auth} |
+| API Docs | {api docs} |
+| Testing | {backend testing} |
+| Migrations | {migrations} |
+| Validation | {validation library} |
+| Logging | {logger} |
+
+### Frontend
+*(omit this section if backend-only)*
+| Concern | Choice |
+|---|---|
+| Framework | {frontend framework} |
+| Language | {language} |
+| Styling | {styling} |
+| State | {state management} |
+| Testing | {frontend testing} |
+| HTTP | {http client} |
+| Data fetching | {data fetching pattern} |
+
+### Infrastructure
+| Concern | Choice |
+|---|---|
+| Cloud provider(s) | {cloud} |
+| IaC tool | {iac tool} |
+| IaC state backend | {state backend} |
+| Secrets manager | {secrets manager} |
+| CI/CD | {pipeline} |
+| Database | {database} |
+| Local Dev | {local dev setup} |
+| Task Automation | {task runner} |
+| Config | {config/env management} |
+| Observability | {logs/metrics/traces backends} |
+
+### Security & Compliance
+| Concern | Choice |
+|---|---|
+| Compliance frameworks | {framework or "none"} |
+| Encryption at rest | {approach} |
+| Encryption in transit | {TLS version} |
+| Data classification scheme | {scheme} |
+| Vulnerability scanning | {tools} |
+
+---
+
+## Repository Structure
+
+{file tree from Phase 4 — built from actual disk contents}
+
+---
+
+## Architecture Rules
+
+This project follows:
+
+- The language-agnostic rules in
+  [`RULES.md`](https://github.com/garethrhughes/skills/blob/main/RULES.md).
+- The **`{profile}`** stack overlay in
+  [`rules/{profile}.md`](https://github.com/garethrhughes/skills/blob/main/rules/{profile}.md).
+
+**Project-specific additions / overrides** (observed in code or supplied by user
+in Phase 5):
+{additions; write "_(none)_" if empty}
+
+**Known divergences from rules** (recorded as gaps in Onboarding Notes below):
+{list of items where current code does not match RULES.md or the active overlay; or "_(none)_"}
+
+---
+
+## Security Rules (hard blocks)
+
+Standard security rules are in `RULES.md` (no secrets in code, `ConfigService`-only
+env access, parameterised queries, no `*` action on `*` resource, lockfile committed,
+etc.).
+
+**Project-specific additions:**
+- Public (unauthenticated) endpoints: {list public routes found in Phase 7}
+- {any project-specific security rules from Phase 7, or "_(none)_"}
+
+---
+
+## External Integrations
+
+*(omit if none)*
+{for each integration discovered in code or supplied by user: name, purpose, auth method, rate limits}
+
+---
+
+## Jira Integration
+
+*(omit if jira: none)*
+| Field | Value |
+|---|---|
+| Instance URL | {jira instance url} |
+| Default project keys | {keys} |
+| Acceptance criteria location | {custom field / heading / pattern} |
+
+---
+
+## Domain Model
+
+*(omit if not provided)*
+| Entity | Data Class |
+|---|---|
+{for each entity from Phase 8: name and classification}
+
+---
+
+## Testing Requirements
+
+See [`RULES.md#testing`](https://github.com/garethrhughes/skills/blob/main/RULES.md#testing)
+for the canonical testing rules.
+
+**Project-specific additions** (observed or supplied):
+{additions, or "_(none)_"}
+
+---
+
+## Design & Proposal Workflow
+
+Write a proposal in `docs/proposals/NNNN-short-kebab-case-title.md` before implementing any:
+- New module, service, or significant component
+- Module boundary or data flow change
+- New external API integration point
+- Schema change affecting more than one entity
+- Cross-cutting concern (caching, error handling strategy, etc.)
+- New cloud resource type, network topology change, or new IAM role/policy with write/admin scope
+- New secret, change to backup/retention, or change to the deployment pipeline
+
+When a proposal is accepted, create the corresponding ADR in `docs/decisions/NNNN-title.md`
+and update the proposal status to `Accepted`.
+
+Write a design plan in `docs/design/NNNN-short-kebab-case-title.md` before implementing any
+new or reshaped user-facing surface, or when porting a design handover from Claude. Routine
+UI work that only consumes existing tokens and components does not need one.
+
+See the `architect`, `design`, and `decision-log` skills for the exact proposal, design
+plan, and ADR formats.
+
+---
+
+## Process
+
+Agents follow `RULES.md`: [evidence, corrections and decisions](https://github.com/garethrhughes/skills/blob/main/RULES.md#evidence-corrections--decisions)
+(including never `cd`), [Git & PRs](https://github.com/garethrhughes/skills/blob/main/RULES.md#git--prs) (CI evidence, review briefs),
+[static analysis](https://github.com/garethrhughes/skills/blob/main/RULES.md#static-analysis), [changelog](https://github.com/garethrhughes/skills/blob/main/RULES.md#changelog),
+[privacy](https://github.com/garethrhughes/skills/blob/main/RULES.md#privacy) and [risk register](https://github.com/garethrhughes/skills/blob/main/RULES.md#risk-register). This project's settings:
+
+| Setting | Value |
+|---|---|
+| CI on pull requests | {yes / no / no CI — from Phase 3} |
+| Local CI command | {command, or "not required"} |
+| Commands run instead of CI | {lint / test / build commands, or "n/a"} |
+| Privacy adoption point | feature docs from {NNNN}, proposals from {NNNN} |
+| Privacy and risk decisions | {name from Phase 7} (fills a PIA's regimes and lawful basis) |
+| Privacy guard | {`node --test scripts/__tests__/privacy-screening.test.mjs` / not installed} |
+| Changelog | {path and limit (default 300 characters) / none} |
+| Process documents | `docs/corrections-log.md`, `docs/risk-register.md`, `docs/privacy/` |
+
+---
+
+## Settled Decisions (do not revisit without a superseding ADR)
+
+One line per decision ([`RULES.md#project-facts`](https://github.com/garethrhughes/skills/blob/main/RULES.md#project-facts)).
+
+| # | Decision |
+|---|---|
+{settled decisions imported from existing ADRs and from Phase 8, or "| — | *(none yet)* |" if empty}
+
+---
+
+## Edge Cases & Gotchas
+
+*(omit if none)*
+{edge cases from Phase 8}
+
+---
+
+## Onboarding Notes
+
+*Gaps observed between the current code and the standard rules these skills assume.
+Each item is a candidate for a proposal via the `architect` skill, or a backlog
+ticket. This section is specific to onboarding an existing project — feel free
+to delete it once the gaps are addressed or explicitly accepted.*
+
+{bulleted list of gaps gathered across all phases — examples:}
+- `process.env` accessed outside the config module in {N} files: {sample paths}
+- No global rate limiter wired up — recommend `@nestjs/throttler` (100 req/min/IP)
+- No `Idempotency-Key` handling on mutating endpoints
+- Frontend: {N} components fetch data inside `useEffect` — migrate to Server Components or React Query
+- IaC: IAM policy at {path} grants `Action = "*"` on `Resource = "*"`
+- IaC: Security group at {path} allows `0.0.0.0/0` ingress on a non-443 port
+- No vulnerability scanning configured (no Dependabot / `npm audit` in CI / Trivy)
+- `docs/proposals/` and `docs/decisions/` directories do not exist
+- Frontend: no token source found — colours and spacing are raw values spread across
+  {N} components; the `design` skill needs a token layer before it can plan against one
+- Frontend: {N} components remove focus outlines with no visible replacement
+- Frontend: animations present with no `prefers-reduced-motion` fallback
+- Frontend: remote font link / CDN `<script>` at {path} — unpinned remote dependency
+- Public endpoints not behind an auth guard: {list}
+- Logger does not appear to redact `Authorization` headers or known PII fields
+```
+
+### Output 2 — CLAUDE.md
+
+`CLAUDE.md` next to `AGENTS.md` is an unchanged copy of the skills' `CLAUDE.md.template`
+(in the skills dir, `.opencode/skills/` by default; also [here](../CLAUDE.md.template)
+when this skill is read from there): the import line `@AGENTS.md` and a comment. After
+an accepted Step 0.1a it is already. Copy it only when there is no `CLAUDE.md` (a project
+with only `AGENTS.md`, or none); a `CLAUDE.md` kept by a declined Step 0.1a is never
+overwritten. Claude Code reads only `CLAUDE.md` when both exist, so this is how it loads
+`AGENTS.md`. Claude-only instructions, if any, go below the import; project facts never
+do.
+
+---
+
+## After Output
+
+### Step 1 — Detect local skills and old Project Context blocks
+
+Look for `.opencode/skills/` in the project root and list the `SKILL.md` files. Skills
+no longer carry project facts
+([`RULES.md#project-facts`](../RULES.md#project-facts)); note any file that still has a
+filled-in `## Project Context` block from an older version, and read
+`.opencode/skills/.project-context-backup/*.md` (where `update-skills`, usually run
+first, keeps the blocks it removed).
+
+### Step 2 — Move old Project Context blocks into AGENTS.md
+
+For each block or backup found, move any fact it holds that the new `AGENTS.md` lacks into the
+matching `AGENTS.md` section, show the user what moved, and delete the block from the
+skill (`update-skills` also saves a copy of each under
+`.opencode/skills/.project-context-backup/`). If none was found, say so.
+
+### Step 3 — Install the process documents
+
+From the skills' [`templates/`](../templates/README.md) (next to `rules/`), install what
+the project lacks, linking any equivalent it already has; seed the risk register with
+the Phase 7 risks the user accepts and the inventory with Phase 7's privacy findings.
+The adoption point is the newest feature-doc and proposal numbers + 1.
+
+| Template | Install to |
+|---|---|
+| `templates/docs/corrections-log.md` | `docs/corrections-log.md` |
+| `templates/docs/risk-register.md` | `docs/risk-register.md` |
+| `templates/docs/privacy/README.md`, `TEMPLATE-pia.md`, `data-inventory.md` | `docs/privacy/` |
+| `templates/scripts/privacy-screening.guard.mjs.template` | `scripts/__tests__/privacy-screening.test.mjs` (renamed), **only if the user opted in** |
+
+Never overwrite an existing file. Replace `{product owner}` with the Phase 7 name and
+the adoption-point placeholders with the numbers in AGENTS.md (they also go in the
+guard's `FIRST_SCREENED_*`). If the guard was installed: run it; then write
+`9999-no-screening.md` (no screening) in a scratch directory, run the guard with
+`PRIVACY_FEATURES_DIR` pointing there and confirm it fails; and exclude
+`scripts/__tests__/*.test.mjs` from the project's own test runner if it would collect it. (The first run checks no document, since all predate the adoption
+point; the 9999 step is what proves it can fail.) A reopened older document goes in the
+guard's `ALSO_SCREENED_*`.
+
+### Step 4 — MCP Setup
+
+Invoke the `mcp-setup` skill to let the user choose which MCP servers to add to
+this project. The mcp-setup skill will handle reading/writing `opencode.json` and
+explaining each option.
+
+After mcp-setup completes, continue to Step 5.
+
+---
+
+### Step 5 — Finish
+
+Tell the user:
+
+> "Your AGENTS.md and CLAUDE.md are ready to commit to the root of your repository.
+>
+> Suggested next steps:
+> 1. Commit `AGENTS.md`, `CLAUDE.md`, `opencode.json` and the `docs/` process documents to
+>    version control (and delete `.opencode/skills/.agents-md-backup/` once you have
+>    checked the move, if Step 0.1a made one)
+> 2. Review the **Onboarding Notes** section — each bullet is a candidate for a
+>    proposal via the `architect` skill, or a backlog ticket
+> 3. If `docs/proposals/` and `docs/decisions/` don't exist yet, scaffold them
+>    (plus `infra/modules/`, `infra/envs/{dev,staging,prod}/` if applicable)
+> 4. If the repo already has decision records, run:
+>    `use the decision-log skill to import the existing ADRs into the index`
+> 5. For a deeper security pass on the gaps surfaced in Phase 7, run:
+>    `use the infosec skill to audit this codebase`
+> 6. For your first new feature, run: `use the create-feature skill`"
