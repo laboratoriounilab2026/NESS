@@ -13,3 +13,32 @@ jobs:
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
+
+  # Banco descartável: roda os testes de integração (pulados no job check) e a jornada E2E no navegador.
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_USER: ness, POSTGRES_PASSWORD: ness, POSTGRES_DB: ness }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ness:ness@localhost:5432/ness
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npx prisma migrate deploy
+      - run: npm test
+      - name: Senha aleatória do operador E2E (só desta execução)
+        run: echo "E2E_PASSWORD=$(openssl rand -hex 16)" >> "$GITHUB_ENV"
+      - run: node e2e/seed.ts
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: playwright-report, retention-days: 7 }
