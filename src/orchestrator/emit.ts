@@ -16,9 +16,9 @@ type Ctx = { actor: string; correlationId: string };
 const SEND_TO_STATE: Record<SendResult["kind"], DocState> = { authorized: "AUTORIZADO", rejected: "REJEITADO", denied: "DENEGADO", timeout: "INCERTO" };
 const QUERY_TO_STATE: Record<QueryResult["kind"], DocState> = { authorized: "AUTORIZADO", rejected: "REJEITADO", not_found: "PENDENTE", unknown: "INCERTO" };
 
-type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
-/** Trava por pedido até o fim da transação (serializa emitir × descartar). */
-const lockOrder = (tx: Tx, orderId: string) => tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`order:${orderId}`}))`;
+export type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
+/** Trava por pedido até o fim da transação (serializa envio × descarte × correção de destinatário). */
+export const lockOrder = (tx: Tx, orderId: string) => tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`order:${orderId}`}))`;
 
 async function syncOrder(orderId: string) {
   const docs = await db.emissionDocument.findMany({ where: { orderId }, select: { state: true } });

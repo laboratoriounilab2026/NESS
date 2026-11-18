@@ -52,7 +52,7 @@ Cancelamento está só no modelo de estados; não há ação de cancelar ainda.
 
 ## Estado do pedido
 
-Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. Desistência antes de qualquer envio (nenhuma tentativa registrada): `DESCARTADO` (`discardOrder`), final; emitir e descartar usam a mesma trava por pedido (`pg_advisory_xact_lock`), então nunca ocorrem juntos. Depois, é **derivado** das notas (`deriveOrderState`):
+Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. Desistência antes de qualquer envio (nenhuma tentativa registrada): `DESCARTADO` (`discardOrder`), final; envio, descarte e correção de destinatário usam a mesma trava por pedido (`lockOrder`, `pg_advisory_xact_lock`), então nunca se intercalam. Depois, é **derivado** das notas (`deriveOrderState`):
 
 | Notas | Pedido |
 |---|---|

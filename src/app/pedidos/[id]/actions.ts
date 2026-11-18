@@ -8,7 +8,7 @@ import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
-import { discardOrder, emitDocument, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
+import { discardOrder, emitDocument, lockOrder, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
 
 export type ActionResult = { ok: boolean; message: string; docs?: Partial<Record<"NFSE" | "NFE", Outcome>> };
 
@@ -116,18 +116,21 @@ export async function updateRecipientAction(orderId: string, raw: unknown): Prom
   const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
   const parsed = recipientEdit.safeParse(raw);
   if (!parsed.success) return { ok: false, message: "Revise os campos destacados.", errors: issuesByPath(parsed.error) };
-  const nfe = await db.emissionDocument.findFirst({ where: { orderId, type: "NFE" }, select: { state: true, order: { select: { state: true } } } });
-  if (!nfe) return { ok: false, message: "Pedido não encontrado." };
-  if (nfe.order.state === "DESCARTADO") return { ok: false, message: "Pedido descartado." };
-  if (!EDITABLE_NFE.includes(nfe.state)) return { ok: false, message: "A NF-e já foi enviada; o destinatário não pode mais ser alterado aqui." };
-
   const r = parsed.data;
-  await db.$transaction(async (tx) => {
+  // Conferência e gravação sob a trava do pedido: o envio da NF-e não pode acontecer no meio (sairia com o endereço antigo).
+  const refused = await db.$transaction(async (tx) => {
+    await lockOrder(tx, orderId);
+    const nfe = await tx.emissionDocument.findFirst({ where: { orderId, type: "NFE" }, select: { state: true, order: { select: { state: true } } } });
+    if (!nfe) return "Pedido não encontrado.";
+    if (nfe.order.state === "DESCARTADO") return "Pedido descartado.";
+    if (!EDITABLE_NFE.includes(nfe.state)) return "A NF-e já foi enviada; o destinatário não pode mais ser alterado aqui.";
     const rec = await tx.recipient.create({
       data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, uf: r.uf },
     });
     await tx.emissionOrder.update({ where: { id: orderId }, data: { recipientId: rec.id } });
+    return null;
   });
+  if (refused) return { ok: false, message: refused };
   await refreshOrderRules(orderId);
   await audit({ actor: user.id, action: "pedido.corrigir_destinatario", entity: "EmissionOrder", entityId: orderId, result: "ok", correlationId: crypto.randomUUID(), data: { ufDestino: r.uf } });
   revalidatePath(`/pedidos/${orderId}`);
