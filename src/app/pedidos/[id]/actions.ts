@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { z } from "zod";
+import { issuesByPath, recipientSchema } from "@/domain/order-input";
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
@@ -87,6 +89,35 @@ export async function retryRejectedAction(orderId: string, confirmed: boolean): 
   await refreshOrderRules(orderId); // regra pode ter mudado (nova versão aprovada) desde a rejeição
   revalidatePath(`/pedidos/${orderId}`);
   return { ok: true, message: "Nota liberada para nova tentativa. Confira e emita de novo." };
+}
+
+const recipientEdit = recipientSchema.omit({ same: true });
+export type RecipientEdit = z.input<typeof recipientEdit>;
+const EDITABLE_NFE = ["PENDENTE", "REJEITADO"];
+
+/**
+ * Corrige o destinatário (NF-e) enquanto a NF-e não foi enviada ou foi rejeitada. Cria um registro novo e
+ * aponta o pedido para ele: o anterior fica intacto para histórico. UF pode mudar → regras recalculadas.
+ */
+export async function updateRecipientAction(orderId: string, raw: unknown): Promise<ActionResult & { errors?: Record<string, string> }> {
+  const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  const parsed = recipientEdit.safeParse(raw);
+  if (!parsed.success) return { ok: false, message: "Revise os campos destacados.", errors: issuesByPath(parsed.error) };
+  const nfe = await db.emissionDocument.findFirst({ where: { orderId, type: "NFE" }, select: { state: true } });
+  if (!nfe) return { ok: false, message: "Pedido não encontrado." };
+  if (!EDITABLE_NFE.includes(nfe.state)) return { ok: false, message: "A NF-e já foi enviada; o destinatário não pode mais ser alterado aqui." };
+
+  const r = parsed.data;
+  await db.$transaction(async (tx) => {
+    const rec = await tx.recipient.create({
+      data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, uf: r.uf },
+    });
+    await tx.emissionOrder.update({ where: { id: orderId }, data: { recipientId: rec.id } });
+  });
+  await refreshOrderRules(orderId);
+  await audit({ actor: user.id, action: "pedido.corrigir_destinatario", entity: "EmissionOrder", entityId: orderId, result: "ok", correlationId: crypto.randomUUID(), data: { ufDestino: r.uf } });
+  revalidatePath(`/pedidos/${orderId}`);
+  return { ok: true, message: "Destinatário atualizado." };
 }
 
 /** Recalcula as regras de um pedido bloqueado (ex.: o responsável fiscal aprovou a regra depois do cadastro). */

@@ -7,7 +7,9 @@ import { requireUser } from "@/auth/session";
 import { StatusBadge } from "@/components/status-badge";
 import { formatBRL } from "@/domain/order-input";
 import { db } from "@/lib/db";
+import type { RecipientEdit } from "./actions";
 import { EmitPanel } from "./emit-panel";
+import { RecipientEditor } from "./recipient-editor";
 import { DOC_BADGE, DOC_LABEL, maskDocument, ORDER_BADGE } from "../status";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -82,6 +84,16 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         <p><b>Tomador:</b> {o.customer.name} · {maskDocument(o.customer.document)}</p>
         {r && <p><b>Entrega:</b> {r.name} · {r.city}/{r.uf} · CEP {r.cep}</p>}
       </section>
+
+      {r && o.documents.some((d) => d.type === "NFE" && (d.state === "PENDENTE" || d.state === "REJEITADO")) && (
+        <RecipientEditor
+          orderId={o.id}
+          initial={{
+            name: r.name, document: r.document ?? "", cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city,
+            uf: r.uf as RecipientEdit["uf"],
+          }}
+        />
+      )}
 
       <EmitPanel
         orderId={o.id}

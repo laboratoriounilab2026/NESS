@@ -15,7 +15,7 @@ const authorized: EmitterAdapter = {
 
 describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () => {
   const { db } = await import("@/lib/db");
-  const { emitOrderAction, recheckRulesAction, retryRejectedAction } = await import("./actions");
+  const { emitOrderAction, recheckRulesAction, retryRejectedAction, updateRecipientAction } = await import("./actions");
   const tag = `teste-acao-${crypto.randomUUID()}`;
   const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
@@ -47,13 +47,15 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
   });
 
   afterAll(async () => {
-    const ids = (await db.emissionOrder.findMany({ where: { establishmentId: est.id }, select: { id: true } })).map((o) => o.id);
+    const orders = await db.emissionOrder.findMany({ where: { establishmentId: est.id }, select: { id: true, recipientId: true } });
+    const ids = orders.map((o) => o.id);
+    const extraRecipients = orders.flatMap((o) => (o.recipientId && o.recipientId !== recipient.id ? [o.recipientId] : []));
     await db.emissionAttempt.deleteMany({ where: { document: { orderId: { in: ids } } } });
     await db.emissionDocument.deleteMany({ where: { orderId: { in: ids } } });
     await db.emissionOrder.deleteMany({ where: { id: { in: ids } } });
     await db.fiscalRule.deleteMany({ where: { establishmentId: est.id } });
     await db.customer.delete({ where: { id: customer.id } });
-    await db.recipient.delete({ where: { id: recipient.id } });
+    await db.recipient.deleteMany({ where: { id: { in: [recipient.id, ...extraRecipients] } } });
     await db.establishment.delete({ where: { id: est.id } });
     await db.auditEvent.deleteMany({ where: { actor: "teste-emitir-acao" } });
   });
@@ -120,6 +122,22 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     const keys = (await db.emissionAttempt.findMany({ where: { document: { orderId: o.id, type: "NFE" } }, orderBy: { seq: "asc" } })).map((a) => a.idempotencyKey);
     expect(keys).toEqual([`${o.id}:NFE:1`, `${o.id}:NFE:2`]);
     expect(await retryRejectedAction(o.id, true)).toMatchObject({ ok: false }); // nada mais a liberar
+  });
+
+  it("corrigir destinatário: valida no servidor, cria registro novo e trava após envio da NF-e", async () => {
+    const o = await newOrder();
+    const addr = { name: "Fulano", document: "", cep: "01001000", street: "Rua B", number: "2", district: "Centro", city: "Campinas", uf: "SP" };
+    expect(await updateRecipientAction(o.id, { ...addr, cep: "123" })).toMatchObject({ ok: false, errors: { cep: expect.any(String) } });
+
+    expect(await updateRecipientAction(o.id, addr)).toMatchObject({ ok: true });
+    const after = await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id }, include: { recipient: true } });
+    expect(after.recipientId).not.toBe(recipient.id); // original preservado
+    expect(after.recipient?.city).toBe("Campinas");
+    expect(after.state).toBe("PRONTO_REVISAO");
+
+    registry.adapter = authorized;
+    await emitOrderAction(o.id, true);
+    expect(await updateRecipientAction(o.id, addr)).toMatchObject({ ok: false, message: expect.stringMatching(/já foi enviada/) });
   });
 
   it("regra aprovada depois do bloqueio: verificar de novo libera o pedido", async () => {
