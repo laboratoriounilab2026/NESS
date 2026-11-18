@@ -24,7 +24,7 @@ type NavItem = { label: string; Icon: LucideIcon; href?: string };
 const NAV: NavItem[] = [
   { label: "Visão geral", Icon: LayoutDashboard, href: "/" },
   { label: "Pedidos", Icon: ShoppingBag, href: "/pedidos" },
-  { label: "Emissões", Icon: Send },
+  { label: "Emissões", Icon: Send, href: "/emissoes" },
   { label: "Documentos", Icon: Files },
   { label: "Rastreio", Icon: Truck, href: "/rastreio" },
   { label: "Configuração fiscal", Icon: Scale, href: "/configuracao-fiscal" },

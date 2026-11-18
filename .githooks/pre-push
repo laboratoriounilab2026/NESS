@@ -1,0 +1,4 @@
+#!/bin/sh
+# Bloqueia o push se lint, tipos ou testes falharem. Pular só em emergência: git push --no-verify.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+npm run verify || { echo "pre-push: verificação falhou; push cancelado." >&2; exit 1; }

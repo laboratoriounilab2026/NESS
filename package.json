@@ -8,10 +8,12 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run",
+    "test": "node scripts/vitest.mjs run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "user:create": "node scripts/create-user.ts"
+    "user:create": "node scripts/create-user.ts",
+    "verify": "npm run lint && npm run typecheck && node scripts/vitest.mjs run --maxWorkers=1",
+    "prepare": "git config core.hooksPath .githooks || true"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",
