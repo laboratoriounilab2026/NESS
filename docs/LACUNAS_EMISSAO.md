@@ -54,7 +54,10 @@ Códigos de indFinal, indPres, finNFe, indIEDest e modFrete **conferidos no MOC 
 "preencher de acordo com a tabela de alíquotas do IBS e CBS") e os valores (vIBSUF, vIBSMun, vIBS, vCBS = vBC × alíquota).
 CST, cClassTrib e as três alíquotas já estão na regra da NF-e como **opcionais, sem padrão**; o NESS calcularia os valores.
 Grupos de diferimento, redução, crédito presumido, compra governamental, monofásico e Imposto Seletivo ficaram de fora
-(confirmar com o contador). Os totais de IBS/CBS (grupo W) ainda não foram lidos.
+(confirmar com o contador). **Totais (grupo W03, W31–W60):** somatórios dos itens, calculados pelo NESS — nenhum dado novo na regra. O leiaute diz que
+"o IBS e a CBS são 'por fora', por isso seus valores devem ser adicionados ao valor total da NF" (W34): **o total da
+NF-e do álbum passa a incluir IBS/CBS** quando o grupo for informado. Confirmar com o contador se isso muda o preço
+cobrado do cliente ou só o destaque na nota.
 
 | Grupo / campo | Situação | Observação |
 |---|---|---|
