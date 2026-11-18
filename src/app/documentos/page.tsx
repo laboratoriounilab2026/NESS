@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { requireUser } from "@/auth/session";
 import { StatusBadge } from "@/components/status-badge";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { DOC_BADGE, DOC_LABEL } from "../pedidos/status";
 
@@ -11,7 +12,7 @@ export const metadata: Metadata = { title: "Documentos" };
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 const when = (d: Date) => d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" });
 
-export default function Documentos() {
+export default function Documentos({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   return (
     <div className="grid gap-3.5">
       <header className="reveal">
@@ -19,18 +20,28 @@ export default function Documentos() {
         <p className="text-muted">Notas que o governo autorizou, com chave de acesso e protocolo. Só aparece aqui o que teve autorização confirmada.</p>
       </header>
       <Suspense fallback={<div className={`${card} h-48 animate-pulse motion-reduce:animate-none`} aria-busy="true" aria-label="Carregando" />}>
-        <Docs />
+        <Docs searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function Docs() {
+async function Docs({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  const q = ((await searchParams).q ?? "").trim().slice(0, 60);
+  const digits = /^\d+$/.test(q) ? q : null;
+  // Número que cabe na coluna = número da nota; número maior = início da chave de acesso; texto = nome do cliente.
+  const search: Prisma.EmissionDocumentWhereInput = !q
+    ? {}
+    : digits && Number(digits) <= 2_147_483_647 // cabe na coluna de número; acima disso só pode ser chave
+      ? { OR: [{ nfeNumber: { number: Number(digits) } }, { dpsNumber: { number: Number(digits) } }] }
+      : digits
+        ? { accessKey: { startsWith: digits } }
+        : { order: { customer: { name: { contains: q, mode: "insensitive" } } } };
   // Chave só é gravada após autorização confirmada pelo emissor (orchestrator/emit.ts).
-  // ponytail: últimos 100; busca por chave/cliente e XML/DANFE quando os emissores reais existirem.
+  // ponytail: 100 por busca; XML/DANFE quando os emissores reais existirem.
   const docs = await db.emissionDocument.findMany({
-    where: { accessKey: { not: null } },
+    where: { accessKey: { not: null }, ...search },
     orderBy: { updatedAt: "desc" },
     take: 100,
     include: {
@@ -39,6 +50,24 @@ async function Docs() {
       dpsNumber: { select: { series: true, number: true } },
     },
   });
+  const form = (
+    <form role="search" action="/documentos" className="flex flex-wrap items-end gap-2">
+      <div className="grid gap-1.5">
+        <label htmlFor="q" className="text-sm font-semibold">Buscar nota</label>
+        <input id="q" name="q" defaultValue={q} placeholder="Número, chave ou cliente" className="w-72 max-w-full rounded-xl border border-line bg-bg px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-accent" />
+      </div>
+      <button type="submit" className="rounded-xl bg-fg px-4 py-2.5 font-semibold text-bg">Buscar</button>
+      {q && <a href="/documentos" className="px-2 py-2.5 text-sm text-muted hover:text-fg">Limpar</a>}
+    </form>
+  );
+  if (docs.length === 0 && q) {
+    return (
+      <>
+        {form}
+        <p className={`${card} text-sm text-muted`}>Nenhuma nota autorizada encontrada para “{q}”.</p>
+      </>
+    );
+  }
   if (docs.length === 0) {
     return (
       <div className={`${card} grid gap-1`}>
@@ -48,6 +77,8 @@ async function Docs() {
     );
   }
   return (
+    <>
+    {form}
     <section className={`${card} overflow-x-auto`}>
       <table className="w-full border-collapse text-sm">
         <thead>
@@ -79,5 +110,6 @@ async function Docs() {
         </tbody>
       </table>
     </section>
+    </>
   );
 }
