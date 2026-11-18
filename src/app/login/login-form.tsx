@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { LogIn } from "lucide-react";
 import { login, type LoginState } from "./actions";
 
@@ -8,8 +8,13 @@ const inputCls = "w-full rounded-xl border border-line bg-bg px-3 py-2.5 outline
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<LoginState, FormData>(login, {});
+  // Lido no navegador para a página de login continuar estática; o servidor valida o destino (safeNext).
+  const [next, setNext] = useState("");
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- query string só existe no navegador
+  useEffect(() => setNext(new URLSearchParams(location.search).get("next") ?? ""), []);
   return (
     <form action={action} className="grid gap-4">
+      <input type="hidden" name="next" value={next} />
       <div className="grid gap-1.5">
         <label htmlFor="email" className="text-sm font-semibold">E-mail</label>
         <input id="email" name="email" type="email" autoComplete="username" required className={inputCls} />

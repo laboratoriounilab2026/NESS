@@ -12,13 +12,13 @@ test("login exige credenciais válidas", async ({ page }) => {
 });
 
 test("pedido sem regra fiscal é salvo bloqueado e não pode ser emitido", async ({ page }) => {
-  await page.goto("/login");
+  // Link direto sem sessão: login e volta ao destino original.
+  await page.goto("/pedidos/novo");
+  await expect(page).toHaveURL(/\/login\?next=%2Fpedidos%2Fnovo/);
   await page.getByLabel("E-mail").fill("operador@e2e.test");
   await page.getByLabel("Senha").fill(process.env.E2E_PASSWORD ?? "");
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).not.toHaveURL(/\/login/);
-
-  await page.goto("/pedidos/novo");
+  await expect(page).toHaveURL(/\/pedidos\/novo$/);
   const next = page.getByRole("button", { name: "Continuar" });
 
   // Validação inline: avançar vazio mostra erro e não sai da etapa.

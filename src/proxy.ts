@@ -4,6 +4,8 @@ import { NextResponse, type NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   if (request.cookies.has("ness_session")) return NextResponse.next();
   const url = new URL("/login", request.url);
+  const back = request.nextUrl.pathname + request.nextUrl.search;
+  if (back !== "/") url.searchParams.set("next", back); // volta para o link aberto depois do login
   return NextResponse.redirect(url);
 }
 

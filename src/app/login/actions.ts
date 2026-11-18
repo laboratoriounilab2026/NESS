@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { audit } from "@/audit/audit";
 import { verifyPassword } from "@/auth/password";
+import { safeNext } from "@/auth/next-path";
 import { createSession, destroySession, hashIdentifier } from "@/auth/session";
 import { db } from "@/lib/db";
 
@@ -37,7 +38,7 @@ export async function login(_prev: LoginState, form: FormData): Promise<LoginSta
 
   await createSession(user.id);
   await audit({ actor: user.id, action: "auth.login", entity: "User", entityId: who, result: "sucesso", correlationId });
-  redirect("/");
+  redirect(safeNext(form.get("next")));
 }
 
 export async function logout() {
