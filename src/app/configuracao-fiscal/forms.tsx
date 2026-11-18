@@ -3,7 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { CircleCheck, Plus } from "lucide-react";
 import { UFS } from "@/domain/order-input";
-import { NFE_FIELDS, NFSE_FIELDS, REGIMES, RETENCAO_ISS } from "@/fiscal/rule-input";
+import { NFE_FIELDS, NFSE_FIELDS, REGIMES } from "@/fiscal/rule-input";
 import { approveRule, configureNumbering, createEstablishment, createRule, setCertificateRef, updateEstablishmentData, type FormState } from "./actions";
 
 const inputCls = "w-full rounded-xl border border-line bg-bg px-3 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-accent aria-[invalid=true]:border-err";
@@ -96,8 +96,8 @@ export function RuleForm() {
           const props = { ...inputProps(id, e ? { [id]: err ?? "" } : undefined) };
           return (
             <Field key={`${docType}-${f.key}`} id={id} label={f.label} error={err}>
-              {f.key === "retencaoIss" ? (
-                <select {...props} defaultValue=""><option value="">Selecione</option>{Object.entries(RETENCAO_ISS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+              {"options" in f && f.options ? (
+                <select {...props} defaultValue=""><option value="">Selecione</option>{Object.entries(f.options).map(([k, v]) => <option key={k} value={k}>{k} · {v}</option>)}</select>
               ) : f.key === "infCpl" ? (
                 <textarea {...props} rows={2} />
               ) : (

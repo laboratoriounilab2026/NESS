@@ -5,7 +5,7 @@ import { establishmentDataSchema, establishmentSchema, ruleSchema } from "./rule
 const nfe = {
   docType: "NFE", purpose: "album", ufDestino: "", municipioIbge: "", validFrom: "2026-01-01", validTo: "",
   justification: "Teste de formato apenas",
-  params: { natOp: "abc", cfop: "1234", ncm: "12345678", origem: "0", cstIcms: "123", cstPis: "01", cstCofins: "01", infCpl: "" },
+  params: { natOp: "abc", cfop: "1234", ncm: "12345678", origem: "0", cstIcms: "123", cstPis: "01", cstCofins: "01", indFinal: "1", indPres: "1", finNFe: "1", modFrete: "9", indIEDest: "9", infCpl: "" },
 };
 
 describe("regra fiscal", () => {
@@ -21,6 +21,16 @@ describe("regra fiscal", () => {
   });
   it("recusa regra por município (seria ignorada na resolução)", () => {
     expect(ruleSchema.safeParse({ ...nfe, municipioIbge: "1234567" }).success).toBe(false);
+  });
+  it("campos de lista aceitam só códigos da tabela, sem valor padrão", () => {
+    expect(ruleSchema.safeParse({ ...nfe, params: { ...nfe.params, modFrete: "7" } }).success).toBe(false);
+    expect(ruleSchema.safeParse({ ...nfe, params: { ...nfe.params, indPres: undefined } }).success).toBe(false);
+  });
+  it("NFS-e exige tribISSQN, opSimpNac e regEspTrib; NBS opcional com 9 dígitos", () => {
+    const nfse = { ...nfe, docType: "NFSE", purpose: "servico-fotografico", params: { cTribNac: "123456", cTribMun: "", aliquotaIss: "", retencaoIss: "1", tribIssqn: "1", opSimpNac: "1", regEspTrib: "0", cNbs: "" } };
+    expect(ruleSchema.safeParse(nfse).success).toBe(true);
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, tribIssqn: "" } }).success).toBe(false);
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, cNbs: "123" } }).success).toBe(false);
   });
   it("exige justificativa", () => {
     expect(ruleSchema.safeParse({ ...nfe, justification: "" }).success).toBe(false);

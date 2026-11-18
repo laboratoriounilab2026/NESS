@@ -47,6 +47,23 @@ export const establishmentDataSchema = z.object({
   municipalRegistration: z.string().trim().max(15, "Até 15 caracteres").refine((s) => s === "" || /^[0-9A-Za-z./-]+$/.test(s), "Use números, letras, ponto, barra ou hífen"),
 });
 
+// Tabelas do layout NF-e 4.00 (códigos de formato, não enquadramento). O responsável fiscal escolhe; nenhuma tem padrão.
+// ponytail: conferir rótulos e códigos com o Manual de Orientação do Contribuinte vigente.
+export const IND_FINAL = { "0": "Não (operação normal)", "1": "Sim, consumidor final" } as const;
+export const IND_PRES = {
+  "0": "Não se aplica", "1": "Presencial", "2": "Pela internet", "3": "Teleatendimento", "5": "Presencial, fora do estabelecimento", "9": "Outros",
+} as const;
+export const FIN_NFE = { "1": "Normal", "2": "Complementar", "3": "Ajuste", "4": "Devolução" } as const;
+export const MOD_FRETE = {
+  "0": "Por conta do remetente (CIF)", "1": "Por conta do destinatário (FOB)", "2": "Por conta de terceiros",
+  "3": "Transporte próprio do remetente", "4": "Transporte próprio do destinatário", "9": "Sem frete",
+} as const;
+export const IND_IE_DEST = { "1": "Contribuinte do ICMS", "2": "Contribuinte isento de inscrição", "9": "Não contribuinte" } as const;
+
+type FieldDef = { key: string; label: string; schema?: z.ZodType; options?: Record<string, string> };
+const enumOf = (o: Record<string, string>) => z.enum(Object.keys(o) as [string, ...string[]], "Selecione");
+export const fieldSchema = (f: FieldDef) => f.schema ?? enumOf(f.options!);
+
 export const NFE_FIELDS = [
   { key: "natOp", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },
   { key: "cfop", label: "CFOP", schema: req(/^\d{4}$/, "CFOP tem 4 dígitos") },
@@ -55,20 +72,30 @@ export const NFE_FIELDS = [
   { key: "cstIcms", label: "CST ou CSOSN do ICMS", schema: req(/^\d{2,3}$/, "2 ou 3 dígitos") },
   { key: "cstPis", label: "CST do PIS", schema: req(/^\d{2}$/, "2 dígitos") },
   { key: "cstCofins", label: "CST da COFINS", schema: req(/^\d{2}$/, "2 dígitos") },
+  { key: "indFinal", label: "Consumidor final (indFinal)", options: IND_FINAL },
+  { key: "indPres", label: "Presença do comprador (indPres)", options: IND_PRES },
+  { key: "finNFe", label: "Finalidade da NF-e (finNFe)", options: FIN_NFE },
+  { key: "modFrete", label: "Modalidade do frete (modFrete)", options: MOD_FRETE },
+  { key: "indIEDest", label: "Destinatário quanto ao ICMS (indIEDest)", options: IND_IE_DEST },
   { key: "infCpl", label: "Informações complementares (opcional)", schema: z.string().trim().max(2000) },
 ] as const;
+
+export const RETENCAO_ISS = { "1": "Não retido", "2": "Retido pelo tomador", "3": "Retido pelo intermediário" } as const;
 
 export const NFSE_FIELDS = [
   { key: "cTribNac", label: "Código de tributação nacional", schema: req(/^\d{6}$/, "6 dígitos") },
   { key: "cTribMun", label: "Código de tributação municipal (opcional)", schema: opt(/^\d{3}$/, "3 dígitos") },
   { key: "aliquotaIss", label: "Alíquota do ISS em % (opcional)", schema: opt(/^\d{1,2}(,\d{1,2})?$/, "Ex.: 2,00") },
-  { key: "retencaoIss", label: "Retenção do ISS", schema: z.enum(["1", "2", "3"], "Selecione") },
+  { key: "retencaoIss", label: "Retenção do ISS", options: RETENCAO_ISS },
+  // Códigos da NFS-e nacional digitados como no manual (sem rótulos aqui para não induzir escolha errada).
+  { key: "tribIssqn", label: "Tributação do ISSQN (tribISSQN)", schema: req(/^\d$/, "1 dígito, conforme o manual da NFS-e nacional") },
+  { key: "opSimpNac", label: "Situação no Simples Nacional (opSimpNac)", schema: req(/^\d$/, "1 dígito, conforme o manual") },
+  { key: "regEspTrib", label: "Regime especial de tributação (regEspTrib)", schema: req(/^\d$/, "1 dígito, conforme o manual") },
+  { key: "cNbs", label: "Código NBS (opcional)", schema: opt(/^\d{9}$/, "9 dígitos") },
 ] as const;
 
-export const RETENCAO_ISS = { "1": "Não retido", "2": "Retido pelo tomador", "3": "Retido pelo intermediário" } as const;
 
-const paramsSchema = (fields: readonly { key: string; schema: z.ZodType }[]) =>
-  z.object(Object.fromEntries(fields.map((f) => [f.key, f.schema])));
+const paramsSchema = (fields: readonly FieldDef[]) => z.object(Object.fromEntries(fields.map((f) => [f.key, fieldSchema(f)])));
 
 const common = {
   ufDestino: z.union([z.literal(""), z.enum(UFS)]),

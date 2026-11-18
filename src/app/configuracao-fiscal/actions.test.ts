@@ -11,7 +11,7 @@ vi.mock("@/auth/session", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 // Valores só de FORMATO, fictícios, apagados ao final — não são orientação fiscal.
-const params = { natOp: "teste", cfop: "1234", ncm: "12345678", origem: "0", cstIcms: "123", cstPis: "01", cstCofins: "01", infCpl: "" };
+const params = { natOp: "teste", cfop: "1234", ncm: "12345678", origem: "0", cstIcms: "123", cstPis: "01", cstCofins: "01", indFinal: "1", indPres: "1", finNFe: "1", modFrete: "9", indIEDest: "9", infCpl: "" };
 const rule = { docType: "NFE", purpose: "album", ufDestino: "SP", municipioIbge: "", validFrom: "2020-01-01", validTo: "", justification: "Teste automatizado de fluxo", params };
 const order = {
   customer: { document: "529.982.247-25", name: "Cliente Teste", email: "" },
