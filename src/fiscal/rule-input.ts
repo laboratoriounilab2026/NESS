@@ -92,6 +92,12 @@ export const NFSE_FIELDS = [
   { key: "opSimpNac", label: "Situação no Simples Nacional (opSimpNac)", schema: req(/^\d$/, "1 dígito, conforme o manual") },
   { key: "regEspTrib", label: "Regime especial de tributação (regEspTrib)", schema: req(/^\d$/, "1 dígito, conforme o manual") },
   { key: "cNbs", label: "Código NBS (opcional)", schema: opt(/^\d{9}$/, "9 dígitos") },
+  // IBS/CBS no grupo IBSCBS da DPS (Anexo VI v1.04.01 / NT 009). Opcionais até o contador definir se e quando se aplicam;
+  // .optional(): regra aprovada antes destes campos continua completa (não bloqueia pedidos por campo opcional).
+  { key: "ibsCbsIndFinal", label: "IBS/CBS · consumo pessoal (indFinal, opcional)", schema: opt(/^[01]$/, "0 ou 1").optional() },
+  { key: "ibsCbsCIndOp", label: "IBS/CBS · indicador da operação (cIndOp, opcional)", schema: opt(/^\d{6}$/, "6 dígitos (Anexo VII)").optional() },
+  { key: "ibsCbsCst", label: "IBS/CBS · CST (opcional)", schema: opt(/^\d{3}$/, "3 dígitos").optional() },
+  { key: "ibsCbsCClassTrib", label: "IBS/CBS · cClassTrib (opcional)", schema: opt(/^\d{6}$/, "6 dígitos").optional() },
 ] as const;
 
 

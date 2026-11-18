@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { establishmentDataSchema, establishmentSchema, ruleSchema } from "./rule-input";
+import { establishmentDataSchema, establishmentSchema, paramsComplete, ruleSchema } from "./rule-input";
 
 // Valores abaixo são só de formato para teste — não são orientação fiscal.
 const nfe = {
@@ -31,6 +31,10 @@ describe("regra fiscal", () => {
     expect(ruleSchema.safeParse(nfse).success).toBe(true);
     expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, tribIssqn: "" } }).success).toBe(false);
     expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, cNbs: "123" } }).success).toBe(false);
+    // IBS/CBS opcionais, mas no formato do anexo quando informados.
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, ibsCbsCst: "000", ibsCbsCClassTrib: "000001" } }).success).toBe(true);
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, ibsCbsCClassTrib: "12" } }).success).toBe(false);
+    expect(paramsComplete("NFSE", nfse.params)).toBe(true); // regra sem as chaves de IBS/CBS continua completa
   });
   it("exige justificativa", () => {
     expect(ruleSchema.safeParse({ ...nfe, justification: "" }).success).toBe(false);

@@ -4,5 +4,5 @@ export const NFE_TEST_PARAMS = {
   indFinal: "1", indPres: "1", finNFe: "1", modFrete: "9", indIEDest: "9", infCpl: "",
 };
 export const NFSE_TEST_PARAMS = {
-  cTribNac: "123456", cTribMun: "", aliquotaIss: "", retencaoIss: "1", tribIssqn: "1", opSimpNac: "1", regEspTrib: "0", cNbs: "",
+  cTribNac: "123456", cTribMun: "", aliquotaIss: "", retencaoIss: "1", tribIssqn: "1", opSimpNac: "1", regEspTrib: "0", cNbs: "", ibsCbsIndFinal: "", ibsCbsCIndOp: "", ibsCbsCst: "", ibsCbsCClassTrib: "",
 };

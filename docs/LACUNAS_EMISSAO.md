@@ -35,7 +35,7 @@ diferimento, crédito presumido, notas de ajuste) — confirmar com o contador q
 Observação do anexo para o Simples Nacional: "os grupos IBSCBS só serão obrigatórios a partir de 202…" — **o texto da
 célula vem truncado no próprio arquivo oficial**; confirmar o ano com o contador ou na NT 009.
 
-Esses campos entram na regra fiscal como os demais: **sem valor padrão** e com aprovação. Fontes oficiais:
+Os quatro campos já existem na regra da NFS-e como **opcionais** (só formato, sem valor padrão): o responsável fiscal preenche quando o contador definir. Regras aprovadas antes deles continuam válidas. Fontes oficiais:
 - Página RTC da NFS-e: https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/rtc
 - Documentação técnica (manuais, leiautes, XSD): https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica
 
