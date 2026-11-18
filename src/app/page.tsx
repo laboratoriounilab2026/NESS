@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { cache, Suspense } from "react";
-import { ArrowRight, BadgeCheck, List, Plus, ShieldAlert, Split, Timer } from "lucide-react";
+import { ArrowRight, BadgeCheck, List, ListChecks, Plus, ShieldAlert, Split, Timer } from "lucide-react";
 import { requireUser } from "@/auth/session";
 import { Logo } from "@/components/logo";
 import { StatusBadge } from "@/components/status-badge";
 import { formatBRL } from "@/domain/order-input";
+import { getAdapter } from "@/emitters/registry";
 import { db } from "@/lib/db";
+import { setupPendencies } from "./setup-status";
 import { DOC_BADGE, DOC_LABEL } from "./pedidos/status";
 
 const tile = "reveal relative min-w-0 overflow-hidden rounded-tile border border-line bg-surface p-5 transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_40px_-24px_rgb(20_33_61/0.35)]";
@@ -41,6 +43,10 @@ export default function Dashboard() {
         <Counters />
       </Suspense>
 
+      <Suspense fallback={null}>
+        <Setup />
+      </Suspense>
+
       <Suspense fallback={<div className="sm:col-span-2 xl:col-span-4">{skeleton("h-48")}</div>}>
         <Recent />
       </Suspense>
@@ -59,6 +65,43 @@ const counts = cache(async () => {
   const of = (s: string) => byState.find((r) => r.state === s)?._count ?? 0;
   return { ready: of("PRONTO_REVISAO"), blocked: of("BLOQUEADO"), partial: of("PARCIAL"), authorized, uncertain };
 });
+
+async function Setup() {
+  await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  const now = new Date();
+  const ests = await db.establishment.findMany({ select: { id: true, nfeSeries: true, nfeNextNumber: true }, take: 2 });
+  const rule = (docType: "NFSE" | "NFE", purpose: string) =>
+    ests.length === 1
+      ? db.fiscalRule.count({
+          where: { establishmentId: ests[0].id, docType, purpose, municipioIbge: null, approvedAt: { not: null }, validFrom: { lte: now }, OR: [{ validTo: null }, { validTo: { gt: now } }] },
+        })
+      : Promise.resolve(0);
+  const [nfse, nfe] = await Promise.all([rule("NFSE", "servico-fotografico"), rule("NFE", "album")]);
+  const items = setupPendencies({
+    establishments: ests.length,
+    nfeNumbering: ests.length === 1 && ests[0].nfeSeries !== null && ests[0].nfeNextNumber !== null,
+    nfseRule: nfse > 0,
+    nfeRule: nfe > 0,
+    nfseEmitter: getAdapter("NFSE") !== null,
+    nfeEmitter: getAdapter("NFE") !== null,
+  });
+  if (items.length === 0) return null;
+  return (
+    <section className={`${tile} sm:col-span-2 xl:col-span-4`} style={{ ["--i" as string]: 5 }}>
+      <h2 className={tileTitle}><ListChecks size={18} aria-hidden="true" />Pendências de configuração</h2>
+      <p className="mt-1 text-[13px] text-muted">Enquanto houver pendência, os pedidos podem ser cadastrados, mas as notas não são emitidas.</p>
+      <ul className="mt-3 grid gap-2 text-sm">
+        {items.map((i) => (
+          <li key={i.text} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <StatusBadge status="block" label="Pendente" />
+            {i.href ? <Link href={i.href} className="font-semibold hover:underline">{i.text}</Link> : <span className="font-semibold">{i.text}</span>}
+            <span className="text-muted">· {i.who}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 async function HeroSummary() {
   const c = await counts();
