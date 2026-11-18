@@ -35,6 +35,9 @@ export async function emitOrderAction(orderId: string, confirmed: boolean): Prom
     return { ok: false, message: order.state === "BLOQUEADO" ? "Pedido bloqueado: falta regra fiscal aprovada." : "Este pedido não tem notas a emitir." };
   }
   if (order.documents.length === 0) return { ok: false, message: "Nenhuma nota pendente neste pedido." };
+  // Pedido salvo antes de os itens serem guardados não tem descrição/quantidade: a nota sairia incompleta.
+  const missingItems = order.documents.some((d) => (d.type === "NFSE" ? !order.serviceDescription : !order.goodsDescription || !order.goodsQuantity || !order.goodsUnitCents));
+  if (missingItems) return { ok: false, message: "Este pedido não tem a descrição dos itens (foi salvo antes dessa informação ser guardada). Descarte-o e cadastre de novo." };
 
   const correlationId = crypto.randomUUID();
   const ctx = { actor: user.id, correlationId };

@@ -71,6 +71,12 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
               <StatusBadge {...DOC_BADGE[d.state]} />
             </div>
             <p className="tabular-nums">{formatBRL(d.type === "NFSE" ? o.serviceCents : o.goodsCents)}</p>
+            {d.type === "NFSE" && o.serviceDescription && <p className="text-sm">{o.serviceDescription}</p>}
+            {d.type === "NFE" && o.goodsDescription && (
+              <p className="text-sm">
+                {o.goodsQuantity} × {o.goodsDescription} · <span className="tabular-nums">{formatBRL(o.goodsUnitCents ?? 0)}</span> cada
+              </p>
+            )}
             <p className="text-sm text-muted">
               {d.fiscalRule ? `Regra fiscal versão ${d.fiscalRule.version}` : "Sem regra fiscal aprovada: emissão bloqueada até o responsável fiscal aprovar."}
             </p>

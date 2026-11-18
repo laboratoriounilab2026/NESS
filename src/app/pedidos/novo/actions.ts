@@ -104,6 +104,10 @@ export async function saveOrder(raw: unknown, ref: string): Promise<SaveResult> 
           recipientId: recipient.id,
           serviceCents: d.service.value,
           goodsCents: d.goods.quantity * d.goods.unitValue,
+          serviceDescription: d.service.description,
+          goodsDescription: d.goods.description,
+          goodsQuantity: d.goods.quantity,
+          goodsUnitCents: d.goods.unitValue,
           documents: { create: [{ type: "NFSE", fiscalRuleId: ruleOf(nfse) }, { type: "NFE", fiscalRuleId: ruleOf(nfe) }] },
         },
       });

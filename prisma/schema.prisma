@@ -129,6 +129,12 @@ model EmissionOrder {
   recipient       Recipient?    @relation(fields: [recipientId], references: [id])
   serviceCents    Int
   goodsCents      Int
+  // Itens como digitados no pedido (vão para xDescServ da DPS e xProd/qCom/vUnCom da NF-e).
+  // Nulos só em pedidos anteriores a esta coluna; pedido sem eles não é emitido (dado faltando).
+  serviceDescription String?
+  goodsDescription   String?
+  goodsQuantity      Int?
+  goodsUnitCents     Int?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   documents       EmissionDocument[]

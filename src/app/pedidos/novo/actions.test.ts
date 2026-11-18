@@ -56,6 +56,9 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
       expect(a.ok && b.ok && a.id === b.id).toBe(true);
       const docs = await db.emissionDocument.findMany({ where: { order: { ref } } });
       expect(docs.map((d) => d.state)).toEqual(["PENDENTE", "PENDENTE"]);
+      // Itens digitados são guardados (vão para as notas), não só os totais.
+      const saved = await db.emissionOrder.findUniqueOrThrow({ where: { ref } });
+      expect(saved).toMatchObject({ serviceDescription: valid.service.description, goodsDescription: valid.goods.description, goodsQuantity: 1, goodsUnitCents: 25000, goodsCents: 25000 });
     } finally {
       const o = await db.emissionOrder.findUnique({ where: { ref } });
       if (o) {

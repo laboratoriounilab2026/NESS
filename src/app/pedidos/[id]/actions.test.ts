@@ -35,6 +35,7 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     return db.emissionOrder.create({
       data: {
         ref: `${tag}-${crypto.randomUUID()}`, state, establishmentId: est.id, customerId: customer.id, recipientId: recipient.id, serviceCents: 100, goodsCents: 50,
+        serviceDescription: "Ensaio", goodsDescription: "Álbum", goodsQuantity: 1, goodsUnitCents: 50,
         documents: { create: [{ type: "NFSE", fiscalRuleId: rule.id }, { type: "NFE", fiscalRuleId: state === "BLOQUEADO" ? null : nfeRule.id }] },
       },
     });
@@ -154,6 +155,14 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     const sent = await newOrder();
     await emitOrderAction(sent.id, true);
     expect(await discardOrderAction(sent.id, true)).toMatchObject({ ok: false, message: expect.stringMatching(/nenhuma nota enviada/) });
+  });
+
+  it("pedido antigo sem itens guardados não é emitido", async () => {
+    const o = await newOrder();
+    await db.emissionOrder.update({ where: { id: o.id }, data: { goodsDescription: null } });
+    registry.adapter = authorized;
+    expect(await emitOrderAction(o.id, true)).toMatchObject({ ok: false, message: expect.stringMatching(/descrição dos itens/) });
+    expect(await attempts(o.id)).toBe(0);
   });
 
   it("regra aprovada depois do bloqueio: verificar de novo libera o pedido", async () => {
