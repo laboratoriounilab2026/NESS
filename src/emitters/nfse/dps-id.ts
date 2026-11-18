@@ -1,6 +1,7 @@
 // Identificador da DPS (NFS-e padrão nacional), 45 posições:
 // "DPS" + cMun(7) + tpInsc(1: 1=CPF, 2=CNPJ) + inscrição(14, CPF com zeros à esquerda) + série(5) + nDPS(15).
-// ponytail: conferir contra o XSD vigente do Sistema Nacional NFS-e ao iniciar a Fase 5.
+// Composição conferida no Anexo VI v1.04.01 (NT 009), campo infDPS/id. O anexo fala em "42 posições numéricas";
+// CNPJ alfanumérico aceito aqui pelo formato novo da RFB — conferir quando o leiaute atualizar.
 
 export type DpsIdParts = {
   municipioIbge: string; // município emissor, 7 dígitos

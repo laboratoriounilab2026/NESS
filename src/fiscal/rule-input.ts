@@ -29,10 +29,11 @@ export const establishmentSchema = z.object({
 const intField = (msg: string, min: number, max: number, range: string) =>
   z.coerce.number<string>(msg).int("Use número inteiro").min(min, range).max(max, range);
 
-// Limites de layout: NF-e série 0–999 e número até 999.999.999; DPS série 1–99999 (número limitado ao INTEGER do banco).
+// Limites de layout: NF-e série 0–999 e número até 999.999.999; DPS série 1–49999 = faixa de aplicativo próprio
+// (Anexo VI: 50000+ é de emissor móvel/web/transcrição); número da DPS limitado ao INTEGER do banco.
 export const numberingSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("NFE"), series: intField("Informe a série", 0, 999, "Série de 0 a 999"), nextNumber: intField("Informe o número", 1, 999_999_999, "De 1 a 999.999.999") }),
-  z.object({ kind: z.literal("NFSE"), series: intField("Informe a série", 1, 99_999, "Série de 1 a 99999"), nextNumber: intField("Informe o número", 1, 2_147_483_647, "De 1 a 2.147.483.647") }),
+  z.object({ kind: z.literal("NFSE"), series: intField("Informe a série", 1, 49_999, "Série de 1 a 49999 (faixa de aplicativo próprio)"), nextNumber: intField("Informe o número", 1, 2_147_483_647, "De 1 a 2.147.483.647") }),
 ]);
 
 // Dados cadastrais da empresa para as notas. Só formato: IE varia por UF, então aceita dígitos ou "ISENTO".

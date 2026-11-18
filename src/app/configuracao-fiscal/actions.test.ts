@@ -88,6 +88,7 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
       expect(await a.configureNumbering({}, ok)).toEqual({ ok: "Numeração da NF-e configurada." });
       // DPS é independente e tem limites próprios (série 1–99999).
       expect(await a.configureNumbering({}, { ...ok, kind: "NFSE", series: "0" })).toMatchObject({ errors: { series: expect.any(String) } });
+      expect(await a.configureNumbering({}, { ...ok, kind: "NFSE", series: "50000" })).toMatchObject({ errors: { series: expect.stringMatching(/49999/) } }); // faixa do Emissor Móvel
       expect(await a.configureNumbering({}, { ...ok, kind: "NFSE", series: "12345", nextNumber: "7" })).toEqual({ ok: "Numeração da DPS (NFS-e) configurada." });
       expect(await a.configureNumbering({}, { ...ok, nextNumber: "5" })).toMatchObject({ errors: { _: expect.any(String) } }); // não muda depois
       expect(await db.establishment.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ nfeSeries: 1, nfeNextNumber: 120, dpsSeries: 12345, dpsNextNumber: 7 });

@@ -32,8 +32,14 @@ em 18/11/2026), para um serviço comum:
 Alíquotas, base e totais do IBS/CBS são **calculados pelo sistema nacional** na NFS-e (grupo `infNFSe/IBSCBS`), não informados
 pelo emitente. Os demais subgrupos da DPS são de casos especiais (imóveis, condomínios, compras governamentais, doação,
 diferimento, crédito presumido, notas de ajuste) — confirmar com o contador que não se aplicam ao estúdio.
-Observação do anexo para o Simples Nacional: "os grupos IBSCBS só serão obrigatórios a partir de 202…" — **o texto da
-célula vem truncado no próprio arquivo oficial**; confirmar o ano com o contador ou na NT 009.
+Observação do anexo para o Simples Nacional: "os grupos IBSCBS só serão obrigatórios **a partir de 2027**".
+(Correção: uma versão anterior deste documento dizia que o texto vinha truncado no arquivo oficial — o corte era da
+ferramenta de leitura usada aqui, não do anexo.)
+
+Outros pontos confirmados no mesmo anexo:
+- **Id da DPS:** "DPS" + Cód. Mun. (7) + tipo de inscrição (1) + inscrição (14, CPF com zeros à esquerda) + série (5) + número (15) — igual ao implementado.
+- **Série da DPS:** 00001 a 49999 é a faixa de **emissão por aplicativo próprio** (50000–69999 Emissor Móvel, 70000–79999 Emissor Web, 80000–89999 transcrição manual). O NESS passou a aceitar só 1–49999.
+- **dCompet:** "deve ser … a data da prestação do serviço" — é a data do serviço que o pedido já coleta.
 
 Os quatro campos já existem na regra da NFS-e como **opcionais** (só formato, sem valor padrão): o responsável fiscal preenche quando o contador definir. Regras aprovadas antes deles continuam válidas. Fontes oficiais:
 - Página RTC da NFS-e: https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/rtc
@@ -70,8 +76,8 @@ Os quatro campos já existem na regra da NFS-e como **opcionais** (só formato, 
 
 | Grupo / campo | Situação | Observação |
 |---|---|---|
-| Id, série, nDPS | ✅ ⚙️ | `dps-id.ts`, `numbering.ts` |
-| tpAmb, dhEmi, dCompet | ✅ ⚙️ | data do serviço coletada no pedido (competência) — confirmar com o contador se competência = data do serviço |
+| Id, série, nDPS | ✅ ⚙️ | `dps-id.ts` (composição confirmada no Anexo VI), `numbering.ts`; série 1–49999 (aplicativo próprio) |
+| tpAmb, dhEmi, dCompet | ✅ ⚙️ | dCompet = data da prestação do serviço (confirmado no Anexo VI), coletada no pedido |
 | cLocEmi (município emissor) | ✅ | `Establishment.municipioIbge` |
 | prest: CNPJ | ✅ | |
 | prest: IM (inscrição municipal) | ✅ | cadastro da empresa |
