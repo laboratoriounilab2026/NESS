@@ -2,13 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, RefreshCw, Send, ShieldCheck } from "lucide-react";
-import { emitOrderAction, recheckRulesAction, reconcileOrderAction, type ActionResult } from "./actions";
+import { LoaderCircle, RefreshCw, RotateCcw, Send, ShieldCheck } from "lucide-react";
+import { emitOrderAction, recheckRulesAction, reconcileOrderAction, retryRejectedAction, type ActionResult } from "./actions";
 
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 
-export function EmitPanel({ orderId, canEmit, uncertain, blocked }: { orderId: string; canEmit: boolean; uncertain: boolean; blocked: boolean }) {
+type Props = { orderId: string; canEmit: boolean; uncertain: boolean; blocked: boolean; rejected: boolean; canRetry: boolean };
+
+export function EmitPanel({ orderId, canEmit, uncertain, blocked, rejected, canRetry }: Props) {
   const [confirmed, setConfirmed] = useState(false);
+  const [fixed, setFixed] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -17,10 +20,11 @@ export function EmitPanel({ orderId, canEmit, uncertain, blocked }: { orderId: s
     startTransition(async () => {
       setResult(await fn());
       setConfirmed(false);
+      setFixed(false);
       router.refresh();
     });
 
-  if (!canEmit && !uncertain && !blocked) return null;
+  if (!canEmit && !uncertain && !blocked && !rejected) return null;
   return (
     <section className={`${card} grid justify-items-start gap-3`} aria-label="Emissão">
       {canEmit && (
@@ -62,6 +66,23 @@ export function EmitPanel({ orderId, canEmit, uncertain, blocked }: { orderId: s
         >
           <RefreshCw size={16} aria-hidden="true" /> Consultar notas sem resposta
         </button>
+      )}
+      {rejected && !canRetry && <p className="text-sm text-muted">Nota rejeitada. Peça ao responsável fiscal para conferir o motivo e liberar nova tentativa.</p>}
+      {rejected && canRetry && (
+        <>
+          <label className="flex items-start gap-2.5 text-sm">
+            <input type="checkbox" className="mt-0.5 size-4 accent-[var(--accent)]" checked={fixed} onChange={(e) => setFixed(e.target.checked)} />
+            Conferi o motivo da rejeição e o que precisava ser corrigido já foi corrigido.
+          </label>
+          <button
+            type="button"
+            disabled={!fixed || pending}
+            onClick={() => run(() => retryRejectedAction(orderId, fixed))}
+            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 font-semibold hover:bg-fg/5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCcw size={16} aria-hidden="true" /> Liberar nova tentativa
+          </button>
+        </>
       )}
       <p role="status" className={`text-sm ${result && !result.ok ? "text-err" : "text-muted"}`}>
         {result?.message}

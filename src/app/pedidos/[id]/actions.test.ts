@@ -15,7 +15,7 @@ const authorized: EmitterAdapter = {
 
 describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () => {
   const { db } = await import("@/lib/db");
-  const { emitOrderAction, recheckRulesAction } = await import("./actions");
+  const { emitOrderAction, recheckRulesAction, retryRejectedAction } = await import("./actions");
   const tag = `teste-acao-${crypto.randomUUID()}`;
   const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
@@ -99,6 +99,27 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     expect(await emitOrderAction(o.id, true)).toMatchObject({ ok: false, message: expect.stringMatching(/regra fiscal/) });
     expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id } })).state).toBe("BLOQUEADO");
     expect(await attempts(o.id)).toBe(0);
+  });
+
+  it("NF-e rejeitada: liberar nova tentativa usa nova chave e conclui o pedido", async () => {
+    const o = await newOrder();
+    registry.adapter = {
+      ...authorized,
+      send: async (req) => (req.docType === "NFE" ? { kind: "rejected", code: "999", message: "teste" } : authorized.send(req)),
+    };
+    await emitOrderAction(o.id, true);
+    expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id } })).state).toBe("PARCIAL");
+
+    expect(await retryRejectedAction(o.id, false)).toMatchObject({ ok: false });
+    expect(await retryRejectedAction(o.id, true)).toMatchObject({ ok: true });
+    expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id } })).state).toBe("EMITINDO");
+
+    registry.adapter = authorized;
+    expect(await emitOrderAction(o.id, true)).toMatchObject({ ok: true, docs: { NFE: { state: "AUTORIZADO" } } });
+    expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id } })).state).toBe("COMPLETO");
+    const keys = (await db.emissionAttempt.findMany({ where: { document: { orderId: o.id, type: "NFE" } }, orderBy: { seq: "asc" } })).map((a) => a.idempotencyKey);
+    expect(keys).toEqual([`${o.id}:NFE:1`, `${o.id}:NFE:2`]);
+    expect(await retryRejectedAction(o.id, true)).toMatchObject({ ok: false }); // nada mais a liberar
   });
 
   it("regra aprovada depois do bloqueio: verificar de novo libera o pedido", async () => {

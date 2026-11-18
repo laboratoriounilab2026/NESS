@@ -14,6 +14,12 @@ export const metadata: Metadata = { title: "Pedido" };
 
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 
+// responseSummary guarda só { kind, code, message } do emissor (sem dados pessoais).
+function govReason(summary: unknown): string {
+  const s = summary as { code?: unknown; message?: unknown } | null;
+  return s && typeof s.code === "string" && typeof s.message === "string" ? `${s.code} — ${s.message}` : "não informado";
+}
+
 export default function Pedido({ params }: { params: Promise<{ id: string }> }) {
   return (
     <div className="grid gap-3.5">
@@ -28,14 +34,19 @@ export default function Pedido({ params }: { params: Promise<{ id: string }> }) 
 }
 
 async function Detail({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
   const { id } = await params;
   const o = await db.emissionOrder.findUnique({
     where: { id },
     include: {
       customer: true,
       recipient: true,
-      documents: { orderBy: { type: "asc" }, include: { fiscalRule: { select: { version: true } }, _count: { select: { attempts: true } } } },
+      documents: { orderBy: { type: "asc" }, include: {
+          fiscalRule: { select: { version: true } },
+          _count: { select: { attempts: true } },
+          attempts: { orderBy: { seq: "desc" }, take: 1, select: { responseSummary: true } },
+        },
+      },
     },
   });
   if (!o) notFound();
@@ -59,7 +70,10 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
               {d.fiscalRule ? `Regra fiscal versão ${d.fiscalRule.version}` : "Sem regra fiscal aprovada: emissão bloqueada até o responsável fiscal aprovar."}
             </p>
             <p className="text-sm text-muted">Tentativas de envio: {d._count.attempts}</p>
-            {d.accessKey && <p className="break-all font-mono text-xs">Chave: {d.accessKey}</p>}
+            {(d.state === "REJEITADO" || d.state === "DENEGADO") && (
+              <p className="text-sm text-err">Motivo informado pelo governo: {govReason(d.attempts[0]?.responseSummary)}</p>
+            )}
+            {d.accessKey &&<p className="break-all font-mono text-xs">Chave: {d.accessKey}</p>}
           </section>
         ))}
       </div>
@@ -74,6 +88,8 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         canEmit={(o.state === "PRONTO_REVISAO" || o.state === "EMITINDO") && o.documents.some((d) => d.state === "PENDENTE")}
         uncertain={o.documents.some((d) => d.state === "INCERTO")}
         blocked={o.state === "BLOQUEADO"}
+        rejected={o.documents.some((d) => d.state === "REJEITADO")}
+        canRetry={user.role === "FISCAL" || user.role === "ADMIN"}
       />
     </>
   );

@@ -94,3 +94,16 @@ export async function emitOrder(orderId: string, adapters: Record<"NFSE" | "NFE"
   const order = await db.emissionOrder.findUniqueOrThrow({ where: { id: orderId }, select: { state: true } });
   return { order: order.state, docs: out };
 }
+
+/**
+ * Nova tentativa após rejeição: REJEITADO → PENDENTE (DENEGADO nunca volta). O próximo envio usa nova chave
+ * de idempotência (seq+1). Quem chama deve revalidar a regra fiscal antes de emitir.
+ */
+export async function reopenRejected(orderId: string, ctx: Ctx): Promise<number> {
+  assertTransition("REJEITADO", "PENDENTE");
+  const { count } = await db.emissionDocument.updateMany({ where: { orderId, state: "REJEITADO" }, data: { state: "PENDENTE" } });
+  if (count === 0) return 0;
+  await syncOrder(orderId);
+  await audit({ actor: ctx.actor, action: "nota.reabrir", entity: "EmissionOrder", entityId: orderId, result: "PENDENTE", correlationId: ctx.correlationId, data: { notas: count } });
+  return count;
+}

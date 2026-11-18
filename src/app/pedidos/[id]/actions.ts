@@ -6,7 +6,7 @@ import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
-import { emitDocument, reconcileDocument, type Outcome } from "@/orchestrator/emit";
+import { emitDocument, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
 
 export type ActionResult = { ok: boolean; message: string; docs?: Partial<Record<"NFSE" | "NFE", Outcome>> };
 
@@ -76,6 +76,17 @@ export async function reconcileOrderAction(orderId: string): Promise<ActionResul
   return Object.keys(out).length
     ? { ok: true, docs: out, message: "Consulta feita. Veja o estado atualizado de cada nota." }
     : { ok: false, message: "Transmissão ao governo ainda não configurada; não há como consultar." };
+}
+
+/** Libera nota rejeitada para nova tentativa. Só FISCAL/ADMIN: exige ter conferido o motivo da rejeição. */
+export async function retryRejectedAction(orderId: string, confirmed: boolean): Promise<ActionResult> {
+  const user = await requireUser("FISCAL", "ADMIN");
+  if (confirmed !== true) return { ok: false, message: "Confirme que o motivo da rejeição foi corrigido." };
+  const n = await reopenRejected(orderId, { actor: user.id, correlationId: crypto.randomUUID() });
+  if (n === 0) return { ok: false, message: "Nenhuma nota rejeitada neste pedido." };
+  await refreshOrderRules(orderId); // regra pode ter mudado (nova versão aprovada) desde a rejeição
+  revalidatePath(`/pedidos/${orderId}`);
+  return { ok: true, message: "Nota liberada para nova tentativa. Confira e emita de novo." };
 }
 
 /** Recalcula as regras de um pedido bloqueado (ex.: o responsável fiscal aprovou a regra depois do cadastro). */
