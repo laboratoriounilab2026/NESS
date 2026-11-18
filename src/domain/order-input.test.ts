@@ -36,4 +36,14 @@ describe("pedido", () => {
     expect(ok.service.value).toBe(100000);
     expect(ok.goods.quantity).toBe(2);
   });
+
+  it("destinatário 'mesma pessoa' sempre usa o tomador atual (ignora nome/documento antigos)", () => {
+    const o = orderSchema.parse({
+      customer: { document: "529.982.247-25", name: "Nome Corrigido", email: "" },
+      recipient: { same: true, name: "Nome Antigo", document: "", cep: "01001-000", street: "Rua A", number: "1", district: "Centro", city: "São Paulo", uf: "SP" },
+      service: { description: "Ensaio", value: "100" },
+      goods: { description: "Álbum", quantity: "1", unitValue: "50" },
+    });
+    expect(o.recipient).toMatchObject({ name: "Nome Corrigido", document: "529.982.247-25" });
+  });
 });

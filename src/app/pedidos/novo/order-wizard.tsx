@@ -68,7 +68,13 @@ export function OrderWizard() {
   }, [step, loaded]);
 
   function set<S extends Section>(section: S, key: keyof OrderDraft[S], value: unknown) {
-    setDraft((d) => ({ ...d, [section]: { ...d[section], [key]: value } }));
+    setDraft((d) => {
+      const next = { ...d, [section]: { ...d[section], [key]: value } };
+      // Destinatário "mesma pessoa" acompanha o tomador (o servidor também deriva; aqui é para a revisão mostrar certo).
+      if (section === "customer" && (key === "name" || key === "document") && d.recipient.same) next.recipient = { ...next.recipient, [key]: value };
+      return next;
+    });
+    setReviewed(false); // dado mudou: a conferência precisa ser refeita
     setErrors((e) => {
       const rest = { ...e };
       delete rest[`${section}.${String(key)}`];

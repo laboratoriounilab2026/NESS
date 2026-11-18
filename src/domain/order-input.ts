@@ -77,7 +77,10 @@ export const goodsSchema = z.object({
   unitValue: money,
 });
 
-export const orderSchema = z.object({ customer: customerSchema, recipient: recipientSchema, service: serviceSchema, goods: goodsSchema });
+export const orderSchema = z
+  .object({ customer: customerSchema, recipient: recipientSchema, service: serviceSchema, goods: goodsSchema })
+  // "Mesma pessoa": destinatário sempre derivado do tomador (evita nome/documento antigos se o tomador mudou depois).
+  .transform((o) => (o.recipient.same ? { ...o, recipient: { ...o.recipient, name: o.customer.name, document: o.customer.document } } : o));
 
 export type OrderDraft = z.input<typeof orderSchema>;
 export type OrderInput = z.output<typeof orderSchema>;
