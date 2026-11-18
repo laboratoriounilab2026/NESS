@@ -55,6 +55,15 @@ Sidebar (Visão geral, Pedidos, Emissões, Documentos, Configuração fiscal, Au
 | 7 | Papéis, mascaramento, observabilidade | revisão de segurança |
 | 8 | E2E Playwright, docs, treinamento | checklist final; produção só com autorização explícita |
 
+### Situação em 17/11/2026
+| Fase | Situação |
+|---|---|
+| 0–3 | Concluídas: app, domínio e estados, schema e auditoria, design system, matriz fiscal com aprovação, cadastro de pedido. |
+| 6 | Concluída: orquestrador com idempotência, INCERTO só sai por consulta, sucesso parcial. Pedido é salvo com as duas notas; emissão e consulta pela tela, com confirmação; regra revalidada antes de cada envio. |
+| 4 e 5 | **Bloqueadas** pelas pendências abaixo. Ponto de ligação pronto: `src/emitters/registry.ts` (hoje sem adaptador, envio bloqueado com explicação). |
+| 7 | Parcial: papéis OPERADOR/FISCAL/ADMIN em toda página/ação, CPF/CNPJ mascarado na tela, auditoria sem dados pessoais. Falta observabilidade (logs estruturados/alertas) ao definir a hospedagem. |
+| 8 | Pendente: E2E (Playwright) e treinamento. Gate local `npm run verify` + hook pre-push já ativos. |
+
 ### Pendências que dependem de humano
 - Município aderiu ao Emissor Nacional NFS-e? (senão, adaptador da prefeitura).
 - Matriz fiscal por estabelecimento aprovada pelo contador (CFOP, CST/CSOSN, NCM do álbum, natureza, necessidade de DC-e).
