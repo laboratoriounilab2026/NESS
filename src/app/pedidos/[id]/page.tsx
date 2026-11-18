@@ -45,6 +45,8 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       recipient: true,
       documents: { orderBy: { type: "asc" }, include: {
           fiscalRule: { select: { version: true } },
+          nfeNumber: { select: { series: true, number: true } },
+          dpsNumber: { select: { series: true, number: true } },
           _count: { select: { attempts: true } },
           // ponytail: últimas 10 tentativas por nota; a lista completa está em Emissões.
           attempts: { orderBy: { seq: "desc" }, take: 10, select: { id: true, seq: true, startedAt: true, resultState: true, responseSummary: true } },
@@ -91,7 +93,12 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
             {(d.state === "REJEITADO" || d.state === "DENEGADO") && (
               <p className="text-sm text-err">Motivo informado pelo governo: {govReason(d.attempts[0]?.responseSummary)}</p>
             )}
-            {d.accessKey &&<p className="break-all font-mono text-xs">Chave: {d.accessKey}</p>}
+            {(d.nfeNumber ?? d.dpsNumber) && (
+              <p className="text-sm tabular-nums">
+                {d.type === "NFE" ? "NF-e" : "DPS"} nº {(d.nfeNumber ?? d.dpsNumber)!.number} · série {(d.nfeNumber ?? d.dpsNumber)!.series}
+              </p>
+            )}
+            {d.accessKey && <p className="break-all font-mono text-xs">Chave: {d.accessKey}</p>}
           </section>
         ))}
       </div>
