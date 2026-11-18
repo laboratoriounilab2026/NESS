@@ -48,6 +48,7 @@ Cada nota tem seu próprio resultado: uma pode ser autorizada e a outra não (o 
 |---|---|---|
 | **Sem regra fiscal** | Falta regra aprovada e vigente para uma das notas | Avise o responsável fiscal. Depois que ele aprovar, clique em **Verificar regras de novo** |
 | **Aguardando confirmação** | O governo não respondeu a tempo. A nota **pode** ter sido autorizada | **Não emita de novo.** Clique em **Consultar notas sem resposta** |
+| **Transmitindo** por mais de alguns minutos | O envio foi interrompido antes da resposta | Clique em **Consultar notas sem resposta**. O sistema consulta o governo antes de qualquer reenvio |
 | **Rejeitada** | O governo recusou; o motivo aparece no card da nota | Se for endereço, use **Corrigir destinatário da NF-e**. Depois, o responsável fiscal ou o administrador clica em **Liberar nova tentativa** |
 | **Denegada** | O governo negou a nota de forma definitiva | Não há nova tentativa. Fale com o contador |
 
