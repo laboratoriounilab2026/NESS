@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { requireUser } from "@/auth/session";
 import { StatusBadge } from "@/components/status-badge";
 import { formatBRL } from "@/domain/order-input";
+import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { DOC_BADGE, DOC_LABEL, ORDER_BADGE } from "./status";
 
@@ -12,7 +13,17 @@ export const metadata: Metadata = { title: "Pedidos" };
 
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 
-export default function Pedidos() {
+// Filtros por situação: pedido antigo que precisa de ação não pode sumir da lista dos 50 mais recentes.
+const FILTERS = {
+  todos: { label: "Todos", where: {} },
+  aguardando: { label: "Aguardando confirmação", where: { documents: { some: { state: { in: ["INCERTO", "ENVIADO"] } } } } },
+  parciais: { label: "Parciais ou com falha", where: { state: { in: ["PARCIAL", "FALHA"] } } },
+  bloqueados: { label: "Sem regra fiscal", where: { state: "BLOQUEADO" } },
+  prontos: { label: "Prontos para emitir", where: { state: "PRONTO_REVISAO" } },
+} satisfies Record<string, { label: string; where: Prisma.EmissionOrderWhereInput }>;
+type FilterKey = keyof typeof FILTERS;
+
+export default function Pedidos({ searchParams }: { searchParams: Promise<{ situacao?: string }> }) {
   return (
     <div className="grid gap-3.5">
       <header className="reveal flex flex-wrap items-end justify-between gap-3">
@@ -25,29 +36,51 @@ export default function Pedidos() {
         </Link>
       </header>
       <Suspense fallback={<div className={`${card} h-48 animate-pulse motion-reduce:animate-none`} aria-busy="true" aria-label="Carregando" />}>
-        <Orders />
+        <Orders searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function Orders() {
+async function Orders({ searchParams }: { searchParams: Promise<{ situacao?: string }> }) {
   await requireUser("OPERADOR", "FISCAL", "ADMIN");
-  // ponytail: últimos 50, sem paginação/busca; adicionar quando o volume pedir.
+  const asked = (await searchParams).situacao;
+  const key: FilterKey = asked && asked in FILTERS ? (asked as FilterKey) : "todos";
+  // ponytail: 50 por filtro, sem paginação/busca por nome; adicionar quando o volume pedir.
   const orders = await db.emissionOrder.findMany({
+    where: FILTERS[key].where,
     orderBy: { createdAt: "desc" },
     take: 50,
     include: { customer: { select: { name: true } }, documents: { select: { type: true, state: true }, orderBy: { type: "asc" } } },
   });
+  const nav = (
+    <nav aria-label="Filtrar por situação" className="flex flex-wrap gap-2">
+      {(Object.keys(FILTERS) as FilterKey[]).map((k) => (
+        <Link
+          key={k}
+          href={k === "todos" ? "/pedidos" : `/pedidos?situacao=${k}`}
+          aria-current={k === key ? "page" : undefined}
+          className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-fg/5 aria-[current=page]:border-fg aria-[current=page]:bg-fg aria-[current=page]:text-bg"
+        >
+          {FILTERS[k].label}
+        </Link>
+      ))}
+    </nav>
+  );
   if (orders.length === 0) {
     return (
-      <div className={`${card} grid justify-items-start gap-2`}>
-        <p className="font-semibold">Nenhum pedido ainda.</p>
-        <p className="text-sm text-muted">Cadastre o primeiro pedido para preparar as duas notas.</p>
-      </div>
+      <>
+        {nav}
+        <div className={`${card} grid justify-items-start gap-2`}>
+          <p className="font-semibold">{key === "todos" ? "Nenhum pedido ainda." : "Nenhum pedido nesta situação."}</p>
+          {key === "todos" && <p className="text-sm text-muted">Cadastre o primeiro pedido para preparar as duas notas.</p>}
+        </div>
+      </>
     );
   }
   return (
+    <>
+    {nav}
     <section className={`${card} overflow-x-auto`}>
       <table className="w-full border-collapse text-sm">
         <thead>
@@ -82,5 +115,6 @@ async function Orders() {
         </tbody>
       </table>
     </section>
+    </>
   );
 }

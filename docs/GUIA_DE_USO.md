@@ -57,6 +57,7 @@ Se o problema for nos dados do **tomador** (NFS-e), cadastre um novo pedido: o c
 ## Acompanhamento
 
 - **Visão geral**: notas autorizadas, aguardando confirmação, emissões parciais, pedidos bloqueados e, enquanto houver, as **pendências de configuração** (o que falta para emitir e quem resolve).
+- **Pedidos**: filtros por situação (aguardando confirmação, parciais ou com falha, sem regra fiscal, prontos para emitir). Os contadores da visão geral levam direto ao filtro certo.
 - **Documentos**: notas autorizadas, com chave de acesso e protocolo.
 - **Emissões**: cada tentativa de envio, com data, nota e resultado.
 - **Auditoria** (fiscal e administrador): quem fez o quê e quando. CPF, CNPJ e endereço não aparecem nos registros.

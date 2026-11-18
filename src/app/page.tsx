@@ -127,12 +127,22 @@ async function Counters() {
         <h2 className={tileTitle}><Timer size={18} aria-hidden="true" />Aguardando confirmação</h2>
         <p className="mt-2 font-display text-[44px] font-bold tabular-nums">{c.uncertain}</p>
         <p className="text-[13px] text-muted">enviadas sem resposta final; consultar antes de reenviar</p>
+        {c.uncertain > 0 && (
+          <Link href="/pedidos?situacao=aguardando" className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold">
+            Ver pedidos <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        )}
       </section>
 
       <section className={`${tile} ${c.partial ? "bg-[color-mix(in_srgb,var(--err)_8%,var(--surface))]" : ""}`} style={{ ["--i" as string]: 3 }}>
         <h2 className={tileTitle}><Split size={18} aria-hidden="true" />Emissões parciais</h2>
         <p className="mt-2 font-display text-[44px] font-bold tabular-nums">{c.partial}</p>
         <p className="text-[13px] text-muted">uma nota autorizada e a outra não</p>
+        {c.partial > 0 && (
+          <Link href="/pedidos?situacao=parciais" className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold">
+            Ver pedidos <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        )}
       </section>
 
       <section className={tile} style={{ ["--i" as string]: 4 }}>
@@ -140,9 +150,14 @@ async function Counters() {
         <p className="mt-2 font-display text-[44px] font-bold tabular-nums">{c.blocked}</p>
         <p className="text-[13px] text-muted">{c.blocked === 1 ? "pedido bloqueado" : "pedidos bloqueados"} por falta de regra aprovada</p>
         {c.blocked > 0 && (
-          <Link href="/configuracao-fiscal" className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold">
-            Configuração fiscal <ArrowRight size={14} aria-hidden="true" />
-          </Link>
+          <div className="mt-2 flex flex-wrap gap-x-4">
+            <Link href="/pedidos?situacao=bloqueados" className="inline-flex items-center gap-1 text-[13px] font-semibold">
+              Ver pedidos <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+            <Link href="/configuracao-fiscal" className="inline-flex items-center gap-1 text-[13px] font-semibold">
+              Configuração fiscal <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
         )}
       </section>
     </>
