@@ -49,6 +49,8 @@ Os quatro campos já existem na regra da NFS-e como **opcionais** (só formato, 
 
 ## NF-e (álbum)
 
+Códigos de indFinal, indPres, finNFe, indIEDest e modFrete **conferidos no MOC online** (moc.sped.fazenda.pr.gov.br) em 18/11/2026; finNFe ganhou 5 (nota de crédito) e 6 (nota de débito) com a Reforma. O grupo UB (IBS/CBS) da NF-e — NT 2025.002, hoje na v1.53 (30/10/2026) — ainda precisa ser levantado para a regra, como na NFS-e.
+
 | Grupo / campo | Situação | Observação |
 |---|---|---|
 | ide: série, número, chave, cNF, cDV | ✅ ⚙️ | `numbering.ts`, `access-key.ts` |

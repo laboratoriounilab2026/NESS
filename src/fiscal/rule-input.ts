@@ -49,12 +49,13 @@ export const establishmentDataSchema = z.object({
 });
 
 // Tabelas do layout NF-e 4.00 (códigos de formato, não enquadramento). O responsável fiscal escolhe; nenhuma tem padrão.
-// ponytail: conferir rótulos e códigos com o Manual de Orientação do Contribuinte vigente.
+// Conferidas no MOC online (moc.sped.fazenda.pr.gov.br, Leiaute NF-e/NFC-e) em 18/11/2026: B25, B25a, B25b, E16a, X02.
+// indPres 4 (NFC-e / DANFE simplificado com entrega) fica de fora por não se aplicar à NF-e do álbum.
 export const IND_FINAL = { "0": "Não (operação normal)", "1": "Sim, consumidor final" } as const;
 export const IND_PRES = {
   "0": "Não se aplica", "1": "Presencial", "2": "Pela internet", "3": "Teleatendimento", "5": "Presencial, fora do estabelecimento", "9": "Outros",
 } as const;
-export const FIN_NFE = { "1": "Normal", "2": "Complementar", "3": "Ajuste", "4": "Devolução" } as const;
+export const FIN_NFE = { "1": "Normal", "2": "Complementar", "3": "Ajuste", "4": "Devolução", "5": "Nota de crédito", "6": "Nota de débito" } as const;
 export const MOD_FRETE = {
   "0": "Por conta do remetente (CIF)", "1": "Por conta do destinatário (FOB)", "2": "Por conta de terceiros",
   "3": "Transporte próprio do remetente", "4": "Transporte próprio do destinatário", "9": "Sem frete",
