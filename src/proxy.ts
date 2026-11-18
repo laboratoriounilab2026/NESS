@@ -9,5 +9,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Tudo menos login, arquivos estáticos e ícones.
-  matcher: ["/((?!login|_next/static|_next/image|brand/|favicon\\.svg|icon\\.svg).*)"],
+  matcher: ["/((?!login|api/health|_next/static|_next/image|brand/|favicon\\.svg|icon\\.svg).*)"],
 };
