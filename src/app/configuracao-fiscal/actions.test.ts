@@ -91,4 +91,35 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
       await db.establishment.delete({ where: { id: e.id } });
     }
   });
+  it("aprovar regra libera os pedidos bloqueados que passam a ter as duas regras", async () => {
+    const a = await import("./actions");
+    const tag = `teste-lib-${crypto.randomUUID()}`;
+    const e = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
+    const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
+    const recipient = await db.recipient.create({ data: { name: tag, cep: "01001000", street: "R", number: "1", district: "C", city: "São Paulo", uf: "SP" } });
+    const base = { establishmentId: e.id, version: 1, params: {}, validFrom: new Date(Date.now() - 60_000), justification: "teste", createdBy: "teste" };
+    const nfse = await db.fiscalRule.create({ data: { ...base, docType: "NFSE", purpose: "servico-fotografico", approvedBy: "teste", approvedAt: new Date() } });
+    const nfe = await db.fiscalRule.create({ data: { ...base, docType: "NFE", purpose: "album" } }); // aguardando aprovação
+    const order = await db.emissionOrder.create({
+      data: {
+        ref: tag, state: "BLOQUEADO", establishmentId: e.id, customerId: customer.id, recipientId: recipient.id, serviceCents: 1, goodsCents: 1,
+        documents: { create: [{ type: "NFSE", fiscalRuleId: nfse.id }, { type: "NFE" }] },
+      },
+    });
+    try {
+      role = "FISCAL";
+      const f = new FormData();
+      f.set("id", nfe.id);
+      f.set("confirm", "on");
+      expect(await a.approveRule({}, f)).toMatchObject({ ok: expect.stringMatching(/1 pedido bloqueado ficou pronto/) });
+      expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: order.id } })).state).toBe("PRONTO_REVISAO");
+    } finally {
+      await db.emissionDocument.deleteMany({ where: { orderId: order.id } });
+      await db.emissionOrder.delete({ where: { id: order.id } });
+      await db.recipient.delete({ where: { id: recipient.id } });
+      await db.customer.delete({ where: { id: customer.id } });
+      await db.fiscalRule.deleteMany({ where: { establishmentId: e.id } });
+      await db.establishment.delete({ where: { id: e.id } });
+    }
+  });
 });

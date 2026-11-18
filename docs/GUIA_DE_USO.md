@@ -19,7 +19,7 @@ Contas são criadas, desativadas e têm a senha trocada por quem cuida do sistem
 
 1. **Administrador** — *Configuração fiscal › Estabelecimentos*: informe CNPJ, razão social, UF, código IBGE do município e regime tributário. A empresa entra sempre em **homologação** (ambiente de teste do governo).
 2. **Responsável fiscal** — *Configuração fiscal › Regras fiscais*: crie uma regra para a NFS-e e outra para a NF-e, com os valores passados pelo contador, vigência e a **justificativa/origem** (parecer, consulta à SEFAZ, legislação).
-3. **Responsável fiscal** — marque **Revisei** e clique em **Aprovar**. Só regra aprovada e dentro da vigência libera emissão.
+3. **Responsável fiscal** — marque **Revisei** e clique em **Aprovar**. Só regra aprovada e dentro da vigência libera emissão. Ao aprovar, os pedidos que estavam bloqueados só por falta dessa regra ficam prontos para emitir automaticamente (a emissão continua exigindo confirmação).
 
 Regra aprovada não muda. Para alterar, crie uma nova (ela vira a próxima versão) e aprove.
 

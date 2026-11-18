@@ -5,6 +5,7 @@ import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { issuesByPath } from "@/domain/order-input";
 import { establishmentSchema, nfeNumberingSchema, ruleSchema } from "@/fiscal/rule-input";
+import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
 
 export type FormState = { ok?: string; errors?: Record<string, string> };
@@ -88,11 +89,22 @@ export async function approveRule(_prev: FormState, form: FormData): Promise<For
 
   // updateMany com approvedAt=null: aprovação única mesmo com dois cliques simultâneos.
   const { count } = await db.fiscalRule.updateMany({ where: { id, approvedAt: null }, data: { approvedAt: new Date(), approvedBy: user.id } });
-  await audit({
-    actor: user.id, action: "regra_fiscal.aprovar", entity: "FiscalRule", entityId: id,
-    result: count === 1 ? "aprovada" : "ignorada", correlationId: crypto.randomUUID(),
-  });
+  const correlationId = crypto.randomUUID();
+  await audit({ actor: user.id, action: "regra_fiscal.aprovar", entity: "FiscalRule", entityId: id, result: count === 1 ? "aprovada" : "ignorada", correlationId });
   if (count !== 1) return { errors: { _: "Regra não encontrada ou já aprovada." } };
+
+  // Pedidos bloqueados da empresa são reverificados: os que passam a ter as duas regras ficam prontos para emitir
+  // (emitir continua exigindo confirmação humana). ponytail: laço simples; fila se houver milhares de bloqueados.
+  const rule = await db.fiscalRule.findUniqueOrThrow({ where: { id }, select: { establishmentId: true } });
+  const blocked = await db.emissionOrder.findMany({ where: { establishmentId: rule.establishmentId, state: "BLOQUEADO" }, select: { id: true } });
+  let released = 0;
+  for (const o of blocked) {
+    const r = await refreshOrderRules(o.id);
+    if (r.NFSE.status === "ok" && r.NFE.status === "ok") released++;
+  }
+  if (blocked.length) {
+    await audit({ actor: user.id, action: "pedido.reverificar_regras", entity: "FiscalRule", entityId: id, result: "lote", correlationId, data: { bloqueados: blocked.length, liberados: released } });
+  }
   revalidatePath(PATH);
-  return { ok: "Regra aprovada." };
+  return { ok: released ? `Regra aprovada. ${released} ${released === 1 ? "pedido bloqueado ficou pronto" : "pedidos bloqueados ficaram prontos"} para emitir.` : "Regra aprovada." };
 }
