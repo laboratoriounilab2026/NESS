@@ -53,9 +53,26 @@ model Establishment {
   environment    Environment @default(HOMOLOGACAO)
   // Referência ao segredo no secret manager — nunca o certificado ou a senha.
   certSecretRef  String?
+  // Numeração da NF-e: sem padrão (a empresa pode continuar a sequência de outro emissor). Sem série, não reserva número.
+  nfeSeries      Int?
+  nfeNextNumber  Int?
   createdAt      DateTime    @default(now())
   orders         EmissionOrder[]
   fiscalRules    FiscalRule[]
+  nfeNumbers     NfeNumber[]
+}
+
+/// Número de NF-e reservado: a chave primária impede repetir (série, número) no estabelecimento.
+model NfeNumber {
+  establishmentId String
+  establishment   Establishment    @relation(fields: [establishmentId], references: [id])
+  series          Int
+  number          Int
+  documentId      String           @unique
+  document        EmissionDocument @relation(fields: [documentId], references: [id])
+  reservedAt      DateTime         @default(now())
+
+  @@id([establishmentId, series, number])
 }
 
 // Tomador do serviço (quem paga). Separado do destinatário físico.
@@ -111,6 +128,7 @@ model EmissionDocument {
   fiscalRule  FiscalRule? @relation(fields: [fiscalRuleId], references: [id])
   updatedAt   DateTime @updatedAt
   attempts    EmissionAttempt[]
+  nfeNumber   NfeNumber?
 
   @@unique([orderId, type])
 }

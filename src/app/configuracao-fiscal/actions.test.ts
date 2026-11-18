@@ -72,4 +72,23 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
     r = await checkOrder({ ...order, recipient: { ...order.recipient, uf: "PR" } });
     expect(r.ok && r.nfe.status).toBe("blocked");
   });
+
+  it("numeração da NF-e: só ADMIN, exige confirmação, valida limites e grava uma única vez", async () => {
+    const a = await import("./actions");
+    const e = await db.establishment.create({ data: { cnpj: `teste-num-${crypto.randomUUID()}`, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
+    try {
+      const ok = { id: e.id, nfeSeries: "1", nfeNextNumber: "120", confirm: "on" };
+      role = "FISCAL";
+      await expect(a.configureNfeNumbering({}, ok)).rejects.toThrow("Sem permissão");
+      role = "ADMIN";
+      expect(await a.configureNfeNumbering({}, { ...ok, confirm: undefined })).toMatchObject({ errors: { _: expect.any(String) } });
+      expect(await a.configureNfeNumbering({}, { ...ok, nfeSeries: "1000" })).toMatchObject({ errors: { nfeSeries: expect.any(String) } });
+      expect(await a.configureNfeNumbering({}, { ...ok, nfeNextNumber: "0" })).toMatchObject({ errors: { nfeNextNumber: expect.any(String) } });
+      expect(await a.configureNfeNumbering({}, ok)).toEqual({ ok: "Numeração da NF-e configurada." });
+      expect(await a.configureNfeNumbering({}, { ...ok, nfeNextNumber: "5" })).toMatchObject({ errors: { _: expect.any(String) } }); // não muda depois
+      expect(await db.establishment.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ nfeSeries: 1, nfeNextNumber: 120 });
+    } finally {
+      await db.establishment.delete({ where: { id: e.id } });
+    }
+  });
 });

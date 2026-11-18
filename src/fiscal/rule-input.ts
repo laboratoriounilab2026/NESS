@@ -25,6 +25,12 @@ export const establishmentSchema = z.object({
   regime: z.enum(Object.keys(REGIMES) as [keyof typeof REGIMES], "Selecione o regime"),
 });
 
+// Numeração da NF-e (limites do layout 4.00). Sem padrão: a empresa pode continuar a sequência de outro emissor.
+export const nfeNumberingSchema = z.object({
+  nfeSeries: z.coerce.number<string>("Informe a série").int("Série inteira").min(0, "Série de 0 a 999").max(999, "Série de 0 a 999"),
+  nfeNextNumber: z.coerce.number<string>("Informe o número").int("Número inteiro").min(1, "Mínimo 1").max(999_999_999, "Máximo 999.999.999"),
+});
+
 export const NFE_FIELDS = [
   { key: "natOp", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },
   { key: "cfop", label: "CFOP", schema: req(/^\d{4}$/, "CFOP tem 4 dígitos") },

@@ -70,6 +70,15 @@ Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. D
 - **Concorrência:** só um processo passa `PENDENTE → ENVIADO` (`updateMany where state = PENDENTE`); o outro recebe "Envio já em andamento".
 - **Retry automático:** não existe. Toda nova tentativa é ação humana (emitir de novo uma nota `PENDENTE`, ou reabrir uma `REJEITADO`).
 
+## Numeração da NF-e (`src/emitters/nfe/numbering.ts`)
+
+Decisão de projeto (prática comum dos emissores; revisar com o responsável fiscal se a operação exigir outra):
+- **Quando:** o número é reservado no primeiro envio da NF-e (`reserveNfeNumber`), não ao salvar o pedido. Pedido nunca emitido não consome número.
+- **Novas tentativas reusam o número:** nota rejeitada não foi autorizada, então o reenvio usa o mesmo (série, número). Assim não sobra lacuna a inutilizar.
+- **Unicidade:** tabela `NfeNumber` com chave primária (estabelecimento, série, número) e `documentId` único; o contador `Establishment.nfeNextNumber` sobe com `UPDATE … RETURNING` dentro da mesma transação. Corrida na mesma nota desfaz a transação perdedora, inclusive o incremento.
+- **Configuração:** série e próximo número não têm padrão; o ADMIN informa uma única vez em *Configuração fiscal* (a empresa pode estar continuando a sequência de outro emissor). Sem isso, a reserva é bloqueada com explicação.
+- **Ainda não feito:** inutilização de faixa (para número reservado que nunca será usado, ex.: NF-e rejeitada que nunca será reenviada) e ligação ao adaptador real (Fase 4). A chave de acesso usa o número reservado (`src/emitters/nfe/access-key.ts`).
+
 ## Timeout e reconciliação
 
 1. Sem resposta → nota `INCERTO`. **Não é rejeição nem autorização.**
@@ -94,7 +103,7 @@ A regra é resolvida ao salvar o pedido **e de novo** antes de cada envio (`refr
 
 ## Auditoria
 
-Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`.
+Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
 `data` aceita só valores escalares; nunca CPF/CNPJ, endereço, senha ou certificado. E-mail no login entra como hash.
 
 ## Pontos de extensão (Fases 4/5)
