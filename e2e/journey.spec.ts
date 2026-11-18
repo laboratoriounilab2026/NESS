@@ -8,7 +8,7 @@ test("login exige credenciais válidas", async ({ page }) => {
   await page.getByLabel("E-mail").fill("operador@e2e.test");
   await page.getByLabel("Senha").fill("senha-errada-123");
   await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.locator("form").getByRole("alert")).toBeVisible(); // escopo: o Next tem um anunciador de rota com role=alert
 });
 
 test("pedido sem regra fiscal é salvo bloqueado e não pode ser emitido", async ({ page }) => {
