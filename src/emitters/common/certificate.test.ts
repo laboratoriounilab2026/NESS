@@ -1,7 +1,7 @@
 import forge from "node-forge";
 import { createPublicKey } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { checkValidity, loadA1 } from "./certificate";
+import { checkValidity, cnpjFromSubject, loadA1, readyToSign } from "./certificate";
 import { signXml, verifyXml } from "./xml-sign";
 
 // .pfx gerado na hora (titular fictício "EMPRESA TESTE"); nada de certificado no repositório.
@@ -54,5 +54,15 @@ describe("certificado A1", () => {
     expect(checkValidity(c, new Date("2025-12-31"))).toMatchObject({ ok: false, reason: expect.stringMatching(/ainda não/) });
     expect(checkValidity(c, new Date("2026-11-18"))).toMatchObject({ ok: true, warn: true, expiresInDays: 13 });
     expect(checkValidity(c, new Date("2026-06-01"))).toMatchObject({ ok: true, warn: false });
+  });
+
+  it("CNPJ do titular: lê do CN e barra certificado de outra empresa", () => {
+    expect(cnpjFromSubject("ESTUDIO FOTO LTDA:11222333000181")).toBe("11222333000181");
+    expect(cnpjFromSubject("ESTUDIO:12ABC34501DE35")).toBe("12ABC34501DE35"); // CNPJ alfanumérico
+    expect(cnpjFromSubject("FULANO DE TAL")).toBeNull();
+    const a1 = loadA1(pfx, senha); // titular 00000000000000
+    expect(readyToSign(a1, "00.000.000/0000-00", now)).toMatchObject({ ok: true });
+    expect(readyToSign(a1, "11.222.333/0001-81", now)).toMatchObject({ ok: false, reason: expect.stringMatching(/outro CNPJ/) });
+    expect(readyToSign(a1, "00000000000000", new Date(now.getTime() + 400 * day))).toMatchObject({ ok: false, reason: expect.stringMatching(/vencido/) });
   });
 });

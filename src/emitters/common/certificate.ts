@@ -56,3 +56,23 @@ export function checkValidity(c: Pick<A1Certificate, "notBefore" | "notAfter">, 
   const expiresInDays = Math.floor((c.notAfter.getTime() - now.getTime()) / 86_400_000);
   return { ok: true, expiresInDays, warn: expiresInDays <= warnDays };
 }
+
+/**
+ * CNPJ do titular a partir do CN do e-CNPJ ICP-Brasil ("RAZÃO SOCIAL:12345678000199").
+ * ponytail: lê só o CN; se algum certificado trouxer o CNPJ apenas na extensão otherName (OID 2.16.76.1.3.3), ler de lá.
+ */
+export function cnpjFromSubject(subject: string): string | null {
+  const m = /:([0-9A-Z]{12}\d{2})$/.exec(subject.toUpperCase().trim());
+  return m ? m[1] : null;
+}
+
+/** Pronto para assinar: válido agora e do mesmo CNPJ do estabelecimento (evita assinar com o certificado de outra empresa). */
+export function readyToSign(c: A1Certificate, establishmentCnpj: string, now = new Date()): Usability {
+  const v = checkValidity(c, now);
+  if (!v.ok) return v;
+  const own = cnpjFromSubject(c.subject);
+  const expected = establishmentCnpj.toUpperCase().replace(/[^0-9A-Z]/g, "");
+  if (!own) return { ok: false, reason: "Não foi possível ler o CNPJ do titular no certificado A1." };
+  if (own !== expected) return { ok: false, reason: "O certificado A1 é de outro CNPJ, diferente do estabelecimento." };
+  return v;
+}
