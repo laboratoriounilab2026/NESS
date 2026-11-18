@@ -2,7 +2,7 @@
 
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
-import { issuesByPath, orderSchema, type OrderInput } from "@/domain/order-input";
+import { isValidDocument, issuesByPath, normalizeDocument, orderSchema, type OrderInput } from "@/domain/order-input";
 import type { Resolution } from "@/fiscal/matrix";
 import { resolveOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
@@ -46,6 +46,14 @@ export async function checkOrder(raw: unknown): Promise<CheckResult> {
     data: { nfse: nfse.status, nfe: nfe.status, ufDestino: parsed.data.recipient.uf },
   });
   return { ok: true, nfse, nfe };
+}
+
+/** Cadastro existente do tomador, para preencher nome/e-mail. Só com documento válido (não serve para varrer a base). */
+export async function lookupCustomer(document: unknown): Promise<{ name: string; email: string } | null> {
+  await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  if (typeof document !== "string" || !isValidDocument(document)) return null;
+  const c = await db.customer.findFirst({ where: { document: normalizeDocument(document) }, select: { name: true, email: true } });
+  return c ? { name: c.name, email: c.email ?? "" } : null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

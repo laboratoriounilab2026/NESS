@@ -105,4 +105,16 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
       if (own) await db.establishment.delete({ where: { id: own.id } });
     }
   });
+  it("lookupCustomer: acha pelo documento com ou sem pontuação; documento inválido não consulta", async () => {
+    const { lookupCustomer } = await import("./actions");
+    const { db } = await import("@/lib/db");
+    const c = await db.customer.create({ data: { document: "11222333000181", name: `teste-lookup-${crypto.randomUUID()}`, email: "a@b.test" } });
+    try {
+      expect(await lookupCustomer("11.222.333/0001-81")).toEqual({ name: c.name, email: "a@b.test" });
+      expect(await lookupCustomer("11222333000180")).toBeNull(); // DV errado
+      expect(await lookupCustomer(42)).toBeNull();
+    } finally {
+      await db.customer.delete({ where: { id: c.id } });
+    }
+  });
 });

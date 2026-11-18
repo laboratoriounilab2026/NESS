@@ -10,7 +10,7 @@ import {
   type OrderDraft,
 } from "@/domain/order-input";
 import type { Resolution } from "@/fiscal/matrix";
-import { checkOrder, saveOrder, type CheckResult } from "./actions";
+import { checkOrder, lookupCustomer, saveOrder, type CheckResult } from "./actions";
 
 type Section = keyof OrderDraft;
 const STEPS: { label: string; section?: Section; schema?: z.ZodType }[] = [
@@ -46,6 +46,18 @@ export function OrderWizard() {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const router = useRouter();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [known, setKnown] = useState<string | null>(null);
+
+  // Tomador já cadastrado: preenche só campos vazios (nunca sobrescreve o que foi digitado).
+  async function fillKnownCustomer() {
+    const found = await lookupCustomer(draft.customer.document);
+    setKnown(found ? "Cliente já cadastrado: nome e e-mail preenchidos onde estavam vazios. Confira se continuam atuais." : null);
+    if (!found) return;
+    setDraft((d) => {
+      const customer = { ...d.customer, name: d.customer.name || found.name, email: d.customer.email || found.email };
+      return { ...d, customer, recipient: d.recipient.same ? { ...d.recipient, name: customer.name } : d.recipient };
+    });
+  }
 
   useEffect(() => {
     try {
@@ -152,7 +164,7 @@ export function OrderWizard() {
     setStep(0);
   }
 
-  function field<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, opts: { hint?: string; inputMode?: "numeric" | "decimal" | "email"; disabled?: boolean; className?: string } = {}) {
+  function field<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, opts: { hint?: string; inputMode?: "numeric" | "decimal" | "email"; disabled?: boolean; className?: string; onBlur?: () => void } = {}) {
     const id = `${section}-${key}`;
     const err = errors[`${section}.${key}`];
     return (
@@ -163,6 +175,7 @@ export function OrderWizard() {
           className={inputCls}
           value={String(draft[section][key] ?? "")}
           onChange={(e) => set(section, key, e.target.value)}
+          onBlur={opts.onBlur}
           inputMode={opts.inputMode}
           disabled={opts.disabled}
           aria-invalid={err ? true : undefined}
@@ -214,9 +227,10 @@ export function OrderWizard() {
         {step === 0 && (
           <div className="grid gap-4 sm:grid-cols-2">
             <p className="text-sm text-muted sm:col-span-2">Quem contratou e paga o serviço. Aparece na NFS-e.</p>
-            {field("customer", "document", "CPF ou CNPJ", { hint: "Aceita CNPJ alfanumérico." })}
+            {field("customer", "document", "CPF ou CNPJ", { hint: "Aceita CNPJ alfanumérico.", onBlur: fillKnownCustomer })}
             {field("customer", "name", "Nome ou razão social")}
             {field("customer", "email", "E-mail (opcional)", { inputMode: "email", hint: "Para enviar a nota ao cliente." })}
+            <p role="status" className="text-sm text-muted sm:col-span-2">{known}</p>
           </div>
         )}
 
