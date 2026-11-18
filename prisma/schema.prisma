@@ -185,6 +185,8 @@ model AuditEvent {
   data          Json?    // sem segredos; identificadores mascarados
 
   @@index([entity, entityId])
+  @@index([at])                       // lista da auditoria (mais recentes primeiro)
+  @@index([action, entityId, at])     // limite de tentativas de login
 }
 
 enum Role {
