@@ -101,6 +101,7 @@ Vence a mais específica e, no empate, a maior versão. Empate total → bloquei
 Finalidades usadas hoje: NFS-e `servico-fotografico`, NF-e `album` (`src/fiscal/resolve-order.ts`).
 
 A regra é resolvida ao salvar o pedido **e de novo** antes de cada envio (`refreshOrderRules`): regra vencida bloqueia o pedido.
+A regra escolhida também precisa ter **todos os parâmetros do formato atual** (`paramsComplete`): regra aprovada antes de um campo novo bloqueia o pedido (não cai para outra regra menos específica) e aparece na Configuração fiscal pedindo nova versão.
 
 **Pendência fiscal:** o pedido não informa município à resolução, então regra com município preenchido nunca é aplicada.
 É preciso o responsável fiscal definir qual município vale (prestação do serviço para NFS-e? destino para NF-e?) e o pedido passar a guardar o código IBGE correspondente. Até lá, o servidor recusa criar regra com município (`src/fiscal/rule-input.ts`) e o campo não aparece no formulário.

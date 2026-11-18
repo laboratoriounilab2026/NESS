@@ -1,5 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EmitterAdapter } from "@/emitters/types";
+import { NFE_TEST_PARAMS, NFSE_TEST_PARAMS } from "@/test/fiscal-params";
 
 vi.mock("@/auth/session", () => ({ requireUser: async () => ({ id: "teste-emitir-acao", name: "Teste", role: "OPERADOR" }) }));
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
@@ -20,11 +21,11 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
   const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1", nfeSeries: 1, nfeNextNumber: 1, dpsSeries: 1, dpsNextNumber: 1 } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
   const recipient = await db.recipient.create({ data: { name: tag, cep: "01001000", street: "Rua", number: "1", district: "Centro", city: "São Paulo", uf: "SP" } });
-  // Regras de teste nas finalidades que o sistema procura; parâmetros vazios (nenhum valor fiscal inventado).
+  // Regras de teste nas finalidades que o sistema procura; parâmetros só de formato (src/test/fiscal-params.ts).
   const approve = (docType: "NFSE" | "NFE", purpose: string, version = 1) =>
     db.fiscalRule.create({
       data: {
-        establishmentId: est.id, docType, purpose, version, params: {}, validFrom: new Date(Date.now() - 60_000),
+        establishmentId: est.id, docType, purpose, version, params: docType === "NFE" ? NFE_TEST_PARAMS : NFSE_TEST_PARAMS, validFrom: new Date(Date.now() - 60_000),
         justification: "teste", createdBy: "teste", approvedBy: "teste", approvedAt: new Date(),
       },
     });
@@ -164,6 +165,22 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     registry.adapter = authorized;
     expect(await emitOrderAction(o.id, true)).toMatchObject({ ok: false, message: expect.stringMatching(/descrição dos itens/) });
     expect(await attempts(o.id)).toBe(0);
+  });
+
+  it("regra específica aprovada mas incompleta bloqueia (não cai para a genérica completa)", async () => {
+    const o = await newOrder("BLOQUEADO");
+    const partial = await db.fiscalRule.create({
+      data: {
+        establishmentId: est.id, docType: "NFE", purpose: "album", ufDestino: "SP", version: 1, params: { natOp: "x" },
+        validFrom: new Date(Date.now() - 60_000), justification: "teste", createdBy: "teste", approvedBy: "teste", approvedAt: new Date(),
+      },
+    });
+    try {
+      expect(await recheckRulesAction(o.id)).toMatchObject({ ok: false, message: expect.stringMatching(/não tem todos os parâmetros/) });
+      expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id } })).state).toBe("BLOQUEADO");
+    } finally {
+      await db.fiscalRule.delete({ where: { id: partial.id } });
+    }
   });
 
   it("regra aprovada depois do bloqueio: verificar de novo libera o pedido", async () => {

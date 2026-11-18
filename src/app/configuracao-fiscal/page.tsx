@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Ban, Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
-import { REGIMES } from "@/fiscal/rule-input";
+import { paramsComplete, REGIMES } from "@/fiscal/rule-input";
 import { loadEstablishmentCertificate } from "@/emitters/common/certificate-source";
 import { ApproveForm, CertificateRefForm, EstablishmentDataForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
 import { requireUser } from "@/auth/session";
@@ -118,6 +118,8 @@ async function Content() {
                             <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-wait"><Clock size={14} aria-hidden="true" /> Aguardando aprovação</span>
                             {user.role === "FISCAL" && <ApproveForm id={r.id} />}
                           </div>
+                        ) : !paramsComplete(r.docType, r.params) ? (
+                          <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-err"><Ban size={14} aria-hidden="true" /> Aprovada, mas sem os parâmetros exigidos hoje: crie nova versão</span>
                         ) : !current ? (
                           <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-muted"><CalendarX size={14} aria-hidden="true" /> Fora da vigência</span>
                         ) : (

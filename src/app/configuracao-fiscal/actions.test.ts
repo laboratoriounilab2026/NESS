@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
+import { NFE_TEST_PARAMS, NFSE_TEST_PARAMS } from "@/test/fiscal-params";
 
 // Papel trocável por teste; o mock reproduz a checagem de papel do requireUser real.
 let role: "ADMIN" | "FISCAL" | "OPERADOR" = "ADMIN";
@@ -11,7 +12,7 @@ vi.mock("@/auth/session", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: () => {} }));
 
 // Valores só de FORMATO, fictícios, apagados ao final — não são orientação fiscal.
-const params = { natOp: "teste", cfop: "1234", ncm: "12345678", origem: "0", cstIcms: "123", cstPis: "01", cstCofins: "01", indFinal: "1", indPres: "1", finNFe: "1", modFrete: "9", indIEDest: "9", infCpl: "" };
+const params = NFE_TEST_PARAMS;
 const rule = { docType: "NFE", purpose: "album", ufDestino: "SP", municipioIbge: "", validFrom: "2020-01-01", validTo: "", justification: "Teste automatizado de fluxo", params };
 const order = {
   customer: { document: "529.982.247-25", name: "Cliente Teste", email: "" },
@@ -100,9 +101,9 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
     const e = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
     const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
     const recipient = await db.recipient.create({ data: { name: tag, cep: "01001000", street: "R", number: "1", district: "C", city: "São Paulo", uf: "SP" } });
-    const base = { establishmentId: e.id, version: 1, params: {}, validFrom: new Date(Date.now() - 60_000), justification: "teste", createdBy: "teste" };
-    const nfse = await db.fiscalRule.create({ data: { ...base, docType: "NFSE", purpose: "servico-fotografico", approvedBy: "teste", approvedAt: new Date() } });
-    const nfe = await db.fiscalRule.create({ data: { ...base, docType: "NFE", purpose: "album" } }); // aguardando aprovação
+    const base = { establishmentId: e.id, version: 1, validFrom: new Date(Date.now() - 60_000), justification: "teste", createdBy: "teste" };
+    const nfse = await db.fiscalRule.create({ data: { ...base, params: NFSE_TEST_PARAMS, docType: "NFSE", purpose: "servico-fotografico", approvedBy: "teste", approvedAt: new Date() } });
+    const nfe = await db.fiscalRule.create({ data: { ...base, params: NFE_TEST_PARAMS, docType: "NFE", purpose: "album" } }); // aguardando aprovação
     const order = await db.emissionOrder.create({
       data: {
         ref: tag, state: "BLOQUEADO", establishmentId: e.id, customerId: customer.id, recipientId: recipient.id, serviceCents: 1, goodsCents: 1,

@@ -106,6 +106,11 @@ const common = {
   justification: text(10, "Explique a origem da regra (mín. 10 caracteres), ex.: parecer do contador de 10/11/2026"),
 };
 
+/** Parâmetros da regra atendem ao formato atual? Regra aprovada antes de um campo novo fica incompleta. */
+export function paramsComplete(docType: "NFE" | "NFSE", params: unknown): boolean {
+  return paramsSchema(docType === "NFE" ? NFE_FIELDS : NFSE_FIELDS).safeParse(params).success;
+}
+
 export const ruleSchema = z
   .discriminatedUnion("docType", [
     z.object({ docType: z.literal("NFE"), purpose: z.literal("album"), params: paramsSchema(NFE_FIELDS), ...common }),

@@ -2,14 +2,24 @@ import "server-only";
 import { db } from "@/lib/db";
 import { lockOrder } from "@/lib/order-lock";
 import { resolveRule, type Resolution } from "./matrix";
+import { paramsComplete } from "./rule-input";
 
 /** Regras das duas notas de um pedido, resolvidas de forma independente (fonte única para cadastro e revalidação). */
 export async function resolveOrderRules(establishmentId: string, ufDestino: string): Promise<{ nfse: Resolution; nfe: Resolution }> {
   const rules = await db.fiscalRule.findMany({ where: { establishmentId, approvedAt: { not: null } } });
   const base = { establishmentId, at: new Date() };
+  // A regra escolhida precisa ter todos os parâmetros atuais. Não cai para outra regra (uma genérica antiga poderia
+  // vencer a específica que o fiscal aprovou): bloqueia e pede nova versão.
+  const complete = (r: Resolution, docType: "NFE" | "NFSE"): Resolution => {
+    if (r.status !== "ok") return r;
+    const rule = rules.find((x) => x.id === r.ruleId)!;
+    return paramsComplete(docType, rule.params)
+      ? r
+      : { status: "blocked", reason: `A regra aprovada (versão ${rule.version}) não tem todos os parâmetros exigidos hoje. O responsável fiscal precisa criar e aprovar uma nova versão.` };
+  };
   return {
-    nfse: resolveRule(rules, { ...base, docType: "NFSE", purpose: "servico-fotografico" }),
-    nfe: resolveRule(rules, { ...base, docType: "NFE", purpose: "album", ufDestino }),
+    nfse: complete(resolveRule(rules, { ...base, docType: "NFSE", purpose: "servico-fotografico" }), "NFSE"),
+    nfe: complete(resolveRule(rules, { ...base, docType: "NFE", purpose: "album", ufDestino }), "NFE"),
   };
 }
 
