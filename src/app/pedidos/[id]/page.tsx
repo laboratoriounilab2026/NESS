@@ -7,6 +7,7 @@ import { requireUser } from "@/auth/session";
 import { StatusBadge } from "@/components/status-badge";
 import { formatBRL } from "@/domain/order-input";
 import { db } from "@/lib/db";
+import { EmitPanel } from "./emit-panel";
 import { DOC_BADGE, DOC_LABEL, maskDocument, ORDER_BADGE } from "../status";
 
 export const metadata: Metadata = { title: "Pedido" };
@@ -68,7 +69,11 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         {r && <p><b>Entrega:</b> {r.name} · {r.city}/{r.uf} · CEP {r.cep}</p>}
       </section>
 
-      <p className="text-sm text-muted">A transmissão ao governo ainda não está ligada; as notas ficam pendentes até a homologação.</p>
+      <EmitPanel
+        orderId={o.id}
+        canEmit={(o.state === "PRONTO_REVISAO" || o.state === "EMITINDO") && o.documents.some((d) => d.state === "PENDENTE")}
+        uncertain={o.documents.some((d) => d.state === "INCERTO")}
+      />
     </>
   );
 }

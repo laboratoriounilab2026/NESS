@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, CircleCheck, LoaderCircle, Save, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleCheck, LoaderCircle, Save, Trash2 } from "lucide-react";
 import type { z } from "zod";
 import { StatusBadge } from "@/components/status-badge";
 import {
@@ -319,13 +319,10 @@ export function OrderWizard() {
               {pending ? <LoaderCircle size={18} aria-hidden="true" className="animate-spin" /> : <Save size={18} aria-hidden="true" />} Salvar pedido
             </button>
             {saveError && <p role="alert" className="text-sm text-err">{saveError}</p>}
-            <button type="button" disabled className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-accent px-4 py-3 font-bold text-accent-fg opacity-70" aria-describedby="emit-why">
-              <Send size={18} aria-hidden="true" /> Emitir NFS-e e NF-e
-            </button>
-            <p id="emit-why" className="text-sm text-muted">
+            <p className="text-sm text-muted">
               {blocked
-                ? "Bloqueado: falta regra fiscal aprovada para este pedido."
-                : "A transmissão ao governo ainda não está ligada. Ela entra primeiro em ambiente de homologação."}
+                ? "O pedido será salvo como bloqueado: falta regra fiscal aprovada."
+                : "Depois de salvar, a emissão é feita na página do pedido, com confirmação."}
             </p>
           </div>
         )}

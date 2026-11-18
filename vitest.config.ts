@@ -15,5 +15,5 @@ export default defineConfig({
     },
   },
   // Testes de integração compartilham o mesmo banco: arquivos em sequência evitam corrida entre eles.
-  test: { include: ["src/**/*.test.ts"], fileParallelism: false },
+  test: { include: ["src/**/*.test.ts"], fileParallelism: false, setupFiles: ["src/test/setup.ts"] },
 });
