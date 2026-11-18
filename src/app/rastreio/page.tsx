@@ -27,13 +27,13 @@ export default function Rastreio() {
         </p>
         <ol className="grid list-decimal gap-1 pl-5 text-muted">
           <li>Um administrador gera o código de acesso no portal Correios Web Services (CWS).</li>
-          <li>Cadastra o contrato e o cartão de postagem em Configurações → Integrações.</li>
+          <li>Informa o contrato e o cartão de postagem ao NESS (a tela de integrações ainda será criada).</li>
           <li>O NESS testa a conexão no ambiente de homologação antes de ativar.</li>
         </ol>
-        <button type="button" disabled title="Disponível quando a integração for implementada" className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-fg px-4 py-2.5 font-semibold text-bg opacity-80">
+        <button type="button" disabled aria-describedby="rastreio-indisponivel" className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-fg px-4 py-2.5 font-semibold text-bg opacity-80">
           <Plug size={18} aria-hidden="true" /> Configurar integração com os Correios
         </button>
-        <small className="text-muted">Somente administradores podem fazer essa configuração.</small>
+        <small id="rastreio-indisponivel" className="text-muted">Em breve: a integração ainda não foi implementada. Quando existir, somente administradores poderão configurá-la.</small>
       </section>
     </div>
   );
