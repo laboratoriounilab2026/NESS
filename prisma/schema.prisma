@@ -115,6 +115,9 @@ model EmissionOrder {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   documents       EmissionDocument[]
+
+  @@index([state, createdAt])   // filtros da lista de pedidos e contadores do dashboard
+  @@index([createdAt])          // lista "Todos" (mais recentes primeiro)
 }
 
 model EmissionDocument {
@@ -132,6 +135,7 @@ model EmissionDocument {
   nfeNumber   NfeNumber?
 
   @@unique([orderId, type])
+  @@index([state])              // "aguardando confirmação" e contadores
 }
 
 model EmissionAttempt {
@@ -148,6 +152,7 @@ model EmissionAttempt {
   finishedAt     DateTime?
 
   @@unique([documentId, seq])
+  @@index([startedAt])          // tela Emissões (mais recentes primeiro)
 }
 
 // Regra fiscal versionada: só habilita cenário se approvedAt != null e vigente.
