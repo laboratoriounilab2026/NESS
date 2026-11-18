@@ -2,16 +2,17 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, RefreshCw, RotateCcw, Send, ShieldCheck } from "lucide-react";
-import { emitOrderAction, recheckRulesAction, reconcileOrderAction, retryRejectedAction, type ActionResult } from "./actions";
+import { LoaderCircle, RefreshCw, RotateCcw, Send, ShieldCheck, Trash2 } from "lucide-react";
+import { discardOrderAction, emitOrderAction, recheckRulesAction, reconcileOrderAction, retryRejectedAction, type ActionResult } from "./actions";
 
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 
-type Props = { orderId: string; canEmit: boolean; uncertain: boolean; blocked: boolean; rejected: boolean; canRetry: boolean };
+type Props = { orderId: string; canEmit: boolean; uncertain: boolean; blocked: boolean; rejected: boolean; canRetry: boolean; canDiscard: boolean };
 
-export function EmitPanel({ orderId, canEmit, uncertain, blocked, rejected, canRetry }: Props) {
+export function EmitPanel({ orderId, canEmit, uncertain, blocked, rejected, canRetry, canDiscard }: Props) {
   const [confirmed, setConfirmed] = useState(false);
   const [fixed, setFixed] = useState(false);
+  const [discard, setDiscard] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -21,10 +22,11 @@ export function EmitPanel({ orderId, canEmit, uncertain, blocked, rejected, canR
       setResult(await fn());
       setConfirmed(false);
       setFixed(false);
+      setDiscard(false);
       router.refresh();
     });
 
-  if (!canEmit && !uncertain && !blocked && !rejected) return null;
+  if (!canEmit && !uncertain && !blocked && !rejected && !canDiscard) return null;
   return (
     <section className={`${card} grid justify-items-start gap-3`} aria-label="Emissão">
       {canEmit && (
@@ -83,6 +85,25 @@ export function EmitPanel({ orderId, canEmit, uncertain, blocked, rejected, canR
             <RotateCcw size={16} aria-hidden="true" /> Liberar nova tentativa
           </button>
         </>
+      )}
+      {canDiscard && (
+        <details className="w-full border-t border-line pt-3 text-sm">
+          <summary className="cursor-pointer text-muted">Pedido salvo por engano?</summary>
+          <div className="mt-2 grid justify-items-start gap-2">
+            <label className="flex items-start gap-2.5">
+              <input type="checkbox" className="mt-0.5 size-4 accent-[var(--accent)]" checked={discard} onChange={(e) => setDiscard(e.target.checked)} />
+              Descartar este pedido. Nenhuma nota foi enviada; ele fica no histórico e não poderá mais ser emitido.
+            </label>
+            <button
+              type="button"
+              disabled={!discard || pending}
+              onClick={() => run(() => discardOrderAction(orderId, discard))}
+              className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 font-semibold text-err hover:bg-fg/5 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 size={16} aria-hidden="true" /> Descartar pedido
+            </button>
+          </div>
+        </details>
       )}
       <p role="status" className={`text-sm ${result && !result.ok ? "text-err" : "text-muted"}`}>
         {result?.message}

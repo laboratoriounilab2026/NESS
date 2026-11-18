@@ -40,6 +40,8 @@ Você não preenche CFOP, NCM, alíquota nem nenhum código fiscal: eles vêm da
 ### Emitir
 
 Na página do pedido, marque a confirmação e clique em **Emitir notas**. Antes de enviar, o sistema confere de novo se as regras ainda valem.
+Pedido salvo por engano? Enquanto nenhuma nota foi enviada, abra o pedido e use **Descartar pedido**: ele fica no histórico e não pode mais ser emitido.
+
 Cada nota tem seu próprio resultado: uma pode ser autorizada e a outra não (o pedido fica em **emissão parcial**).
 
 ## Quando algo dá errado

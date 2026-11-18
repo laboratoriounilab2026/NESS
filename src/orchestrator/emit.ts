@@ -16,6 +16,10 @@ type Ctx = { actor: string; correlationId: string };
 const SEND_TO_STATE: Record<SendResult["kind"], DocState> = { authorized: "AUTORIZADO", rejected: "REJEITADO", denied: "DENEGADO", timeout: "INCERTO" };
 const QUERY_TO_STATE: Record<QueryResult["kind"], DocState> = { authorized: "AUTORIZADO", rejected: "REJEITADO", not_found: "PENDENTE", unknown: "INCERTO" };
 
+type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
+/** Trava por pedido até o fim da transação (serializa emitir × descartar). */
+const lockOrder = (tx: Tx, orderId: string) => tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`order:${orderId}`}))`;
+
 async function syncOrder(orderId: string) {
   const docs = await db.emissionDocument.findMany({ where: { orderId }, select: { state: true } });
   await db.emissionOrder.update({ where: { id: orderId }, data: { state: deriveOrderState(docs.map((d) => d.state)) } });
@@ -29,9 +33,17 @@ export async function emitDocument(documentId: string, adapter: EmitterAdapter, 
   if (doc.state !== "PENDENTE") return { state: doc.state, detail: "Nota não está pendente; nada enviado." };
   if (!doc.fiscalRuleId) return { state: doc.state, detail: "Nota sem regra fiscal aprovada; envio bloqueado." };
 
-  // Trava: só um processo consegue passar de PENDENTE para ENVIADO.
-  const { count } = await db.emissionDocument.updateMany({ where: { id: documentId, state: "PENDENTE" }, data: { state: "ENVIADO" } });
-  if (count !== 1) return { state: "ENVIADO", detail: "Envio já em andamento." };
+  // Trava: só um processo passa de PENDENTE para ENVIADO, e nunca num pedido descartado
+  // (mesma trava por pedido que discardOrder usa; sem ela, descartar e emitir juntos poderiam ambos passar).
+  const locked = await db.$transaction(async (tx) => {
+    await lockOrder(tx, doc.orderId);
+    const order = await tx.emissionOrder.findUniqueOrThrow({ where: { id: doc.orderId }, select: { state: true } });
+    if (order.state === "DESCARTADO") return "descartado" as const;
+    const { count } = await tx.emissionDocument.updateMany({ where: { id: documentId, state: "PENDENTE" }, data: { state: "ENVIADO" } });
+    return count === 1 ? ("ok" as const) : ("em_andamento" as const);
+  });
+  if (locked === "descartado") return { state: doc.state, detail: "Pedido descartado; nada enviado." };
+  if (locked !== "ok") return { state: "ENVIADO", detail: "Envio já em andamento." };
 
   const seq = doc._count.attempts + 1;
   const req: EmitRequest = { documentId, docType: doc.type, idempotencyKey: idempotencyKey(doc.orderId, doc.type, seq) };
@@ -92,6 +104,29 @@ export async function reconcileDocument(documentId: string, adapter: EmitterAdap
   }
   await audit({ actor: ctx.actor, action: "nota.reconciliar", entity: "EmissionDocument", entityId: documentId, result: state, correlationId: ctx.correlationId, data: { consulta: result.kind } });
   return { state };
+}
+
+/**
+ * Desistência antes de qualquer envio: só se nenhuma nota tem tentativa registrada (nada pode existir no governo).
+ * Pedido fica no histórico como DESCARTADO; nunca mais é emitido.
+ */
+export async function discardOrder(orderId: string, ctx: Ctx): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const r = await db.$transaction(async (tx) => {
+    await lockOrder(tx, orderId);
+    const order = await tx.emissionOrder.findUnique({
+      where: { id: orderId },
+      select: { state: true, documents: { select: { state: true, _count: { select: { attempts: true } } } } },
+    });
+    if (!order) return { ok: false, reason: "Pedido não encontrado." } as const;
+    const untouched = order.documents.every((d) => d.state === "PENDENTE" && d._count.attempts === 0);
+    if (!["PRONTO_REVISAO", "BLOQUEADO"].includes(order.state) || !untouched) {
+      return { ok: false, reason: "Só é possível descartar pedido sem nenhuma nota enviada." } as const;
+    }
+    await tx.emissionOrder.update({ where: { id: orderId }, data: { state: "DESCARTADO" } });
+    return { ok: true } as const;
+  });
+  await audit({ actor: ctx.actor, action: "pedido.descartar", entity: "EmissionOrder", entityId: orderId, result: r.ok ? "descartado" : "recusado", correlationId: ctx.correlationId });
+  return r;
 }
 
 /** Tempo sem resposta após o qual um envio é considerado interrompido. */

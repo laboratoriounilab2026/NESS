@@ -8,7 +8,7 @@ import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
-import { emitDocument, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
+import { discardOrder, emitDocument, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
 
 export type ActionResult = { ok: boolean; message: string; docs?: Partial<Record<"NFSE" | "NFE", Outcome>> };
 
@@ -84,6 +84,15 @@ export async function reconcileOrderAction(orderId: string): Promise<ActionResul
     : { ok: false, message: "Transmissão ao governo ainda não configurada; não há como consultar." };
 }
 
+/** Descarta pedido salvo por engano, enquanto nenhuma nota foi enviada. */
+export async function discardOrderAction(orderId: string, confirmed: boolean): Promise<ActionResult> {
+  const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  if (confirmed !== true) return { ok: false, message: "Confirme o descarte." };
+  const r = await discardOrder(orderId, { actor: user.id, correlationId: crypto.randomUUID() });
+  revalidatePath(`/pedidos/${orderId}`);
+  return r.ok ? { ok: true, message: "Pedido descartado. Ele continua no histórico e não pode mais ser emitido." } : { ok: false, message: r.reason };
+}
+
 /** Libera nota rejeitada para nova tentativa. Só FISCAL/ADMIN: exige ter conferido o motivo da rejeição. */
 export async function retryRejectedAction(orderId: string, confirmed: boolean): Promise<ActionResult> {
   const user = await requireUser("FISCAL", "ADMIN");
@@ -107,8 +116,9 @@ export async function updateRecipientAction(orderId: string, raw: unknown): Prom
   const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
   const parsed = recipientEdit.safeParse(raw);
   if (!parsed.success) return { ok: false, message: "Revise os campos destacados.", errors: issuesByPath(parsed.error) };
-  const nfe = await db.emissionDocument.findFirst({ where: { orderId, type: "NFE" }, select: { state: true } });
+  const nfe = await db.emissionDocument.findFirst({ where: { orderId, type: "NFE" }, select: { state: true, order: { select: { state: true } } } });
   if (!nfe) return { ok: false, message: "Pedido não encontrado." };
+  if (nfe.order.state === "DESCARTADO") return { ok: false, message: "Pedido descartado." };
   if (!EDITABLE_NFE.includes(nfe.state)) return { ok: false, message: "A NF-e já foi enviada; o destinatário não pode mais ser alterado aqui." };
 
   const r = parsed.data;

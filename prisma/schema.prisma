@@ -36,6 +36,7 @@ enum OrderState {
   PARCIAL
   FALHA
   CANCELAMENTO_SOLICITADO
+  DESCARTADO // desistência antes de qualquer envio; o pedido fica no histórico
 }
 
 enum Environment {

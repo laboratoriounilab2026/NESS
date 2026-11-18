@@ -26,7 +26,7 @@ export function assertTransition(from: DocState, to: DocState): void {
   if (!canTransition(from, to)) throw new Error(`Transição inválida: ${from} → ${to}`);
 }
 
-export const ORDER_STATES = ["RASCUNHO", "VALIDANDO", "PRONTO_REVISAO", "BLOQUEADO", "EMITINDO", "COMPLETO", "PARCIAL", "FALHA", "CANCELAMENTO_SOLICITADO"] as const;
+export const ORDER_STATES = ["RASCUNHO", "VALIDANDO", "PRONTO_REVISAO", "BLOQUEADO", "EMITINDO", "COMPLETO", "PARCIAL", "FALHA", "CANCELAMENTO_SOLICITADO", "DESCARTADO"] as const;
 export type OrderState = (typeof ORDER_STATES)[number];
 
 /**

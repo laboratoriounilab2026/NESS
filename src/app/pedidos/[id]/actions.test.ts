@@ -15,7 +15,7 @@ const authorized: EmitterAdapter = {
 
 describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () => {
   const { db } = await import("@/lib/db");
-  const { emitOrderAction, recheckRulesAction, retryRejectedAction, updateRecipientAction } = await import("./actions");
+  const { discardOrderAction, emitOrderAction, recheckRulesAction, retryRejectedAction, updateRecipientAction } = await import("./actions");
   const tag = `teste-acao-${crypto.randomUUID()}`;
   const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
@@ -138,6 +138,20 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     registry.adapter = authorized;
     await emitOrderAction(o.id, true);
     expect(await updateRecipientAction(o.id, addr)).toMatchObject({ ok: false, message: expect.stringMatching(/já foi enviada/) });
+  });
+
+  it("descartar: exige confirmação, só antes de qualquer envio, e pedido descartado nunca é emitido", async () => {
+    const o = await newOrder();
+    expect(await discardOrderAction(o.id, false)).toMatchObject({ ok: false });
+    expect(await discardOrderAction(o.id, true)).toMatchObject({ ok: true });
+    expect((await db.emissionOrder.findUniqueOrThrow({ where: { id: o.id } })).state).toBe("DESCARTADO");
+    registry.adapter = authorized;
+    expect(await emitOrderAction(o.id, true)).toMatchObject({ ok: false });
+    expect(await attempts(o.id)).toBe(0);
+
+    const sent = await newOrder();
+    await emitOrderAction(sent.id, true);
+    expect(await discardOrderAction(sent.id, true)).toMatchObject({ ok: false, message: expect.stringMatching(/nenhuma nota enviada/) });
   });
 
   it("regra aprovada depois do bloqueio: verificar de novo libera o pedido", async () => {

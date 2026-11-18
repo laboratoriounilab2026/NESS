@@ -24,7 +24,7 @@ const ctx = { actor: "teste-orquestrador", correlationId: "00000000-teste" };
 
 describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
   const { db } = await import("@/lib/db");
-  const { emitDocument, emitOrder, markStaleSent, reconcileDocument } = await import("./emit");
+  const { discardOrder, emitDocument, emitOrder, markStaleSent, reconcileDocument } = await import("./emit");
   const tag = `teste-orq-${crypto.randomUUID()}`;
   const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
@@ -136,6 +136,15 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
     const f = fake([]);
     expect((await reconcileDocument(nfe.id, f.adapter, ctx)).state).toBe("PENDENTE");
     expect(f.calls.query).toHaveLength(0);
+  });
+
+  it("nota de pedido descartado nunca chega ao emissor, mesmo chamando o envio direto", async () => {
+    const { order, nfe } = await newOrder();
+    await db.emissionOrder.update({ where: { id: order.id }, data: { state: "PRONTO_REVISAO" } });
+    expect(await discardOrder(order.id, ctx)).toEqual({ ok: true });
+    const f = fake([ok("e")]);
+    expect((await emitDocument(nfe.id, f.adapter, ctx)).detail).toMatch(/descartado/);
+    expect(f.calls.send).toHaveLength(0);
   });
 
   it("nota sem regra fiscal não é enviada", async () => {

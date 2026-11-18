@@ -101,7 +101,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         {r && <p><b>Entrega:</b> {r.name} · {r.city}/{r.uf} · CEP {r.cep}</p>}
       </section>
 
-      {r && o.documents.some((d) => d.type === "NFE" && (d.state === "PENDENTE" || d.state === "REJEITADO")) && (
+      {r && o.state !== "DESCARTADO" && o.documents.some((d) => d.type === "NFE" && (d.state === "PENDENTE" || d.state === "REJEITADO")) && (
         <RecipientEditor
           orderId={o.id}
           initial={{
@@ -118,6 +118,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         blocked={o.state === "BLOQUEADO"}
         rejected={o.documents.some((d) => d.state === "REJEITADO")}
         canRetry={user.role === "FISCAL" || user.role === "ADMIN"}
+        canDiscard={(o.state === "PRONTO_REVISAO" || o.state === "BLOQUEADO") && o.documents.every((d) => d.state === "PENDENTE" && d._count.attempts === 0)}
       />
     </>
   );

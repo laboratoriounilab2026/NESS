@@ -52,7 +52,7 @@ Cancelamento está só no modelo de estados; não há ação de cancelar ainda.
 
 ## Estado do pedido
 
-Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. Depois, é **derivado** das notas (`deriveOrderState`):
+Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. Desistência antes de qualquer envio (nenhuma tentativa registrada): `DESCARTADO` (`discardOrder`), final; emitir e descartar usam a mesma trava por pedido (`pg_advisory_xact_lock`), então nunca ocorrem juntos. Depois, é **derivado** das notas (`deriveOrderState`):
 
 | Notas | Pedido |
 |---|---|
@@ -116,7 +116,7 @@ Salvamentos simultâneos do mesmo documento são serializados com `pg_advisory_x
 
 ## Auditoria
 
-Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
+Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.descartar`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
 `data` aceita só valores escalares; nunca CPF/CNPJ, endereço, senha ou certificado. E-mail no login entra como hash.
 
 ## Pontos de extensão (Fases 4/5)

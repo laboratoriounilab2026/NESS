@@ -23,6 +23,7 @@ export const ORDER_BADGE: Record<OrderState, { status: DocStatus; label: string 
   PARCIAL: { status: "err", label: "Emissão parcial" },
   FALHA: { status: "err", label: "Falha" },
   CANCELAMENTO_SOLICITADO: { status: "wait", label: "Cancelamento solicitado" },
+  DESCARTADO: { status: "draft", label: "Descartado" },
 };
 
 export const DOC_LABEL = { NFSE: "NFS-e", NFE: "NF-e" } as const;
