@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { requireUser } from "@/auth/session";
 import { StatusBadge } from "@/components/status-badge";
-import { formatBRL } from "@/domain/order-input";
+import { formatBRL, PAYMENT_METHODS } from "@/domain/order-input";
 import { db } from "@/lib/db";
 import type { RecipientEdit } from "./actions";
 import { EmitPanel } from "./emit-panel";
@@ -72,10 +72,16 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
             </div>
             <p className="tabular-nums">{formatBRL(d.type === "NFSE" ? o.serviceCents : o.goodsCents)}</p>
             {d.type === "NFSE" && o.serviceDescription && <p className="text-sm">{o.serviceDescription}</p>}
+            {d.type === "NFSE" && o.serviceDate && (
+              <p className="text-sm text-muted">Serviço em {o.serviceDate.toISOString().slice(0, 10).split("-").reverse().join("/")} · {o.serviceCity}</p>
+            )}
             {d.type === "NFE" && o.goodsDescription && (
               <p className="text-sm">
                 {o.goodsQuantity} × {o.goodsDescription} · <span className="tabular-nums">{formatBRL(o.goodsUnitCents ?? 0)}</span> cada
               </p>
+            )}
+            {d.type === "NFE" && o.paymentMethod && (
+              <p className="text-sm text-muted">Pagamento: {PAYMENT_METHODS[o.paymentMethod as keyof typeof PAYMENT_METHODS] ?? o.paymentMethod}</p>
             )}
             <p className="text-sm text-muted">
               {d.fiscalRule ? `Regra fiscal versão ${d.fiscalRule.version}` : "Sem regra fiscal aprovada: emissão bloqueada até o responsável fiscal aprovar."}

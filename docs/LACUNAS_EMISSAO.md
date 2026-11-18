@@ -30,7 +30,7 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 | imposto: ICMS (CST/CSOSN + origem), PIS, COFINS | ✅ 🔷 | CST na regra; **bases e alíquotas, se o CST exigir, não estão na regra** |
 | total (ICMSTot) | ⚙️ | soma dos itens |
 | transp: modFrete | 🔷 🟡 | modalidade do frete (Correios/retirada) — **não definido** |
-| pag: tPag, vPag | 🟡 | forma de pagamento — **não coletada** |
+| pag: tPag, vPag | ✅ | forma de pagamento no pedido (códigos tPag usuais; conferir tabela vigente) |
 | infAdic: infCpl | ✅ 🔷 | parâmetro opcional da regra (ex.: referência à NFS-e) |
 
 ## DPS / NFS-e nacional (serviço fotográfico)
@@ -38,14 +38,14 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 | Grupo / campo | Situação | Observação |
 |---|---|---|
 | Id, série, nDPS | ✅ ⚙️ | `dps-id.ts`, `numbering.ts` |
-| tpAmb, dhEmi, dCompet | ✅ ⚙️ | competência = data do serviço? **confirmar** (hoje não coletamos a data do serviço) |
+| tpAmb, dhEmi, dCompet | ✅ ⚙️ | data do serviço coletada no pedido (competência) — confirmar com o contador se competência = data do serviço |
 | cLocEmi (município emissor) | ✅ | `Establishment.municipioIbge` |
 | prest: CNPJ | ✅ | |
 | prest: IM (inscrição municipal) | ✅ | cadastro da empresa |
 | prest: regime (opSimpNac, regEspTrib) | 🔷 | **não está na regra** |
 | toma: CPF/CNPJ, nome, e-mail | ✅ | tomador |
 | toma: endereço | 🟡 | **não coletado** do tomador (só do destinatário) — confirmar se o município exige |
-| serv: local da prestação (cLocPrestacao) | 🟡 🔷 | onde o ensaio aconteceu — **não coletado** |
+| serv: local da prestação (cLocPrestacao) | ✅ | município do serviço no pedido, validado pelo IBGE |
 | serv: cTribNac, cTribMun | ✅ 🔷 | parâmetros da regra |
 | serv: xDescServ | ✅ | guardado no pedido desde `f8ab6bd` |
 | serv: código NBS | 🔷 | **não está na regra** — confirmar obrigatoriedade |
@@ -57,6 +57,6 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 
 1. ~~**Cadastro do estabelecimento (ADMIN):** endereço completo, IE, IM~~ — feito. Regime especial (regEspTrib) é decisão fiscal: vai para a regra.
 2. ~~**Código IBGE do município do destinatário**~~ — feito: lista por UF com a tabela pública do IBGE embarcada (sem consulta externa com dados do cliente).
-3. **Pedido:** forma de pagamento, data e local do serviço.
+3. ~~**Pedido:** forma de pagamento, data e local do serviço~~ — feito.
 4. **Regra fiscal (responsável fiscal + contador):** acrescentar à regra os campos 🔷 que faltam — indFinal, indPres, finNFe, modFrete, indIEDest, bases/alíquotas conforme o CST, tribISSQN, NBS, totTrib — **sem valores padrão**, como os demais.
 5. Só então escrever os montadores de XML, validando contra o XSD oficial.

@@ -144,6 +144,11 @@ model EmissionOrder {
   goodsDescription   String?
   goodsQuantity      Int?
   goodsUnitCents     Int?
+  // Dados das notas coletados no pedido (nulos em pedidos antigos; sem eles não há emissão).
+  serviceDate        DateTime? @db.Date // competência da DPS (dCompet)
+  serviceCity        String?
+  serviceCityIbge    String?            // local da prestação (cLocPrestacao)
+  paymentMethod      String?            // tPag da NF-e
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   documents       EmissionDocument[]

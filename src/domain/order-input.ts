@@ -87,12 +87,43 @@ export const recipientSchema = recipientFields.transform(withMunicipio);
 export const recipientEditSchema = recipientFields.omit({ same: true }).transform(withMunicipio);
 
 
-export const serviceSchema = z.object({ description: text(3, "a descrição do serviço"), value: money });
+/** Formas de pagamento (códigos tPag do layout da NF-e). ponytail: subconjunto usual do estúdio; conferir a tabela vigente. */
+export const PAYMENT_METHODS = {
+  "17": "PIX",
+  "03": "Cartão de crédito",
+  "04": "Cartão de débito",
+  "01": "Dinheiro",
+  "15": "Boleto",
+  "16": "Depósito bancário",
+  "18": "Transferência",
+  "99": "Outros",
+} as const;
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe a data do serviço").refine((s) => !Number.isNaN(Date.parse(`${s}T12:00:00Z`)), "Data inválida");
+
+// Local da prestação (DPS cLocPrestacao): município do IBGE, validado como a cidade do destinatário.
+export const serviceSchema = z
+  .object({
+    description: text(3, "a descrição do serviço"),
+    value: money,
+    date: isoDate,
+    uf: z.enum(UFS, "Selecione a UF onde o serviço foi feito"),
+    city: text(2, "a cidade onde o serviço foi feito"),
+  })
+  .transform((s, ctx) => {
+    const m = findMunicipio(s.uf, s.city);
+    if (!m) {
+      ctx.addIssue({ code: "custom", path: ["city"], message: "Cidade não encontrada nesta UF. Escolha da lista." });
+      return z.NEVER;
+    }
+    return { ...s, city: m.name, cityIbge: m.code };
+  });
 
 export const goodsSchema = z.object({
   description: text(3, "a descrição do álbum"),
   quantity: z.coerce.number<string>().int("Quantidade inteira").min(1, "Mínimo 1"),
   unitValue: money,
+  payment: z.enum(Object.keys(PAYMENT_METHODS) as [keyof typeof PAYMENT_METHODS], "Selecione a forma de pagamento"),
 });
 
 export const orderSchema = z
@@ -106,8 +137,8 @@ export type OrderInput = z.output<typeof orderSchema>;
 export const EMPTY_DRAFT: OrderDraft = {
   customer: { document: "", name: "", email: "" },
   recipient: { same: false, name: "", document: "", cep: "", street: "", number: "", district: "", city: "", uf: "" as OrderDraft["recipient"]["uf"] },
-  service: { description: "", value: "" },
-  goods: { description: "", quantity: "1", unitValue: "" },
+  service: { description: "", value: "", date: "", uf: "" as OrderDraft["service"]["uf"], city: "" },
+  goods: { description: "", quantity: "1", unitValue: "", payment: "" as OrderDraft["goods"]["payment"] },
 };
 
 /** Erros por caminho ("customer.document") para exibir inline. */

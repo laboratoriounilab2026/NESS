@@ -16,8 +16,8 @@ const rule = { docType: "NFE", purpose: "album", ufDestino: "SP", municipioIbge:
 const order = {
   customer: { document: "529.982.247-25", name: "Cliente Teste", email: "" },
   recipient: { same: false, name: "Dest", document: "", cep: "01001-000", street: "Rua", number: "1", district: "Centro", city: "São Paulo", uf: "SP" },
-  service: { description: "Ensaio", value: "100" },
-  goods: { description: "Álbum", quantity: "1", unitValue: "50" },
+  service: { description: "Ensaio", value: "100", date: "2026-11-10", uf: "SP", city: "São Paulo" },
+  goods: { description: "Álbum", quantity: "1", unitValue: "50", payment: "17" },
 };
 
 describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", async () => {

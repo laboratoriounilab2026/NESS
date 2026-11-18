@@ -34,16 +34,20 @@ test("pedido sem regra fiscal é salvo bloqueado e não pode ser emitido", async
   await page.getByLabel("Rua").fill("Praça da Sé");
   await page.getByLabel("Número").fill("1");
   await page.getByLabel("Bairro").fill("Sé");
-  await page.getByLabel("Cidade").fill("São Paulo");
-  await page.getByLabel("UF").selectOption("SP");
+  await page.getByLabel("Cidade", { exact: true }).fill("São Paulo");
+  await page.getByLabel("UF", { exact: true }).selectOption("SP");
   await next.click();
 
   await page.getByLabel("Descrição do serviço").fill("Ensaio fotográfico E2E");
   await page.getByLabel("Valor do serviço (R$)").fill("500,00");
+  await page.getByLabel("Data do serviço").fill("2026-11-10");
+  await page.getByLabel("UF onde o serviço foi feito").selectOption("SP");
+  await page.getByLabel("Cidade onde o serviço foi feito").fill("São Paulo");
   await next.click();
 
   await page.getByLabel("Descrição do álbum").fill("Álbum E2E");
   await page.getByLabel("Valor unitário (R$)").fill("200,00");
+  await page.getByLabel("Forma de pagamento").selectOption("17");
   await next.click();
 
   // Verificação fiscal: sem regra aprovada, as duas notas ficam bloqueadas.

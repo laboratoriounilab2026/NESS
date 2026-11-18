@@ -19,8 +19,8 @@ describe("municípios IBGE", () => {
     const base = {
       customer: { document: "529.982.247-25", name: "Cliente", email: "" },
       recipient: { same: false, name: "Dest", document: "", cep: "01001-000", street: "Rua", number: "1", district: "Centro", city: "SAO PAULO", uf: "SP" as const },
-      service: { description: "Ensaio", value: "100" },
-      goods: { description: "Álbum", quantity: "1", unitValue: "50" },
+      service: { description: "Ensaio", value: "100", date: "2026-11-10", uf: "SP", city: "São Paulo" },
+      goods: { description: "Álbum", quantity: "1", unitValue: "50", payment: "17" },
     };
     expect(orderSchema.parse(base).recipient).toMatchObject({ city: "São Paulo", cityIbge: "3550308" });
     const bad = orderSchema.safeParse({ ...base, recipient: { ...base.recipient, uf: "RJ" } });

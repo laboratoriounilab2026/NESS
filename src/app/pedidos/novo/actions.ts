@@ -108,6 +108,10 @@ export async function saveOrder(raw: unknown, ref: string): Promise<SaveResult> 
           goodsDescription: d.goods.description,
           goodsQuantity: d.goods.quantity,
           goodsUnitCents: d.goods.unitValue,
+          serviceDate: new Date(`${d.service.date}T00:00:00Z`),
+          serviceCity: d.service.city,
+          serviceCityIbge: d.service.cityIbge,
+          paymentMethod: d.goods.payment,
           documents: { create: [{ type: "NFSE", fiscalRuleId: ruleOf(nfse) }, { type: "NFE", fiscalRuleId: ruleOf(nfe) }] },
         },
       });

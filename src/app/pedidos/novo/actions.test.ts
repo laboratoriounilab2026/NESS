@@ -7,8 +7,8 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
   const valid = {
     customer: { document: "529.982.247-25", name: "Cliente Teste", email: "" },
     recipient: { same: false, name: "Destinatário", document: "", cep: "01001-000", street: "Rua A", number: "1", district: "Centro", city: "São Paulo", uf: "SP" },
-    service: { description: "Ensaio", value: "1.000,00" },
-    goods: { description: "Álbum 30x30", quantity: "1", unitValue: "250" },
+    service: { description: "Ensaio", value: "1.000,00", date: "2026-11-10", uf: "SP", city: "São Paulo" },
+    goods: { description: "Álbum 30x30", quantity: "1", unitValue: "250", payment: "17" },
   };
 
   it("rejeita entrada inválida no servidor mesmo que o cliente aceite", async () => {
@@ -58,7 +58,8 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
       expect(docs.map((d) => d.state)).toEqual(["PENDENTE", "PENDENTE"]);
       // Itens digitados são guardados (vão para as notas), não só os totais.
       const saved = await db.emissionOrder.findUniqueOrThrow({ where: { ref } });
-      expect(saved).toMatchObject({ serviceDescription: valid.service.description, goodsDescription: valid.goods.description, goodsQuantity: 1, goodsUnitCents: 25000, goodsCents: 25000 });
+      expect(saved).toMatchObject({ serviceDescription: valid.service.description, goodsDescription: valid.goods.description, goodsQuantity: 1, goodsUnitCents: 25000, goodsCents: 25000, serviceCity: "São Paulo", serviceCityIbge: "3550308", paymentMethod: "17" });
+      expect(saved.serviceDate?.toISOString().slice(0, 10)).toBe("2026-11-10");
     } finally {
       const o = await db.emissionOrder.findUnique({ where: { ref } });
       if (o) {

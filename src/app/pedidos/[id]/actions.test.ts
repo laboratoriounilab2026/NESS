@@ -36,6 +36,7 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
       data: {
         ref: `${tag}-${crypto.randomUUID()}`, state, establishmentId: est.id, customerId: customer.id, recipientId: recipient.id, serviceCents: 100, goodsCents: 50,
         serviceDescription: "Ensaio", goodsDescription: "Álbum", goodsQuantity: 1, goodsUnitCents: 50,
+        serviceDate: new Date("2026-11-10"), serviceCity: "São Paulo", serviceCityIbge: "3550308", paymentMethod: "17",
         documents: { create: [{ type: "NFSE", fiscalRuleId: rule.id }, { type: "NFE", fiscalRuleId: state === "BLOQUEADO" ? null : nfeRule.id }] },
       },
     });

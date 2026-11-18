@@ -30,8 +30,8 @@ describe("pedido", () => {
     const ok = orderSchema.parse({
       customer: { document: "529.982.247-25", name: "Cliente Teste", email: "" },
       recipient: { same: false, name: "Destinatário", document: "", cep: "01001-000", street: "Rua A", number: "1", district: "Centro", city: "São Paulo", uf: "SP" },
-      service: { description: "Ensaio", value: "1.000,00" },
-      goods: { description: "Álbum 30x30", quantity: "2", unitValue: "250" },
+      service: { description: "Ensaio", value: "1.000,00", date: "2026-11-10", uf: "SP", city: "São Paulo" },
+      goods: { description: "Álbum 30x30", quantity: "2", unitValue: "250", payment: "17" },
     });
     expect(ok.service.value).toBe(100000);
     expect(ok.goods.quantity).toBe(2);
@@ -41,8 +41,8 @@ describe("pedido", () => {
     const o = orderSchema.parse({
       customer: { document: "529.982.247-25", name: "Nome Corrigido", email: "" },
       recipient: { same: true, name: "Nome Antigo", document: "", cep: "01001-000", street: "Rua A", number: "1", district: "Centro", city: "São Paulo", uf: "SP" },
-      service: { description: "Ensaio", value: "100" },
-      goods: { description: "Álbum", quantity: "1", unitValue: "50" },
+      service: { description: "Ensaio", value: "100", date: "2026-11-10", uf: "SP", city: "São Paulo" },
+      goods: { description: "Álbum", quantity: "1", unitValue: "50", payment: "17" },
     });
     expect(o.recipient).toMatchObject({ name: "Nome Corrigido", document: "52998224725" });
   });

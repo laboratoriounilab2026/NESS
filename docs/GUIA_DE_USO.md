@@ -29,8 +29,8 @@ Menu **Pedidos › Novo pedido**. São 7 etapas; o rascunho fica salvo enquanto 
 
 1. **Tomador** — quem contratou e paga o serviço (sai na NFS-e).
 2. **Destinatário** — quem recebe o álbum e o endereço de entrega (sai na NF-e). Marque "O destinatário é o próprio tomador" se for a mesma pessoa.
-3. **Serviço** — descrição e valor.
-4. **Álbum** — descrição, quantidade e valor unitário.
+3. **Serviço** — descrição, valor, data e cidade onde o ensaio foi feito.
+4. **Álbum** — descrição, quantidade, valor unitário e forma de pagamento.
 5. **Verificação fiscal** — o sistema procura a regra aprovada de cada nota. Se faltar, o pedido pode ser salvo, mas fica **bloqueado**.
 6. **Revisão** — confira as duas notas lado a lado.
 7. **Confirmação** — marque "Conferi os dados das duas notas" e clique em **Salvar pedido**.

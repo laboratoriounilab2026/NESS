@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, CircleCheck, LoaderCircle, Save, Trash2 } from "
 import type { z } from "zod";
 import { StatusBadge } from "@/components/status-badge";
 import {
-  customerSchema, EMPTY_DRAFT, formatBRL, goodsSchema, issuesByPath, parseBRL, recipientSchema, serviceSchema, UFS,
+  customerSchema, EMPTY_DRAFT, formatBRL, goodsSchema, issuesByPath, parseBRL, PAYMENT_METHODS, recipientSchema, serviceSchema, UFS,
   type OrderDraft,
 } from "@/domain/order-input";
 import type { Resolution } from "@/fiscal/matrix";
@@ -63,8 +63,9 @@ export function OrderWizard() {
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(DRAFT_KEY);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- restaurar rascunho do navegador só é possível após montar
-      if (saved) setDraft({ ...EMPTY_DRAFT, ...JSON.parse(saved) });
+      // Mescla por seção: rascunho de versão anterior não tem os campos novos (ficam vazios, não undefined).
+      const d = saved ? (JSON.parse(saved) as Partial<OrderDraft>) : null;
+      if (d) setDraft({ customer: { ...EMPTY_DRAFT.customer, ...d.customer }, recipient: { ...EMPTY_DRAFT.recipient, ...d.recipient }, service: { ...EMPTY_DRAFT.service, ...d.service }, goods: { ...EMPTY_DRAFT.goods, ...d.goods } });
     } catch {}
     setLoaded(true);
   }, []);
@@ -165,7 +166,7 @@ export function OrderWizard() {
     setStep(0);
   }
 
-  function field<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, opts: { hint?: string; inputMode?: "numeric" | "decimal" | "email"; disabled?: boolean; className?: string; onBlur?: () => void; list?: string } = {}) {
+  function field<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, opts: { hint?: string; inputMode?: "numeric" | "decimal" | "email"; disabled?: boolean; className?: string; onBlur?: () => void; list?: string; type?: "date" } = {}) {
     const id = `${section}-${key}`;
     const err = errors[`${section}.${key}`];
     return (
@@ -178,6 +179,7 @@ export function OrderWizard() {
           onChange={(e) => set(section, key, e.target.value)}
           onBlur={opts.onBlur}
           list={opts.list}
+          type={opts.type}
           inputMode={opts.inputMode}
           disabled={opts.disabled}
           aria-invalid={err ? true : undefined}
@@ -196,6 +198,28 @@ export function OrderWizard() {
   const blocked = !fiscal || fiscal.nfse.status === "blocked" || fiscal.nfe.status === "blocked";
   const service = parseBRL(draft.service.value);
   const goods = parseBRL(draft.goods.unitValue) * (Number(draft.goods.quantity) || 0);
+
+  function select<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, options: [string, string][]) {
+    const id = `${section}-${key}`;
+    const err = errors[`${section}.${key}`];
+    return (
+      <div className="grid gap-1.5">
+        <label htmlFor={id} className="text-sm font-semibold">{label}</label>
+        <select
+          id={id}
+          className={inputCls}
+          value={String(draft[section][key] ?? "")}
+          onChange={(e) => set(section, key, e.target.value)}
+          aria-invalid={err ? true : undefined}
+          aria-describedby={err ? `${id}-err` : undefined}
+        >
+          <option value="">Selecione</option>
+          {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+        {err && <p id={`${id}-err`} className="text-[13px] font-semibold text-err">{err}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-3.5 lg:grid-cols-[220px_1fr]">
@@ -284,6 +308,13 @@ export function OrderWizard() {
             <p className="text-sm text-muted sm:col-span-2">O serviço fotográfico. Vira a NFS-e. Códigos e impostos vêm da regra aprovada.</p>
             {field("service", "description", "Descrição do serviço", { className: "sm:col-span-2", hint: "Ex.: Ensaio gestante, 2 horas, 40 fotos editadas." })}
             {field("service", "value", "Valor do serviço (R$)", { inputMode: "decimal", hint: "Ex.: 1.250,00" })}
+            {field("service", "date", "Data do serviço", { type: "date", hint: "Vira a competência da NFS-e." })}
+            <div />
+            {select("service", "uf", "UF onde o serviço foi feito", UFS.map((u) => [u, u]))}
+            {field("service", "city", "Cidade onde o serviço foi feito", { list: "cidades-servico", hint: "Local da prestação na NFS-e. Escolha da lista." })}
+            <datalist id="cidades-servico">
+              {draft.service.uf && municipiosOf(draft.service.uf).map((c) => <option key={c} value={c} />)}
+            </datalist>
           </div>
         )}
 
@@ -293,6 +324,7 @@ export function OrderWizard() {
             {field("goods", "description", "Descrição do álbum", { className: "sm:col-span-2", hint: "Ex.: Álbum 30×30, capa em linho, 40 páginas." })}
             {field("goods", "quantity", "Quantidade", { inputMode: "numeric" })}
             {field("goods", "unitValue", "Valor unitário (R$)", { inputMode: "decimal" })}
+            {select("goods", "payment", "Forma de pagamento", Object.entries(PAYMENT_METHODS))}
           </div>
         )}
 
@@ -322,12 +354,14 @@ export function OrderWizard() {
               ["Tomador", draft.customer.name],
               ["CPF/CNPJ", maskDoc(draft.customer.document)],
               ["Serviço", draft.service.description],
+              ["Data e local", `${draft.service.date ? draft.service.date.split("-").reverse().join("/") : "—"} · ${draft.service.city}/${draft.service.uf}`],
               ["Valor", formatBRL(service)],
             ]} />
             <ReviewCard title="NF-e · álbum" status={fiscal?.nfe} rows={[
               ["Destinatário", draft.recipient.name],
               ["Entrega", `${draft.recipient.city}/${draft.recipient.uf} · CEP ${draft.recipient.cep}`],
               ["Item", `${draft.goods.quantity} × ${draft.goods.description}`],
+              ["Pagamento", PAYMENT_METHODS[draft.goods.payment as keyof typeof PAYMENT_METHODS] ?? "—"],
               ["Valor", formatBRL(goods)],
             ]} />
           </div>
