@@ -55,12 +55,12 @@ Sidebar (Visão geral, Pedidos, Emissões, Documentos, Configuração fiscal, Au
 | 7 | Papéis, mascaramento, observabilidade | revisão de segurança |
 | 8 | E2E Playwright, docs, treinamento | checklist final; produção só com autorização explícita |
 
-### Situação em 17/11/2026
+### Situação em 18/11/2026
 | Fase | Situação |
 |---|---|
 | 0–3 | Concluídas: app, domínio e estados, schema e auditoria, design system, matriz fiscal com aprovação, cadastro de pedido. |
-| 6 | Concluída: orquestrador com idempotência, INCERTO só sai por consulta, sucesso parcial. Pedido é salvo com as duas notas; emissão e consulta pela tela, com confirmação; regra revalidada antes de cada envio. |
-| 4 e 5 | **Bloqueadas** pelas pendências abaixo. Ponto de ligação pronto: `src/emitters/registry.ts` (hoje sem adaptador, envio bloqueado com explicação). |
+| 6 | Concluída: orquestrador com idempotência, INCERTO só sai por consulta, sucesso parcial. Pedido é salvo com as duas notas; emissão e consulta pela tela, com confirmação; regra revalidada antes de cada envio. Recuperação de envio interrompido, resposta tardia não sobrescreve, descarte antes do envio, nova tentativa de rejeitada, trava por pedido. |
+| 4 e 5 | **Transmissão bloqueada** pelas pendências abaixo. Já prontas (sem certificado): chave de acesso NF-e 44 posições com DV (`src/emitters/nfe/access-key.ts`), Id da DPS 45 posições (`src/emitters/nfse/dps-id.ts`, conferir com XSD vigente), numeração NF-e e DPS reservada no envio e entregue ao emissor (`src/emitters/numbering.ts`). Falta: XML 4.00/DPS, assinatura A1, cliente SOAP/REST, DANFE/DANFSe e o adaptador em `src/emitters/registry.ts`. |
 | 7 | Parcial: log estruturado de erros sem dados pessoais (`src/instrumentation.ts`, digest = código da tela de erro); saúde em `/api/health` (200 ok / 503 sem banco, público, sem detalhes). papéis OPERADOR/FISCAL/ADMIN em toda página/ação, CPF/CNPJ mascarado na tela, auditoria sem dados pessoais. Falta enviar esses logs a um coletor e configurar alertas, ao definir a hospedagem. |
 | 8 | Parcial: jornada E2E (`e2e/`, Playwright) e testes de integração com banco no job `e2e` do CI — **ainda não executados: as Actions do GitHub não rodam neste repositório** (0 execuções). Guia de uso em `docs/GUIA_DE_USO.md`. |
 
