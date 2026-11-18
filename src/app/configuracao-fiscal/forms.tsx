@@ -4,7 +4,7 @@ import { startTransition, useActionState, useState } from "react";
 import { CircleCheck, Plus } from "lucide-react";
 import { UFS } from "@/domain/order-input";
 import { NFE_FIELDS, NFSE_FIELDS, REGIMES, RETENCAO_ISS } from "@/fiscal/rule-input";
-import { approveRule, configureNfeNumbering, createEstablishment, createRule, type FormState } from "./actions";
+import { approveRule, configureNumbering, createEstablishment, createRule, type FormState } from "./actions";
 
 const inputCls = "w-full rounded-xl border border-line bg-bg px-3 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-accent aria-[invalid=true]:border-err";
 const btn = "inline-flex items-center gap-2 rounded-xl bg-fg px-4 py-2.5 font-semibold text-bg disabled:opacity-60";
@@ -152,21 +152,23 @@ function keep(action: (f: FormData) => void) {
   };
 }
 
-export function NfeNumberingForm({ id }: { id: string }) {
+export function NumberingForm({ id, kind }: { id: string; kind: "NFE" | "NFSE" }) {
   const [state, action, pending] = useActionState(
-    (prev: FormState, f: FormData) => configureNfeNumbering(prev, Object.fromEntries(f)),
+    (prev: FormState, f: FormData) => configureNumbering(prev, Object.fromEntries(f)),
     {},
   );
   const e = state.errors;
-  const p = (name: string) => ({ ...inputProps(`${name}-${id}`, e && { [`${name}-${id}`]: e[name] }), name, inputMode: "numeric" as const });
+  const doc = kind === "NFE" ? "NF-e" : "DPS (NFS-e)";
+  const p = (name: string) => ({ ...inputProps(`${name}-${kind}-${id}`, e && { [`${name}-${kind}-${id}`]: e[name] }), name, inputMode: "numeric" as const });
   return (
     <form action={action} className="mt-2 grid gap-3 sm:grid-cols-2">
       <input type="hidden" name="id" value={id} />
-      <Field id={`nfeSeries-${id}`} label="Série da NF-e" error={e?.nfeSeries} hint="A mesma série usada hoje na empresa."><input {...p("nfeSeries")} /></Field>
-      <Field id={`nfeNextNumber-${id}`} label="Próximo número da NF-e" error={e?.nfeNextNumber} hint="Último número emitido nesta série + 1."><input {...p("nfeNextNumber")} /></Field>
+      <input type="hidden" name="kind" value={kind} />
+      <Field id={`series-${kind}-${id}`} label={`Série da ${doc}`} error={e?.series} hint="A mesma série usada hoje na empresa."><input {...p("series")} /></Field>
+      <Field id={`nextNumber-${kind}-${id}`} label={`Próximo número da ${doc}`} error={e?.nextNumber} hint="Último número emitido nesta série + 1."><input {...p("nextNumber")} /></Field>
       <label className="flex items-start gap-2.5 text-sm sm:col-span-2">
         <input type="checkbox" name="confirm" className="mt-0.5 size-4 accent-[var(--accent)]" />
-        Conferi série e número com a última NF-e emitida. Depois de salvo, não é possível alterar por esta tela.
+        Conferi série e número com a última {doc} emitida. Depois de salvo, não é possível alterar por esta tela.
       </label>
       <div className="grid gap-2 sm:col-span-2">
         <button type="submit" disabled={pending} className={`${btn} w-fit`}>Salvar numeração</button>

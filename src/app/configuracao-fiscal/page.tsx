@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Ban, Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
 import { REGIMES } from "@/fiscal/rule-input";
-import { ApproveForm, EstablishmentForm, NfeNumberingForm, RuleForm } from "./forms";
+import { ApproveForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
 import { requireUser } from "@/auth/session";
 import { db } from "@/lib/db";
 
@@ -48,15 +48,17 @@ async function Content() {
                 <b>{e.name}</b>
                 <span className="text-muted">{e.uf} · {REGIMES[e.regime as keyof typeof REGIMES] ?? e.regime}</span>
                 <span className="text-muted">{e.environment === "PRODUCAO" ? "Produção" : "Homologação"}</span>
-                {e.nfeSeries !== null ? (
-                  <span className="text-muted">NF-e série {e.nfeSeries} · próximo nº {e.nfeNextNumber}</span>
-                ) : user.role === "ADMIN" ? (
-                  <details className="basis-full">
-                    <summary className="cursor-pointer font-semibold text-wait">Configurar numeração da NF-e (necessária para emitir)</summary>
-                    <NfeNumberingForm id={e.id} />
-                  </details>
-                ) : (
-                  <span className="font-semibold text-wait">Numeração da NF-e não configurada (administrador)</span>
+                {([["NFE", "NF-e", e.nfeSeries, e.nfeNextNumber], ["NFSE", "DPS (NFS-e)", e.dpsSeries, e.dpsNextNumber]] as const).map(([kind, doc, series, next]) =>
+                  series !== null ? (
+                    <span key={kind} className="text-muted">{doc} série {series} · próximo nº {next}</span>
+                  ) : user.role === "ADMIN" ? (
+                    <details key={kind} className="basis-full">
+                      <summary className="cursor-pointer font-semibold text-wait">Configurar numeração da {doc} (necessária para emitir)</summary>
+                      <NumberingForm id={e.id} kind={kind} />
+                    </details>
+                  ) : (
+                    <span key={kind} className="font-semibold text-wait">Numeração da {doc} não configurada (administrador)</span>
+                  ),
                 )}
               </li>
             ))}

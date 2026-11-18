@@ -1,11 +1,11 @@
 import { afterAll, describe, expect, it } from "vitest";
 
-describe.skipIf(!process.env.DATABASE_URL)("numeração NF-e (banco)", async () => {
+describe.skipIf(!process.env.DATABASE_URL)("numeração NF-e e DPS (banco)", async () => {
   const { db } = await import("@/lib/db");
-  const { reserveNfeNumber } = await import("./numbering");
+  const { reserveNumber: reserveNfeNumber } = await import("./numbering");
   const tag = `teste-num-${crypto.randomUUID()}`;
   // Série/número só de teste; na aplicação vêm do administrador.
-  const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1", nfeSeries: 7, nfeNextNumber: 500 } });
+  const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1", nfeSeries: 7, nfeNextNumber: 500, dpsSeries: 3, dpsNextNumber: 90 } });
   const bare = await db.establishment.create({ data: { cnpj: `${tag}-sem`, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
 
@@ -19,6 +19,7 @@ describe.skipIf(!process.env.DATABASE_URL)("numeração NF-e (banco)", async () 
   afterAll(async () => {
     const where = { establishmentId: { in: [est.id, bare.id] } };
     await db.nfeNumber.deleteMany({ where });
+    await db.dpsNumber.deleteMany({ where });
     const ids = (await db.emissionOrder.findMany({ where, select: { id: true } })).map((o) => o.id);
     await db.emissionDocument.deleteMany({ where: { orderId: { in: ids } } });
     await db.emissionOrder.deleteMany({ where: { id: { in: ids } } });
@@ -41,9 +42,15 @@ describe.skipIf(!process.env.DATABASE_URL)("numeração NF-e (banco)", async () 
     expect((await db.establishment.findUniqueOrThrow({ where: { id: est.id } })).nfeNextNumber).toBe(503);
   });
 
-  it("sem série configurada, bloqueia; NFS-e não usa esta numeração", async () => {
-    expect(await reserveNfeNumber((await nfe(bare.id)).id)).toMatchObject({ ok: false, reason: expect.stringMatching(/não configurados/) });
-    const nfse = (await order(est.id)).documents[0];
-    expect(await reserveNfeNumber(nfse.id)).toMatchObject({ ok: false });
+  it("sem série configurada, bloqueia", async () => {
+    expect(await reserveNfeNumber((await nfe(bare.id)).id)).toMatchObject({ ok: false, reason: expect.stringMatching(/NF-e não configurados/) });
+    expect(await reserveNfeNumber((await order(bare.id)).documents[0].id)).toMatchObject({ ok: false, reason: expect.stringMatching(/DPS/) });
+  });
+
+  it("NFS-e usa a sequência da DPS, independente da NF-e", async () => {
+    const o = await order(est.id);
+    expect(await reserveNfeNumber(o.documents[0].id)).toEqual({ ok: true, series: 3, number: 90 });
+    expect(await reserveNfeNumber(o.documents[0].id)).toEqual({ ok: true, series: 3, number: 90 });
+    expect((await db.establishment.findUniqueOrThrow({ where: { id: est.id } })).dpsNextNumber).toBe(91);
   });
 });

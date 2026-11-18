@@ -57,10 +57,27 @@ model Establishment {
   // Numeração da NF-e: sem padrão (a empresa pode continuar a sequência de outro emissor). Sem série, não reserva número.
   nfeSeries      Int?
   nfeNextNumber  Int?
+  // Numeração da DPS (NFS-e nacional), mesmas regras da NF-e.
+  dpsSeries      Int?
+  dpsNextNumber  Int?
   createdAt      DateTime    @default(now())
   orders         EmissionOrder[]
   fiscalRules    FiscalRule[]
   nfeNumbers     NfeNumber[]
+  dpsNumbers     DpsNumber[]
+}
+
+/// Número de DPS reservado: (estabelecimento, série, número) nunca repete.
+model DpsNumber {
+  establishmentId String
+  establishment   Establishment    @relation(fields: [establishmentId], references: [id])
+  series          Int
+  number          Int
+  documentId      String           @unique
+  document        EmissionDocument @relation(fields: [documentId], references: [id])
+  reservedAt      DateTime         @default(now())
+
+  @@id([establishmentId, series, number])
 }
 
 /// Número de NF-e reservado: a chave primária impede repetir (série, número) no estabelecimento.
@@ -133,6 +150,7 @@ model EmissionDocument {
   updatedAt   DateTime @updatedAt
   attempts    EmissionAttempt[]
   nfeNumber   NfeNumber?
+  dpsNumber   DpsNumber?
 
   @@unique([orderId, type])
   @@index([state])              // "aguardando confirmação" e contadores

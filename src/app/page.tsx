@@ -69,7 +69,7 @@ const counts = cache(async () => {
 async function Setup() {
   await requireUser("OPERADOR", "FISCAL", "ADMIN");
   const now = new Date();
-  const ests = await db.establishment.findMany({ select: { id: true, nfeSeries: true, nfeNextNumber: true }, take: 2 });
+  const ests = await db.establishment.findMany({ select: { id: true, nfeSeries: true, nfeNextNumber: true, dpsSeries: true, dpsNextNumber: true }, take: 2 });
   const rule = (docType: "NFSE" | "NFE", purpose: string) =>
     ests.length === 1
       ? db.fiscalRule.count({
@@ -80,6 +80,7 @@ async function Setup() {
   const items = setupPendencies({
     establishments: ests.length,
     nfeNumbering: ests.length === 1 && ests[0].nfeSeries !== null && ests[0].nfeNextNumber !== null,
+    dpsNumbering: ests.length === 1 && ests[0].dpsSeries !== null && ests[0].dpsNextNumber !== null,
     nfseRule: nfse > 0,
     nfeRule: nfe > 0,
     nfseEmitter: getAdapter("NFSE") !== null,

@@ -26,10 +26,14 @@ export const establishmentSchema = z.object({
 });
 
 // Numeração da NF-e (limites do layout 4.00). Sem padrão: a empresa pode continuar a sequência de outro emissor.
-export const nfeNumberingSchema = z.object({
-  nfeSeries: z.coerce.number<string>("Informe a série").int("Série inteira").min(0, "Série de 0 a 999").max(999, "Série de 0 a 999"),
-  nfeNextNumber: z.coerce.number<string>("Informe o número").int("Número inteiro").min(1, "Mínimo 1").max(999_999_999, "Máximo 999.999.999"),
-});
+const intField = (msg: string, min: number, max: number, range: string) =>
+  z.coerce.number<string>(msg).int("Use número inteiro").min(min, range).max(max, range);
+
+// Limites de layout: NF-e série 0–999 e número até 999.999.999; DPS série 1–99999 (número limitado ao INTEGER do banco).
+export const numberingSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("NFE"), series: intField("Informe a série", 0, 999, "Série de 0 a 999"), nextNumber: intField("Informe o número", 1, 999_999_999, "De 1 a 999.999.999") }),
+  z.object({ kind: z.literal("NFSE"), series: intField("Informe a série", 1, 99_999, "Série de 1 a 99999"), nextNumber: intField("Informe o número", 1, 2_147_483_647, "De 1 a 2.147.483.647") }),
+]);
 
 export const NFE_FIELDS = [
   { key: "natOp", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },

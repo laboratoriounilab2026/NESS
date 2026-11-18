@@ -71,10 +71,11 @@ Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. D
 - **Concorrência:** só um processo passa `PENDENTE → ENVIADO` (`updateMany where state = PENDENTE`); o outro recebe "Envio já em andamento".
 - **Retry automático:** não existe. Toda nova tentativa é ação humana (emitir de novo uma nota `PENDENTE`, ou reabrir uma `REJEITADO`).
 
-## Numeração da NF-e (`src/emitters/nfe/numbering.ts`)
+## Numeração da NF-e e da DPS (`src/emitters/numbering.ts`)
 
 Decisão de projeto (prática comum dos emissores; revisar com o responsável fiscal se a operação exigir outra):
-- **Quando:** o número é reservado no primeiro envio da NF-e (`reserveNfeNumber`), não ao salvar o pedido. Pedido nunca emitido não consome número.
+- **Os dois documentos:** NF-e (série 0–999) e DPS da NFS-e (série 1–99999) têm sequências independentes, cada uma com sua tabela de números usados (`NfeNumber`, `DpsNumber`). Número da DPS limitado ao INTEGER do banco (2.147.483.647); o layout aceita 15 dígitos.
+- **Quando:** o número é reservado no primeiro envio da nota (`reserveNumber`), não ao salvar o pedido. Pedido nunca emitido não consome número.
 - **Novas tentativas reusam o número:** nota rejeitada não foi autorizada, então o reenvio usa o mesmo (série, número). Assim não sobra lacuna a inutilizar.
 - **Unicidade:** tabela `NfeNumber` com chave primária (estabelecimento, série, número) e `documentId` único; o contador `Establishment.nfeNextNumber` sobe com `UPDATE … RETURNING` dentro da mesma transação. Corrida na mesma nota desfaz a transação perdedora, inclusive o incremento.
 - **Configuração:** série e próximo número não têm padrão; o ADMIN informa uma única vez em *Configuração fiscal* (a empresa pode estar continuando a sequência de outro emissor). Sem isso, a reserva é bloqueada com explicação.
@@ -117,7 +118,7 @@ Salvamentos simultâneos do mesmo documento são serializados com `pg_advisory_x
 
 ## Auditoria
 
-Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.descartar`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `nota.resposta_tardia`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
+Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.descartar`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `nota.resposta_tardia`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`, `estabelecimento.numeracao_dps`.
 `data` aceita só valores escalares; nunca CPF/CNPJ, endereço, senha ou certificado. E-mail no login entra como hash.
 
 ## Pontos de extensão (Fases 4/5)

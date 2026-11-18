@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { issuesByPath } from "@/domain/order-input";
-import { establishmentSchema, nfeNumberingSchema, ruleSchema } from "@/fiscal/rule-input";
+import { establishmentSchema, numberingSchema, ruleSchema } from "@/fiscal/rule-input";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
 
@@ -29,22 +29,26 @@ export async function createEstablishment(_prev: FormState, raw: unknown): Promi
   return { ok: "Estabelecimento cadastrado em homologação." };
 }
 
-/** Define série e próximo número da NF-e UMA vez. Depois disso não muda pela tela (evita buraco ou volta na sequência). */
-export async function configureNfeNumbering(_prev: FormState, raw: unknown): Promise<FormState> {
+/** Define série e próximo número (NF-e ou DPS) UMA vez. Depois não muda pela tela (evita buraco ou volta na sequência). */
+export async function configureNumbering(_prev: FormState, raw: unknown): Promise<FormState> {
   const user = await requireUser("ADMIN");
   const r = (raw ?? {}) as Record<string, unknown>;
   const id = String(r.id ?? "");
-  if (r.confirm !== "on") return { errors: { _: "Confirme que conferiu série e número com a última NF-e emitida." } };
-  const parsed = nfeNumberingSchema.safeParse(raw);
+  if (r.confirm !== "on") return { errors: { _: "Confirme que conferiu série e número com a última nota emitida." } };
+  const parsed = numberingSchema.safeParse(raw);
   if (!parsed.success) return { errors: issuesByPath(parsed.error) };
-  const { count } = await db.establishment.updateMany({ where: { id, nfeSeries: null }, data: parsed.data });
+  const { kind, series, nextNumber } = parsed.data;
+  const { count } =
+    kind === "NFE"
+      ? await db.establishment.updateMany({ where: { id, nfeSeries: null }, data: { nfeSeries: series, nfeNextNumber: nextNumber } })
+      : await db.establishment.updateMany({ where: { id, dpsSeries: null }, data: { dpsSeries: series, dpsNextNumber: nextNumber } });
   await audit({
-    actor: user.id, action: "estabelecimento.numeracao_nfe", entity: "Establishment", entityId: id, result: count === 1 ? "sucesso" : "ignorada",
-    correlationId: crypto.randomUUID(), data: { serie: parsed.data.nfeSeries, proximo: parsed.data.nfeNextNumber },
+    actor: user.id, action: kind === "NFE" ? "estabelecimento.numeracao_nfe" : "estabelecimento.numeracao_dps", entity: "Establishment", entityId: id,
+    result: count === 1 ? "sucesso" : "ignorada", correlationId: crypto.randomUUID(), data: { serie: series, proximo: nextNumber },
   });
   if (count !== 1) return { errors: { _: "Numeração já configurada ou estabelecimento não encontrado." } };
   revalidatePath(PATH);
-  return { ok: "Numeração da NF-e configurada." };
+  return { ok: `Numeração da ${kind === "NFE" ? "NF-e" : "DPS (NFS-e)"} configurada.` };
 }
 
 export async function createRule(_prev: FormState, raw: unknown): Promise<FormState> {

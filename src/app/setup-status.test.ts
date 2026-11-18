@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { setupPendencies, type SetupFacts } from "./setup-status";
 
-const ready: SetupFacts = { establishments: 1, nfeNumbering: true, nfseRule: true, nfeRule: true, nfseEmitter: true, nfeEmitter: true };
+const ready: SetupFacts = { establishments: 1, nfeNumbering: true, dpsNumbering: true, nfseRule: true, nfeRule: true, nfseEmitter: true, nfeEmitter: true };
 
 describe("pendências de configuração", () => {
   it("tudo pronto: nenhuma pendência", () => expect(setupPendencies(ready)).toEqual([]));

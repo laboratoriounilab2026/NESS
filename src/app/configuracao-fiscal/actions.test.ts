@@ -77,16 +77,19 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
     const a = await import("./actions");
     const e = await db.establishment.create({ data: { cnpj: `teste-num-${crypto.randomUUID()}`, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
     try {
-      const ok = { id: e.id, nfeSeries: "1", nfeNextNumber: "120", confirm: "on" };
+      const ok = { id: e.id, kind: "NFE", series: "1", nextNumber: "120", confirm: "on" };
       role = "FISCAL";
-      await expect(a.configureNfeNumbering({}, ok)).rejects.toThrow("Sem permissão");
+      await expect(a.configureNumbering({}, ok)).rejects.toThrow("Sem permissão");
       role = "ADMIN";
-      expect(await a.configureNfeNumbering({}, { ...ok, confirm: undefined })).toMatchObject({ errors: { _: expect.any(String) } });
-      expect(await a.configureNfeNumbering({}, { ...ok, nfeSeries: "1000" })).toMatchObject({ errors: { nfeSeries: expect.any(String) } });
-      expect(await a.configureNfeNumbering({}, { ...ok, nfeNextNumber: "0" })).toMatchObject({ errors: { nfeNextNumber: expect.any(String) } });
-      expect(await a.configureNfeNumbering({}, ok)).toEqual({ ok: "Numeração da NF-e configurada." });
-      expect(await a.configureNfeNumbering({}, { ...ok, nfeNextNumber: "5" })).toMatchObject({ errors: { _: expect.any(String) } }); // não muda depois
-      expect(await db.establishment.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ nfeSeries: 1, nfeNextNumber: 120 });
+      expect(await a.configureNumbering({}, { ...ok, confirm: undefined })).toMatchObject({ errors: { _: expect.any(String) } });
+      expect(await a.configureNumbering({}, { ...ok, series: "1000" })).toMatchObject({ errors: { series: expect.any(String) } });
+      expect(await a.configureNumbering({}, { ...ok, nextNumber: "0" })).toMatchObject({ errors: { nextNumber: expect.any(String) } });
+      expect(await a.configureNumbering({}, ok)).toEqual({ ok: "Numeração da NF-e configurada." });
+      // DPS é independente e tem limites próprios (série 1–99999).
+      expect(await a.configureNumbering({}, { ...ok, kind: "NFSE", series: "0" })).toMatchObject({ errors: { series: expect.any(String) } });
+      expect(await a.configureNumbering({}, { ...ok, kind: "NFSE", series: "12345", nextNumber: "7" })).toEqual({ ok: "Numeração da DPS (NFS-e) configurada." });
+      expect(await a.configureNumbering({}, { ...ok, nextNumber: "5" })).toMatchObject({ errors: { _: expect.any(String) } }); // não muda depois
+      expect(await db.establishment.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ nfeSeries: 1, nfeNextNumber: 120, dpsSeries: 12345, dpsNextNumber: 7 });
     } finally {
       await db.establishment.delete({ where: { id: e.id } });
     }
