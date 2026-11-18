@@ -25,7 +25,7 @@ const NAV: NavItem[] = [
   { label: "Visão geral", Icon: LayoutDashboard, href: "/" },
   { label: "Pedidos", Icon: ShoppingBag, href: "/pedidos" },
   { label: "Emissões", Icon: Send, href: "/emissoes" },
-  { label: "Documentos", Icon: Files },
+  { label: "Documentos", Icon: Files, href: "/documentos" },
   { label: "Rastreio", Icon: Truck, href: "/rastreio" },
   { label: "Configuração fiscal", Icon: Scale, href: "/configuracao-fiscal" },
   { label: "Auditoria", Icon: History, href: "/auditoria" },

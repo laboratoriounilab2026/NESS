@@ -56,6 +56,7 @@ Se o problema for nos dados do **tomador** (NFS-e), cadastre um novo pedido: o c
 ## Acompanhamento
 
 - **Visão geral**: notas autorizadas, aguardando confirmação, emissões parciais e pedidos bloqueados.
+- **Documentos**: notas autorizadas, com chave de acesso e protocolo.
 - **Emissões**: cada tentativa de envio, com data, nota e resultado.
 - **Auditoria** (fiscal e administrador): quem fez o quê e quando. CPF, CNPJ e endereço não aparecem nos registros.
 - **Rastreio**: ainda não ativo; depende de contrato com os Correios.
