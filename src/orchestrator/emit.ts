@@ -59,13 +59,21 @@ export async function emitDocument(documentId: string, adapter: EmitterAdapter, 
   const state = SEND_TO_STATE[result.kind];
   assertTransition("ENVIADO", state);
 
-  await db.$transaction([
-    db.emissionAttempt.update({ where: { id: attempt.id }, data: { resultState: state, responseSummary: summarize(result), finishedAt: new Date() } }),
-    db.emissionDocument.update({
-      where: { id: documentId },
+  // Só aplica se a nota ainda está ENVIADO (ou INCERTO, se a recuperação de envio interrompido agiu antes):
+  // de ambos o resultado é transição válida. Em outro estado (ex.: consulta já a devolveu a PENDENTE), não sobrescreve.
+  const applied = await db.$transaction(async (tx) => {
+    await tx.emissionAttempt.update({ where: { id: attempt.id }, data: { resultState: state, responseSummary: summarize(result), finishedAt: new Date() } });
+    const { count } = await tx.emissionDocument.updateMany({
+      where: { id: documentId, state: { in: ["ENVIADO", "INCERTO"] } },
       data: { state, ...(result.kind === "authorized" ? { accessKey: result.accessKey, protocol: result.protocol } : {}) },
-    }),
-  ]);
+    });
+    return count === 1;
+  });
+  if (!applied) {
+    const now = await db.emissionDocument.findUniqueOrThrow({ where: { id: documentId }, select: { state: true } });
+    await audit({ actor: ctx.actor, action: "nota.resposta_tardia", entity: "EmissionDocument", entityId: documentId, result: state, correlationId: ctx.correlationId, data: { docType: doc.type, seq, estadoAtual: now.state } });
+    return { state: now.state, detail: "A resposta do governo chegou depois de a nota mudar de situação. Confira com o responsável fiscal antes de emitir de novo." };
+  }
   await syncOrder(doc.orderId);
   await audit({ actor: ctx.actor, action: "nota.enviar", entity: "EmissionDocument", entityId: documentId, result: state, correlationId: ctx.correlationId, data: { docType: doc.type, seq } });
   return { state, detail: "code" in result ? `${result.code}: ${result.message}` : undefined };

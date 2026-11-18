@@ -147,6 +147,25 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
     expect(f.calls.send).toHaveLength(0);
   });
 
+  it("resposta tardia não sobrescreve nota que já mudou de situação; fica auditada", async () => {
+    const { nfe } = await newOrder();
+    const late: EmitterAdapter = {
+      async send() {
+        // Enquanto esperava: recuperação + consulta "não encontrada" já devolveram a nota a PENDENTE.
+        await db.$executeRaw`UPDATE "EmissionDocument" SET state = 'PENDENTE' WHERE id = ${nfe.id}`;
+        return ok("tarde");
+      },
+      async query() {
+        return { kind: "unknown" };
+      },
+    };
+    const r = await emitDocument(nfe.id, late, ctx);
+    expect(r.detail).toMatch(/depois de a nota mudar/);
+    const d = await db.emissionDocument.findUniqueOrThrow({ where: { id: nfe.id } });
+    expect(d).toMatchObject({ state: "PENDENTE", accessKey: null });
+    expect(await db.auditEvent.count({ where: { action: "nota.resposta_tardia", entityId: nfe.id } })).toBe(1);
+  });
+
   it("nota sem regra fiscal não é enviada", async () => {
     const { nfe } = await newOrder(false);
     const f = fake([ok("e")]);

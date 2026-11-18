@@ -27,6 +27,7 @@ query(req) → authorized{…} | rejected{…} | not_found | unknown
 - tratar `idempotencyKey` como identificador da tentativa junto ao governo (consultas usam a mesma chave);
 - devolver `timeout` em qualquer falta de resposta; o orquestrador também converte exceções em `timeout`;
 - nunca devolver `authorized` sem resposta autêntica do governo.
+- ter timeout de rede (envio e consulta) **menor que 5 minutos** (`STALE_SENT_MS`): depois disso a nota é tratada como envio interrompido. Resposta que chegue além disso e encontre a nota em outra situação não a sobrescreve; vira `nota.resposta_tardia` na auditoria para conferência humana.
 
 ## Estados da nota
 
@@ -116,7 +117,7 @@ Salvamentos simultâneos do mesmo documento são serializados com `pg_advisory_x
 
 ## Auditoria
 
-Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.descartar`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
+Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.descartar`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `nota.resposta_tardia`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
 `data` aceita só valores escalares; nunca CPF/CNPJ, endereço, senha ou certificado. E-mail no login entra como hash.
 
 ## Pontos de extensão (Fases 4/5)
