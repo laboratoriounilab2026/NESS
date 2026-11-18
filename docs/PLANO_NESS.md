@@ -62,7 +62,7 @@ Sidebar (Visão geral, Pedidos, Emissões, Documentos, Configuração fiscal, Au
 | 6 | Concluída: orquestrador com idempotência, INCERTO só sai por consulta, sucesso parcial. Pedido é salvo com as duas notas; emissão e consulta pela tela, com confirmação; regra revalidada antes de cada envio. |
 | 4 e 5 | **Bloqueadas** pelas pendências abaixo. Ponto de ligação pronto: `src/emitters/registry.ts` (hoje sem adaptador, envio bloqueado com explicação). |
 | 7 | Parcial: papéis OPERADOR/FISCAL/ADMIN em toda página/ação, CPF/CNPJ mascarado na tela, auditoria sem dados pessoais. Falta observabilidade (logs estruturados/alertas) ao definir a hospedagem. |
-| 8 | Parcial: jornada E2E (`e2e/`, Playwright) e testes de integração com banco no job `e2e` do CI — **ainda não executados: as Actions do GitHub não rodam neste repositório** (0 execuções). Falta treinamento. |
+| 8 | Parcial: jornada E2E (`e2e/`, Playwright) e testes de integração com banco no job `e2e` do CI — **ainda não executados: as Actions do GitHub não rodam neste repositório** (0 execuções). Guia de uso em `docs/GUIA_DE_USO.md`. |
 
 ### Pendências que dependem de humano
 - Município aderiu ao Emissor Nacional NFS-e? (senão, adaptador da prefeitura).
