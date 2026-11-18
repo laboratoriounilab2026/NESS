@@ -34,7 +34,11 @@ describe("regra fiscal", () => {
     // IBS/CBS opcionais, mas no formato do anexo quando informados.
     expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, ibsCbsCst: "000", ibsCbsCClassTrib: "000001" } }).success).toBe(true);
     expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, ibsCbsCClassTrib: "12" } }).success).toBe(false);
-    expect(paramsComplete("NFSE", nfse.params)).toBe(true); // regra sem as chaves de IBS/CBS continua completa
+    expect(paramsComplete("NFSE", nfse.params)).toBe(true);
+    // Alíquota no formato 1V2 do leiaute; listas só com códigos do Anexo VI.
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, aliquotaIss: "2,5" } }).success).toBe(true);
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, aliquotaIss: "10,00" } }).success).toBe(false);
+    expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, regEspTrib: "7" } }).success).toBe(false); // regra sem as chaves de IBS/CBS continua completa
   });
   it("exige justificativa", () => {
     expect(ruleSchema.safeParse({ ...nfe, justification: "" }).success).toBe(false);

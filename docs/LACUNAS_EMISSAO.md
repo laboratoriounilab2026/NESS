@@ -39,6 +39,8 @@ ferramenta de leitura usada aqui, não do anexo.)
 Outros pontos confirmados no mesmo anexo:
 - **Id da DPS:** "DPS" + Cód. Mun. (7) + tipo de inscrição (1) + inscrição (14, CPF com zeros à esquerda) + série (5) + número (15) — igual ao implementado.
 - **Série da DPS:** 00001 a 49999 é a faixa de **emissão por aplicativo próprio** (50000–69999 Emissor Móvel, 70000–79999 Emissor Web, 80000–89999 transcrição manual). O NESS passou a aceitar só 1–49999.
+- **Campos clássicos da DPS** (prest, toma, cLocPrestacao, cTribNac 6, cTribMun 3, cNBS 9, xDescServ até 2000, tpRetISSQN) batem com o implementado. tribISSQN, opSimpNac e regEspTrib viraram listas com os rótulos do anexo; alíquota do ISS no formato 1V2 (até 9,99).
+- **Novo, não previsto antes:** `prest/regTrib/regApTribSN` (opcional) — regime de apuração para optante ME/EPP que ultrapassou sublimite. Confirmar com o contador se se aplica.
 - **dCompet:** "deve ser … a data da prestação do serviço" — é a data do serviço que o pedido já coleta.
 
 Os quatro campos já existem na regra da NFS-e como **opcionais** (só formato, sem valor padrão): o responsável fiscal preenche quando o contador definir. Regras aprovadas antes deles continuam válidas. Fontes oficiais:

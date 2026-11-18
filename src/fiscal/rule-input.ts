@@ -81,17 +81,25 @@ export const NFE_FIELDS = [
   { key: "infCpl", label: "Informações complementares (opcional)", schema: z.string().trim().max(2000) },
 ] as const;
 
+// Tabelas da DPS conferidas no Anexo VI v1.04.01 (NT 009), aba "LEIAUTE DPS_NFS-e - RT", em 18/11/2026.
+export const TRIB_ISSQN = { "1": "Operação tributável", "2": "Imunidade", "3": "Exportação de serviço", "4": "Não incidência" } as const;
+export const OP_SIMP_NAC = {
+  "1": "Não optante", "2": "Optante - MEI", "3": "Optante - ME/EPP", "4": "Optante pendente",
+} as const;
+export const REG_ESP_TRIB = {
+  "0": "Nenhum", "1": "Ato cooperado (cooperativa)", "2": "Estimativa", "3": "Microempresa municipal",
+  "4": "Notário ou registrador", "5": "Profissional autônomo", "6": "Sociedade de profissionais", "9": "Outros",
+} as const;
 export const RETENCAO_ISS = { "1": "Não retido", "2": "Retido pelo tomador", "3": "Retido pelo intermediário" } as const;
 
 export const NFSE_FIELDS = [
   { key: "cTribNac", label: "Código de tributação nacional", schema: req(/^\d{6}$/, "6 dígitos") },
   { key: "cTribMun", label: "Código de tributação municipal (opcional)", schema: opt(/^\d{3}$/, "3 dígitos") },
-  { key: "aliquotaIss", label: "Alíquota do ISS em % (opcional)", schema: opt(/^\d{1,2}(,\d{1,2})?$/, "Ex.: 2,00") },
+  { key: "aliquotaIss", label: "Alíquota do ISS em % (opcional)", schema: opt(/^\d(,\d{1,2})?$/, "Ex.: 2,00 (formato 1V2 do leiaute)") },
   { key: "retencaoIss", label: "Retenção do ISS", options: RETENCAO_ISS },
-  // Códigos da NFS-e nacional digitados como no manual (sem rótulos aqui para não induzir escolha errada).
-  { key: "tribIssqn", label: "Tributação do ISSQN (tribISSQN)", schema: req(/^\d$/, "1 dígito, conforme o manual da NFS-e nacional") },
-  { key: "opSimpNac", label: "Situação no Simples Nacional (opSimpNac)", schema: req(/^\d$/, "1 dígito, conforme o manual") },
-  { key: "regEspTrib", label: "Regime especial de tributação (regEspTrib)", schema: req(/^\d$/, "1 dígito, conforme o manual") },
+  { key: "tribIssqn", label: "Tributação do ISSQN (tribISSQN)", options: TRIB_ISSQN },
+  { key: "opSimpNac", label: "Situação no Simples Nacional (opSimpNac)", options: OP_SIMP_NAC },
+  { key: "regEspTrib", label: "Regime especial de tributação (regEspTrib)", options: REG_ESP_TRIB },
   { key: "cNbs", label: "Código NBS (opcional)", schema: opt(/^\d{9}$/, "9 dígitos") },
   // IBS/CBS no grupo IBSCBS da DPS (Anexo VI v1.04.01 / NT 009). Opcionais até o contador definir se e quando se aplicam;
   // .optional(): regra aprovada antes destes campos continua completa (não bloqueia pedidos por campo opcional).
