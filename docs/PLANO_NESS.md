@@ -68,6 +68,7 @@ Sidebar (Visão geral, Pedidos, Emissões, Documentos, Configuração fiscal, Au
 - Município aderiu ao Emissor Nacional NFS-e? (senão, adaptador da prefeitura).
 - Matriz fiscal por estabelecimento aprovada pelo contador (CFOP, CST/CSOSN, NCM do álbum, natureza, necessidade de DC-e).
 - Certificado A1 por CNPJ e onde guardá-lo (secret manager).
+- **Reforma Tributária (IBS/CBS):** definir com o contador se a emissão segue o leiaute RTC e os campos de IBS/CBS (cClassTrib, indicador de operação, CST, alíquotas). Ver `docs/LACUNAS_EMISSAO.md`.
 
 ## Critérios de aceite
 - Um pedido gera as duas notas sem redigitação; operador não preenche campos fiscais técnicos.

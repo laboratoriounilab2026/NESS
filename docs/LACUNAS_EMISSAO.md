@@ -7,6 +7,22 @@ Nenhum valor fiscal é sugerido aqui: onde o campo é decisão tributária, ele 
 
 Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 decisão fiscal (regra aprovada pelo contador) · ⚙️ o sistema calcula
 
+## ⚠️ Reforma Tributária (IBS/CBS) — prioridade, depende do contador
+
+Este levantamento foi feito pelo leiaute "clássico". A NFS-e nacional **já tem leiaute com IBS/CBS em produção desde
+05/01/2026** (NT 004), e a documentação segue evoluindo (NT 009 v1.01, de 01/10/2026). Os anexos novos trazem o
+**indicador de operação (cIndOp)** e a **classificação tributária (cClassTrib)**, com correlação por NBS (Anexo VIII,
+que a própria página diz ainda não ter regras de negócio em produção). A NF-e também recebeu grupo de IBS/CBS pela reforma.
+
+Antes de escrever os XMLs, o responsável fiscal/contador precisa definir, para o serviço fotográfico e para o álbum:
+- se a emissão já deve seguir o leiaute RTC (com IBS/CBS) e qual versão das notas técnicas;
+- cClassTrib, indicador de operação e CST de IBS/CBS aplicáveis, e as alíquotas do período;
+- como fica o NBS do serviço (passa a ser relevante na correlação).
+
+Esses campos entram na regra fiscal como os demais: **sem valor padrão** e com aprovação. Fontes oficiais:
+- Página RTC da NFS-e: https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/rtc
+- Documentação técnica (manuais, leiautes, XSD): https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica
+
 ## NF-e (álbum)
 
 | Grupo / campo | Situação | Observação |
