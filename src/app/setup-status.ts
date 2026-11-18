@@ -4,6 +4,7 @@ export type SetupFacts = {
   establishments: number;
   nfeNumbering: boolean; // série e próximo número da NF-e configurados
   dpsNumbering: boolean; // idem DPS (NFS-e)
+  certificate: boolean; // A1 encontrado, válido e do CNPJ do estabelecimento
   nfseRule: boolean; // regra NFS-e aprovada e vigente (qualquer UF)
   nfeRule: boolean; // idem NF-e
   nfseEmitter: boolean; // adaptador registrado
@@ -21,6 +22,7 @@ export function setupPendencies(f: SetupFacts): Pendency[] {
   if (!f.nfeRule) out.push({ text: "Aprovar regra fiscal vigente da NF-e (álbum)", who: "Responsável fiscal", href: cfg });
   if (!f.nfeNumbering) out.push({ text: "Configurar série e próximo número da NF-e", who: "Administrador", href: cfg });
   if (!f.dpsNumbering) out.push({ text: "Configurar série e próximo número da DPS (NFS-e)", who: "Administrador", href: cfg });
+  if (!f.certificate) out.push({ text: "Configurar certificado A1 válido do CNPJ da empresa", who: "Administrador", href: cfg });
   if (!f.nfseEmitter || !f.nfeEmitter) {
     const which = [!f.nfseEmitter && "NFS-e", !f.nfeEmitter && "NF-e"].filter(Boolean).join(" e ");
     out.push({ text: `Ligar a transmissão ao governo (${which}): certificado A1 e homologação`, who: "Equipe técnica" });

@@ -5,6 +5,7 @@ import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { issuesByPath } from "@/domain/order-input";
 import { establishmentSchema, numberingSchema, ruleSchema } from "@/fiscal/rule-input";
+import { CERT_REF, loadEstablishmentCertificate } from "@/emitters/common/certificate-source";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
 
@@ -49,6 +50,25 @@ export async function configureNumbering(_prev: FormState, raw: unknown): Promis
   if (count !== 1) return { errors: { _: "Numeração já configurada ou estabelecimento não encontrado." } };
   revalidatePath(PATH);
   return { ok: `Numeração da ${kind === "NFE" ? "NF-e" : "DPS (NFS-e)"} configurada.` };
+}
+
+/** Liga o estabelecimento ao segredo do certificado A1 pelo NOME da referência (o arquivo e a senha ficam no ambiente). */
+export async function setCertificateRef(_prev: FormState, raw: unknown): Promise<FormState> {
+  const user = await requireUser("ADMIN");
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const id = String(r.id ?? "");
+  const ref = String(r.ref ?? "").trim().toUpperCase();
+  if (!CERT_REF.test(ref)) return { errors: { ref: "Use letras, números e _ (até 40), ex.: ESTUDIO_SP" } };
+  const e = await db.establishment.findUnique({ where: { id }, select: { cnpj: true } });
+  if (!e) return { errors: { _: "Estabelecimento não encontrado." } };
+  await db.establishment.update({ where: { id }, data: { certSecretRef: ref } });
+  const status = loadEstablishmentCertificate({ cnpj: e.cnpj, certSecretRef: ref });
+  await audit({
+    actor: user.id, action: "estabelecimento.certificado", entity: "Establishment", entityId: id, result: status.ok ? "valido" : "pendente",
+    correlationId: crypto.randomUUID(), data: { ref },
+  });
+  revalidatePath(PATH);
+  return status.ok ? { ok: "Certificado encontrado e válido para este CNPJ." } : { errors: { _: `Referência salva, mas: ${status.reason}` } };
 }
 
 export async function createRule(_prev: FormState, raw: unknown): Promise<FormState> {

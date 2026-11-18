@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Ban, Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
 import { REGIMES } from "@/fiscal/rule-input";
-import { ApproveForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
+import { loadEstablishmentCertificate } from "@/emitters/common/certificate-source";
+import { ApproveForm, CertificateRefForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
 import { requireUser } from "@/auth/session";
 import { db } from "@/lib/db";
 
@@ -60,6 +61,7 @@ async function Content() {
                     <span key={kind} className="font-semibold text-wait">Numeração da {doc} não configurada (administrador)</span>
                   ),
                 )}
+                <CertificateLine e={e} admin={user.role === "ADMIN"} />
               </li>
             ))}
           </ul>
@@ -154,6 +156,29 @@ function Skeleton() {
   return (
     <div className="grid gap-3.5" aria-busy="true" aria-label="Carregando">
       {[0, 1].map((i) => <div key={i} className={`${card} h-32 animate-pulse motion-reduce:animate-none`} />)}
+    </div>
+  );
+}
+
+// Status do A1 lido no servidor (nunca exibe segredo): válido, vencendo, ou o motivo da pendência.
+function CertificateLine({ e, admin }: { e: { id: string; cnpj: string; certSecretRef: string | null }; admin: boolean }) {
+  const c = loadEstablishmentCertificate(e);
+  const until = c.ok ? c.a1.notAfter.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "";
+  return (
+    <div className="grid basis-full gap-1">
+      {c.ok ? (
+        <span className={c.usability.warn ? "font-semibold text-wait" : "text-muted"}>
+          Certificado A1 válido até {until}{c.usability.warn ? ` · vence em ${c.usability.expiresInDays} dias, renove` : ""}
+        </span>
+      ) : (
+        <span className="font-semibold text-wait">{c.reason}</span>
+      )}
+      {admin && (
+        <details>
+          <summary className="cursor-pointer text-muted">{e.certSecretRef ? "Trocar referência do certificado" : "Configurar certificado A1"}</summary>
+          <CertificateRefForm id={e.id} current={e.certSecretRef} />
+        </details>
+      )}
     </div>
   );
 }

@@ -17,7 +17,7 @@ Contas são criadas, desativadas e têm a senha trocada por quem cuida do sistem
 
 ## Primeira configuração (uma vez por empresa)
 
-1. **Administrador** — *Configuração fiscal › Estabelecimentos*: informe CNPJ, razão social, UF, código IBGE do município e regime tributário. A empresa entra sempre em **homologação** (ambiente de teste do governo).
+1. **Administrador** — *Configuração fiscal › Estabelecimentos*: informe CNPJ, razão social, UF, código IBGE do município e regime tributário. A empresa entra sempre em **homologação** (ambiente de teste do governo). Depois, informe a **referência do certificado A1**: quem cuida da hospedagem guarda o arquivo .pfx (em base64) e a senha nas variáveis secretas `NESS_CERT_<REF>_PFX` e `NESS_CERT_<REF>_PASSWORD`; na tela vai só o nome `<REF>`. O sistema confere se o certificado abre, está válido e é do mesmo CNPJ, e avisa 30 dias antes de vencer.
 2. **Responsável fiscal** — *Configuração fiscal › Regras fiscais*: crie uma regra para a NFS-e e outra para a NF-e, com os valores passados pelo contador, vigência e a **justificativa/origem** (parecer, consulta à SEFAZ, legislação).
 3. **Responsável fiscal** — marque **Revisei** e clique em **Aprovar**. Só regra aprovada e dentro da vigência libera emissão. Ao aprovar, os pedidos que estavam bloqueados só por falta dessa regra ficam prontos para emitir automaticamente (a emissão continua exigindo confirmação).
 
