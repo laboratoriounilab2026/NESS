@@ -44,6 +44,6 @@ describe("pedido", () => {
       service: { description: "Ensaio", value: "100" },
       goods: { description: "Álbum", quantity: "1", unitValue: "50" },
     });
-    expect(o.recipient).toMatchObject({ name: "Nome Corrigido", document: "529.982.247-25" });
+    expect(o.recipient).toMatchObject({ name: "Nome Corrigido", document: "52998224725" });
   });
 });

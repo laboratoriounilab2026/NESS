@@ -66,4 +66,39 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
       if (own) await db.establishment.delete({ where: { id: own.id } });
     }
   });
+  it("saveOrder: mesmo CPF com e sem pontuação é um cliente só; nome novo atualiza o cadastro e é auditado", async () => {
+    const { saveOrder } = await import("./actions");
+    const { db } = await import("@/lib/db");
+    const tag = `teste-cli-${crypto.randomUUID()}`;
+    const own = (await db.establishment.count()) === 0
+      ? await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } })
+      : null;
+    if ((await db.establishment.count()) !== 1) return;
+    // CPF aleatório com dígitos válidos (não pertence a ninguém conhecido; apagado ao final).
+    const base = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));
+    const dv = (ds: number[]) => { const r = (ds.reduce((a, d, i) => a + d * (ds.length + 1 - i), 0) * 10) % 11; return r === 10 ? 0 : r; };
+    const digits = [...base, dv(base)]; digits.push(dv(digits));
+    const cpf = digits.join("");
+    const pretty = `${cpf.slice(0, 3)}.${cpf.slice(3, 6)}.${cpf.slice(6, 9)}-${cpf.slice(9)}`;
+    const refs = [crypto.randomUUID(), crypto.randomUUID()];
+    try {
+      expect(await saveOrder({ ...valid, customer: { document: pretty, name: "Nome Antigo", email: "" } }, refs[0])).toMatchObject({ ok: true });
+      expect(await saveOrder({ ...valid, customer: { document: cpf, name: "Nome Novo", email: "" } }, refs[1])).toMatchObject({ ok: true });
+      const customers = await db.customer.findMany({ where: { document: { in: [cpf, pretty] } } });
+      expect(customers).toHaveLength(1);
+      expect(customers[0]).toMatchObject({ document: cpf, name: "Nome Novo" });
+      expect(await db.auditEvent.count({ where: { action: "cliente.atualizar", entityId: customers[0].id } })).toBe(1);
+    } finally {
+      const orders = await db.emissionOrder.findMany({ where: { ref: { in: refs } } });
+      for (const o of orders) {
+        await db.emissionDocument.deleteMany({ where: { orderId: o.id } });
+        await db.emissionOrder.delete({ where: { id: o.id } });
+        if (o.recipientId) await db.recipient.delete({ where: { id: o.recipientId } });
+      }
+      const c = await db.customer.findMany({ where: { document: { in: [cpf, pretty] } } });
+      await db.auditEvent.deleteMany({ where: { entityId: { in: c.map((x) => x.id) } } });
+      await db.customer.deleteMany({ where: { id: { in: c.map((x) => x.id) } } });
+      if (own) await db.establishment.delete({ where: { id: own.id } });
+    }
+  });
 });

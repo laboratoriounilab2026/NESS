@@ -105,7 +105,7 @@ A regra é resolvida ao salvar o pedido **e de novo** antes de cada envio (`refr
 
 ## Auditoria
 
-Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
+Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
 `data` aceita só valores escalares; nunca CPF/CNPJ, endereço, senha ou certificado. E-mail no login entra como hash.
 
 ## Pontos de extensão (Fases 4/5)

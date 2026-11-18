@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Auditoria" };
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 
 const ENTITY: Record<string, string> = {
-  EmissionOrder: "Pedido", EmissionDocument: "Nota", FiscalRule: "Regra fiscal", Establishment: "Estabelecimento", User: "Conta",
+  EmissionOrder: "Pedido", EmissionDocument: "Nota", FiscalRule: "Regra fiscal", Establishment: "Estabelecimento", User: "Conta", Customer: "Cliente",
 };
 
 export default function Auditoria() {

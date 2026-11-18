@@ -69,12 +69,17 @@ export async function saveOrder(raw: unknown, ref: string): Promise<SaveResult> 
   const ruleOf = (r: Resolution) => (r.status === "ok" ? r.ruleId : null);
   const correlationId = crypto.randomUUID();
   let id: string;
+  let customerUpdated: string | null = null;
   try {
     id = await db.$transaction(async (tx) => {
-      // Reaproveita o cliente pelo documento: uma fonte de verdade por tomador.
-      const customer =
-        (await tx.customer.findFirst({ where: { document: d.customer.document }, select: { id: true } })) ??
-        (await tx.customer.create({ data: { document: d.customer.document, name: d.customer.name, email: d.customer.email || null }, select: { id: true } }));
+      // Um cadastro por tomador (documento normalizado). O nome/e-mail digitados agora são os atuais: atualizam o cadastro.
+      const c = d.customer;
+      const found = await tx.customer.findFirst({ where: { document: c.document }, select: { id: true, name: true, email: true } });
+      const customer = found ?? (await tx.customer.create({ data: { document: c.document, name: c.name, email: c.email || null }, select: { id: true } }));
+      if (found && (found.name !== c.name || (found.email ?? "") !== c.email)) {
+        await tx.customer.update({ where: { id: found.id }, data: { name: c.name, email: c.email || null } });
+        customerUpdated = found.id;
+      }
       const r = d.recipient;
       const recipient = await tx.recipient.create({
         data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, uf: r.uf },
@@ -100,6 +105,9 @@ export async function saveOrder(raw: unknown, ref: string): Promise<SaveResult> 
     throw e;
   }
 
+  if (customerUpdated) {
+    await audit({ actor: user.id, action: "cliente.atualizar", entity: "Customer", entityId: customerUpdated, result: "atualizado", correlationId, data: { origem: "pedido" } });
+  }
   await audit({
     actor: user.id, action: "pedido.criar", entity: "EmissionOrder", entityId: id, result: "criado", correlationId,
     data: { nfse: nfse.status, nfe: nfe.status, ufDestino: d.recipient.uf },

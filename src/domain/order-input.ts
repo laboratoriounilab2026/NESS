@@ -51,8 +51,11 @@ const money = z.string().transform((s, ctx) => {
 });
 const text = (min: number, label: string) => z.string().trim().min(min, `Informe ${label}`).max(200);
 
+/** CPF/CNPJ sem pontuação e em maiúsculas: uma forma só no banco (evita o mesmo cliente duplicado). */
+export const normalizeDocument = (s: string) => s.toUpperCase().replace(/[^0-9A-Z]/g, "");
+
 export const customerSchema = z.object({
-  document: z.string().refine(isValidDocument, "CPF ou CNPJ inválido"),
+  document: z.string().refine(isValidDocument, "CPF ou CNPJ inválido").transform(normalizeDocument),
   name: text(2, "o nome"),
   email: z.union([z.literal(""), z.email("E-mail inválido")]),
 });
@@ -60,7 +63,7 @@ export const customerSchema = z.object({
 export const recipientSchema = z.object({
   same: z.boolean(),
   name: text(2, "o nome de quem recebe"),
-  document: z.string().refine((s) => s === "" || isValidDocument(s), "CPF ou CNPJ inválido"),
+  document: z.string().refine((s) => s === "" || isValidDocument(s), "CPF ou CNPJ inválido").transform(normalizeDocument),
   cep: z.string().refine((s) => onlyDigits(s).length === 8, "CEP deve ter 8 dígitos"),
   street: text(2, "a rua"),
   number: text(1, "o número"),
