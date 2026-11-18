@@ -60,6 +60,16 @@ async function Docs({ searchParams }: { searchParams: Promise<{ q?: string }> })
       {q && <a href="/documentos" className="px-2 py-2.5 text-sm text-muted hover:text-fg">Limpar</a>}
     </form>
   );
+  const thisMonth = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }).slice(0, 7);
+  const exportForm = (
+    <form action="/documentos/exportar" method="get" className="flex flex-wrap items-end gap-2">
+      <div className="grid gap-1.5">
+        <label htmlFor="mes" className="text-sm font-semibold">Exportar para o contador</label>
+        <input id="mes" name="mes" type="month" required defaultValue={thisMonth} className="rounded-xl border border-line bg-bg px-3 py-2 focus-visible:ring-2 focus-visible:ring-accent" />
+      </div>
+      <button type="submit" className="rounded-xl border border-line px-4 py-2.5 font-semibold hover:bg-fg/5">Baixar CSV do mês</button>
+    </form>
+  );
   if (docs.length === 0 && q) {
     return (
       <>
@@ -78,7 +88,7 @@ async function Docs({ searchParams }: { searchParams: Promise<{ q?: string }> })
   }
   return (
     <>
-    {form}
+    <div className="flex flex-wrap items-end justify-between gap-3">{form}{exportForm}</div>
     <section className={`${card} overflow-x-auto`}>
       <table className="w-full border-collapse text-sm">
         <thead>
