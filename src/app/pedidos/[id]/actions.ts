@@ -8,7 +8,8 @@ import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
-import { discardOrder, emitDocument, lockOrder, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
+import { lockOrder } from "@/lib/order-lock";
+import { discardOrder, emitDocument, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
 
 export type ActionResult = { ok: boolean; message: string; docs?: Partial<Record<"NFSE" | "NFE", Outcome>> };
 

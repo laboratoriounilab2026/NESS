@@ -3,6 +3,7 @@ import { audit } from "@/audit/audit";
 import type { EmitRequest, EmitterAdapter, QueryResult, SendResult } from "@/emitters/types";
 import { assertTransition, deriveOrderState, idempotencyKey, type DocState } from "@/domain/states";
 import { db } from "@/lib/db";
+import { lockOrder } from "@/lib/order-lock";
 
 // Orquestrador de uma nota. Garantias:
 // - uma tentativa por vez (trava PENDENTE→ENVIADO atômica) e chave de idempotência única no banco;
@@ -15,10 +16,6 @@ type Ctx = { actor: string; correlationId: string };
 
 const SEND_TO_STATE: Record<SendResult["kind"], DocState> = { authorized: "AUTORIZADO", rejected: "REJEITADO", denied: "DENEGADO", timeout: "INCERTO" };
 const QUERY_TO_STATE: Record<QueryResult["kind"], DocState> = { authorized: "AUTORIZADO", rejected: "REJEITADO", not_found: "PENDENTE", unknown: "INCERTO" };
-
-export type Tx = Parameters<Parameters<typeof db.$transaction>[0]>[0];
-/** Trava por pedido até o fim da transação (serializa envio × descarte × correção de destinatário). */
-export const lockOrder = (tx: Tx, orderId: string) => tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`order:${orderId}`}))`;
 
 async function syncOrder(orderId: string) {
   const docs = await db.emissionDocument.findMany({ where: { orderId }, select: { state: true } });
@@ -39,10 +36,14 @@ export async function emitDocument(documentId: string, adapter: EmitterAdapter, 
     await lockOrder(tx, doc.orderId);
     const order = await tx.emissionOrder.findUniqueOrThrow({ where: { id: doc.orderId }, select: { state: true } });
     if (order.state === "DESCARTADO") return "descartado" as const;
-    const { count } = await tx.emissionDocument.updateMany({ where: { id: documentId, state: "PENDENTE" }, data: { state: "ENVIADO" } });
-    return count === 1 ? ("ok" as const) : ("em_andamento" as const);
+    // Regra conferida de novo sob a trava: a reverificação (refreshOrderRules) pode tê-la removido há pouco.
+    const { count } = await tx.emissionDocument.updateMany({ where: { id: documentId, state: "PENDENTE", fiscalRuleId: { not: null } }, data: { state: "ENVIADO" } });
+    if (count === 1) return "ok" as const;
+    const now = await tx.emissionDocument.findUniqueOrThrow({ where: { id: documentId }, select: { state: true, fiscalRuleId: true } });
+    return now.state === "PENDENTE" && !now.fiscalRuleId ? ("sem_regra" as const) : ("em_andamento" as const);
   });
   if (locked === "descartado") return { state: doc.state, detail: "Pedido descartado; nada enviado." };
+  if (locked === "sem_regra") return { state: "PENDENTE", detail: "Nota sem regra fiscal aprovada; envio bloqueado." };
   if (locked !== "ok") return { state: "ENVIADO", detail: "Envio já em andamento." };
 
   const seq = doc._count.attempts + 1;

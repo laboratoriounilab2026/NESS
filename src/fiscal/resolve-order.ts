@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { lockOrder } from "@/lib/order-lock";
 import { resolveRule, type Resolution } from "./matrix";
 
 /** Regras das duas notas de um pedido, resolvidas de forma independente (fonte única para cadastro e revalidação). */
@@ -29,16 +30,19 @@ export async function refreshOrderRules(orderId: string) {
     : { nfse: blocked("Pedido sem destinatário."), nfe: blocked("Pedido sem destinatário.") };
   const byType = { NFSE: res.nfse, NFE: res.nfe };
 
-  const pending = order.documents.filter((d) => d.state === "PENDENTE");
-  const allOk = order.documents.every((d) => d.state !== "PENDENTE" || byType[d.type].status === "ok");
-  await db.$transaction([
-    ...pending.map((d) => {
+  // Sob a trava do pedido e relendo estados: uma nota enviada no meio tempo não tem a regra trocada.
+  await db.$transaction(async (tx) => {
+    await lockOrder(tx, orderId);
+    const now = await tx.emissionOrder.findUniqueOrThrow({ where: { id: orderId }, select: { state: true, documents: { select: { id: true, type: true, state: true } } } });
+    const pending = now.documents.filter((d) => d.state === "PENDENTE");
+    for (const d of pending) {
       const r = byType[d.type];
-      return db.emissionDocument.update({ where: { id: d.id }, data: { fiscalRuleId: r.status === "ok" ? r.ruleId : null } });
-    }),
-    ...((REVISABLE as readonly string[]).includes(order.state)
-      ? [db.emissionOrder.update({ where: { id: orderId }, data: { state: allOk ? "PRONTO_REVISAO" : "BLOQUEADO" } })]
-      : []),
-  ]);
+      await tx.emissionDocument.update({ where: { id: d.id }, data: { fiscalRuleId: r.status === "ok" ? r.ruleId : null } });
+    }
+    if ((REVISABLE as readonly string[]).includes(now.state)) {
+      const allOk = now.documents.every((d) => d.state !== "PENDENTE" || byType[d.type].status === "ok");
+      await tx.emissionOrder.update({ where: { id: orderId }, data: { state: allOk ? "PRONTO_REVISAO" : "BLOQUEADO" } });
+    }
+  });
   return byType;
 }
