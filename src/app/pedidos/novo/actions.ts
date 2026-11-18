@@ -74,6 +74,9 @@ export async function saveOrder(raw: unknown, ref: string): Promise<SaveResult> 
     id = await db.$transaction(async (tx) => {
       // Um cadastro por tomador (documento normalizado). O nome/e-mail digitados agora são os atuais: atualizam o cadastro.
       const c = d.customer;
+      // Serializa salvamentos simultâneos do mesmo tomador (sem isso, dois pedidos novos criariam dois cadastros).
+      // ponytail: trava em vez de UNIQUE: o índice exige fundir duplicados antigos antes (migração irreversível, pede confirmação).
+      await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`customer:${c.document}`}))`;
       const found = await tx.customer.findFirst({ where: { document: c.document }, select: { id: true, name: true, email: true } });
       const customer = found ?? (await tx.customer.create({ data: { document: c.document, name: c.name, email: c.email || null }, select: { id: true } }));
       if (found && (found.name !== c.name || (found.email ?? "") !== c.email)) {

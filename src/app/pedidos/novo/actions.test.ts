@@ -84,6 +84,10 @@ describe.skipIf(!process.env.DATABASE_URL)("checkOrder (banco)", () => {
     try {
       expect(await saveOrder({ ...valid, customer: { document: pretty, name: "Nome Antigo", email: "" } }, refs[0])).toMatchObject({ ok: true });
       expect(await saveOrder({ ...valid, customer: { document: cpf, name: "Nome Novo", email: "" } }, refs[1])).toMatchObject({ ok: true });
+      // Dois pedidos simultâneos do mesmo tomador também não duplicam o cadastro.
+      refs.push(crypto.randomUUID(), crypto.randomUUID());
+      const both = await Promise.all(refs.slice(2).map((r) => saveOrder({ ...valid, customer: { document: cpf, name: "Nome Novo", email: "" } }, r)));
+      expect(both.every((x) => x.ok)).toBe(true);
       const customers = await db.customer.findMany({ where: { document: { in: [cpf, pretty] } } });
       expect(customers).toHaveLength(1);
       expect(customers[0]).toMatchObject({ document: cpf, name: "Nome Novo" });
