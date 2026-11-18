@@ -35,6 +35,18 @@ export const numberingSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("NFSE"), series: intField("Informe a série", 1, 99_999, "Série de 1 a 99999"), nextNumber: intField("Informe o número", 1, 2_147_483_647, "De 1 a 2.147.483.647") }),
 ]);
 
+// Dados cadastrais da empresa para as notas. Só formato: IE varia por UF, então aceita dígitos ou "ISENTO".
+export const establishmentDataSchema = z.object({
+  street: text(2, "Informe o logradouro"),
+  number: z.string().trim().min(1, "Informe o número").max(60),
+  district: text(2, "Informe o bairro"),
+  cep: z.string().transform((s) => s.replace(/\D/g, "")).refine((s) => s.length === 8, "CEP deve ter 8 dígitos"),
+  city: text(2, "Informe a cidade"),
+  stateRegistration: z.string().trim().toUpperCase().refine((s) => s === "ISENTO" || /^\d{2,14}$/.test(s.replace(/\D/g, "")) && !/[A-Z]/.test(s), "Use só os dígitos da IE ou ISENTO")
+    .transform((s) => (s === "ISENTO" ? s : s.replace(/\D/g, ""))),
+  municipalRegistration: z.string().trim().max(15, "Até 15 caracteres").refine((s) => s === "" || /^[0-9A-Za-z./-]+$/.test(s), "Use números, letras, ponto, barra ou hífen"),
+});
+
 export const NFE_FIELDS = [
   { key: "natOp", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },
   { key: "cfop", label: "CFOP", schema: req(/^\d{4}$/, "CFOP tem 4 dígitos") },

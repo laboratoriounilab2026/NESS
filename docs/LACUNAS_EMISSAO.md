@@ -18,8 +18,8 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 | ide: cMunFG (município do fato gerador) | ✅ | `Establishment.municipioIbge` |
 | ide: indFinal, indPres, finNFe | 🔷 | consumidor final? venda presencial/internet? finalidade — **não estão na regra hoje** |
 | emit: CNPJ, razão social, CRT | ✅ | `Establishment` (`regime` = CRT) |
-| emit: endereço completo (logradouro, nº, bairro, CEP, município) | 🟡 | **não cadastrado** |
-| emit: IE (inscrição estadual) | 🟡 | **não cadastrada** |
+| emit: endereço completo (logradouro, nº, bairro, CEP, município) | ✅ | cadastro da empresa (ADMIN) |
+| emit: IE (inscrição estadual) | ✅ | cadastro da empresa (só formato: dígitos ou ISENTO) |
 | dest: CPF/CNPJ, nome | ✅ | destinatário (documento opcional hoje — **confirmar se a operação exige**) |
 | dest: endereço | ✅ parcial | rua, nº, bairro, cidade, UF, CEP |
 | dest: cMun (código IBGE do município) | 🟡 | **guardamos só o nome da cidade**; precisa do código IBGE |
@@ -41,7 +41,8 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 | tpAmb, dhEmi, dCompet | ✅ ⚙️ | competência = data do serviço? **confirmar** (hoje não coletamos a data do serviço) |
 | cLocEmi (município emissor) | ✅ | `Establishment.municipioIbge` |
 | prest: CNPJ | ✅ | |
-| prest: IM (inscrição municipal), regime (opSimpNac, regEspTrib) | 🟡 🔷 | **não cadastrados** |
+| prest: IM (inscrição municipal) | ✅ | cadastro da empresa |
+| prest: regime (opSimpNac, regEspTrib) | 🔷 | **não está na regra** |
 | toma: CPF/CNPJ, nome, e-mail | ✅ | tomador |
 | toma: endereço | 🟡 | **não coletado** do tomador (só do destinatário) — confirmar se o município exige |
 | serv: local da prestação (cLocPrestacao) | 🟡 🔷 | onde o ensaio aconteceu — **não coletado** |
@@ -54,7 +55,7 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 
 ## O que fazer (proposta, em ordem)
 
-1. **Cadastro do estabelecimento (ADMIN):** endereço completo, IE, IM, regime especial. Sem decisão fiscal, só dados da empresa.
+1. ~~**Cadastro do estabelecimento (ADMIN):** endereço completo, IE, IM~~ — feito. Regime especial (regEspTrib) é decisão fiscal: vai para a regra.
 2. **Código IBGE do município do destinatário:** escolher a cidade de uma lista pela UF (tabela pública do IBGE embarcada no sistema), em vez de texto livre. Evita consultar serviço externo com dados do cliente.
 3. **Pedido:** forma de pagamento, data e local do serviço.
 4. **Regra fiscal (responsável fiscal + contador):** acrescentar à regra os campos 🔷 que faltam — indFinal, indPres, finNFe, modFrete, indIEDest, bases/alíquotas conforme o CST, tribISSQN, NBS, totTrib — **sem valores padrão**, como os demais.

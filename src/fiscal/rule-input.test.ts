@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { establishmentSchema, ruleSchema } from "./rule-input";
+import { establishmentDataSchema, establishmentSchema, ruleSchema } from "./rule-input";
 
 // Valores abaixo são só de formato para teste — não são orientação fiscal.
 const nfe = {
@@ -33,5 +33,17 @@ describe("estabelecimento", () => {
     expect(establishmentSchema.safeParse(ok).success).toBe(true);
     expect(establishmentSchema.safeParse({ ...ok, cnpj: "11.222.333/0001-80" }).success).toBe(false);
     expect(establishmentSchema.safeParse({ ...ok, municipioIbge: "123" }).success).toBe(false);
+  });
+});
+
+describe("dados cadastrais da empresa", () => {
+  const ok = { street: "Rua A", number: "10", district: "Centro", cep: "01001-000", city: "São Paulo", stateRegistration: "110.042.490.114", municipalRegistration: "" };
+  it("normaliza CEP e IE; aceita ISENTO em qualquer caixa", () => {
+    expect(establishmentDataSchema.parse(ok)).toMatchObject({ cep: "01001000", stateRegistration: "110042490114" });
+    expect(establishmentDataSchema.parse({ ...ok, stateRegistration: "isento" }).stateRegistration).toBe("ISENTO");
+  });
+  it("recusa IE com letras e CEP incompleto", () => {
+    expect(establishmentDataSchema.safeParse({ ...ok, stateRegistration: "12AB" }).success).toBe(false);
+    expect(establishmentDataSchema.safeParse({ ...ok, cep: "0100" }).success).toBe(false);
   });
 });

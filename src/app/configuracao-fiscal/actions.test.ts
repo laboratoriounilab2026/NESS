@@ -125,4 +125,22 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
       await db.establishment.delete({ where: { id: e.id } });
     }
   });
+
+  it("dados da empresa: só ADMIN, validados e auditados", async () => {
+    const a = await import("./actions");
+    const e = await db.establishment.create({ data: { cnpj: `teste-dados-${crypto.randomUUID()}`, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
+    try {
+      const data = { id: e.id, street: "Rua A", number: "10", district: "Centro", cep: "01001-000", city: "São Paulo", stateRegistration: "ISENTO", municipalRegistration: "123" };
+      role = "FISCAL";
+      await expect(a.updateEstablishmentData({}, data)).rejects.toThrow("Sem permissão");
+      role = "ADMIN";
+      expect(await a.updateEstablishmentData({}, { ...data, cep: "1" })).toMatchObject({ errors: { cep: expect.any(String) } });
+      expect(await a.updateEstablishmentData({}, data)).toEqual({ ok: "Dados da empresa salvos." });
+      expect(await db.establishment.findUniqueOrThrow({ where: { id: e.id } })).toMatchObject({ cep: "01001000", stateRegistration: "ISENTO", municipalRegistration: "123" });
+      expect(await db.auditEvent.count({ where: { action: "estabelecimento.dados", entityId: e.id } })).toBe(1);
+    } finally {
+      await db.auditEvent.deleteMany({ where: { entityId: e.id } });
+      await db.establishment.delete({ where: { id: e.id } });
+    }
+  });
 });

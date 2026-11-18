@@ -5,6 +5,7 @@ export type SetupFacts = {
   nfeNumbering: boolean; // série e próximo número da NF-e configurados
   dpsNumbering: boolean; // idem DPS (NFS-e)
   certificate: boolean; // A1 encontrado, válido e do CNPJ do estabelecimento
+  companyData: boolean; // endereço e IE do estabelecimento preenchidos
   nfseRule: boolean; // regra NFS-e aprovada e vigente (qualquer UF)
   nfeRule: boolean; // idem NF-e
   nfseEmitter: boolean; // adaptador registrado
@@ -18,6 +19,7 @@ export function setupPendencies(f: SetupFacts): Pendency[] {
   if (f.establishments === 0) return [{ text: "Cadastrar a empresa emissora", who: "Administrador", href: cfg }];
   const out: Pendency[] = [];
   if (f.establishments > 1) out.push({ text: "Há mais de uma empresa cadastrada; a escolha por pedido ainda não existe", who: "Equipe técnica" });
+  if (!f.companyData) out.push({ text: "Completar endereço e inscrição estadual da empresa", who: "Administrador", href: cfg });
   if (!f.nfseRule) out.push({ text: "Aprovar regra fiscal vigente da NFS-e (serviço)", who: "Responsável fiscal", href: cfg });
   if (!f.nfeRule) out.push({ text: "Aprovar regra fiscal vigente da NF-e (álbum)", who: "Responsável fiscal", href: cfg });
   if (!f.nfeNumbering) out.push({ text: "Configurar série e próximo número da NF-e", who: "Administrador", href: cfg });

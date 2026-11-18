@@ -51,6 +51,14 @@ model Establishment {
   uf             String      @db.Char(2)
   municipioIbge  String
   regime         String
+  // Dados cadastrais para as notas (emit/prest). Nulos até o ADMIN completar; sem eles não há emissão.
+  street         String?
+  number         String?
+  district       String?
+  cep            String?
+  city           String?
+  stateRegistration     String? // IE: dígitos ou "ISENTO"
+  municipalRegistration String? // IM
   environment    Environment @default(HOMOLOGACAO)
   // Referência ao segredo no secret manager — nunca o certificado ou a senha.
   certSecretRef  String?

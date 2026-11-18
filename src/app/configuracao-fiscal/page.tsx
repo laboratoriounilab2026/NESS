@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Ban, Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
 import { REGIMES } from "@/fiscal/rule-input";
 import { loadEstablishmentCertificate } from "@/emitters/common/certificate-source";
-import { ApproveForm, CertificateRefForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
+import { ApproveForm, CertificateRefForm, EstablishmentDataForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
 import { requireUser } from "@/auth/session";
 import { db } from "@/lib/db";
 
@@ -61,6 +61,7 @@ async function Content() {
                     <span key={kind} className="font-semibold text-wait">Numeração da {doc} não configurada (administrador)</span>
                   ),
                 )}
+                <DataLine e={e} admin={user.role === "ADMIN"} />
                 <CertificateLine e={e} admin={user.role === "ADMIN"} />
               </li>
             ))}
@@ -177,6 +178,26 @@ function CertificateLine({ e, admin }: { e: { id: string; cnpj: string; certSecr
         <details>
           <summary className="cursor-pointer text-muted">{e.certSecretRef ? "Trocar referência do certificado" : "Configurar certificado A1"}</summary>
           <CertificateRefForm id={e.id} current={e.certSecretRef} />
+        </details>
+      )}
+    </div>
+  );
+}
+
+// Endereço, IE e IM: obrigatórios nas notas (emitente/prestador).
+function DataLine({ e, admin }: { e: Parameters<typeof EstablishmentDataForm>[0]["current"] & { id: string }; admin: boolean }) {
+  const complete = !!(e.street && e.number && e.district && e.cep && e.city && e.stateRegistration);
+  return (
+    <div className="grid basis-full gap-1">
+      {complete ? (
+        <span className="text-muted">{e.street}, {e.number} · {e.district} · {e.city} · CEP {e.cep} · IE {e.stateRegistration}{e.municipalRegistration ? ` · IM ${e.municipalRegistration}` : ""}</span>
+      ) : (
+        <span className="font-semibold text-wait">Dados da empresa incompletos (endereço e IE são obrigatórios nas notas)</span>
+      )}
+      {admin && (
+        <details open={!complete}>
+          <summary className="cursor-pointer text-muted">{complete ? "Editar dados da empresa" : "Completar dados da empresa"}</summary>
+          <EstablishmentDataForm id={e.id} current={e} />
         </details>
       )}
     </div>

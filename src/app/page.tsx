@@ -70,7 +70,7 @@ const counts = cache(async () => {
 async function Setup() {
   await requireUser("OPERADOR", "FISCAL", "ADMIN");
   const now = new Date();
-  const ests = await db.establishment.findMany({ select: { id: true, cnpj: true, certSecretRef: true, nfeSeries: true, nfeNextNumber: true, dpsSeries: true, dpsNextNumber: true }, take: 2 });
+  const ests = await db.establishment.findMany({ select: { id: true, cnpj: true, certSecretRef: true, street: true, number: true, district: true, cep: true, city: true, stateRegistration: true, nfeSeries: true, nfeNextNumber: true, dpsSeries: true, dpsNextNumber: true }, take: 2 });
   const rule = (docType: "NFSE" | "NFE", purpose: string) =>
     ests.length === 1
       ? db.fiscalRule.count({
@@ -83,6 +83,7 @@ async function Setup() {
     nfeNumbering: ests.length === 1 && ests[0].nfeSeries !== null && ests[0].nfeNextNumber !== null,
     dpsNumbering: ests.length === 1 && ests[0].dpsSeries !== null && ests[0].dpsNextNumber !== null,
     certificate: ests.length === 1 && loadEstablishmentCertificate(ests[0]).ok,
+    companyData: ests.length === 1 && [ests[0].street, ests[0].number, ests[0].district, ests[0].cep, ests[0].city, ests[0].stateRegistration].every(Boolean),
     nfseRule: nfse > 0,
     nfeRule: nfe > 0,
     nfseEmitter: getAdapter("NFSE") !== null,

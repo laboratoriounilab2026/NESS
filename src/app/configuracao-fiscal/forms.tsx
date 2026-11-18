@@ -4,7 +4,7 @@ import { startTransition, useActionState, useState } from "react";
 import { CircleCheck, Plus } from "lucide-react";
 import { UFS } from "@/domain/order-input";
 import { NFE_FIELDS, NFSE_FIELDS, REGIMES, RETENCAO_ISS } from "@/fiscal/rule-input";
-import { approveRule, configureNumbering, createEstablishment, createRule, setCertificateRef, type FormState } from "./actions";
+import { approveRule, configureNumbering, createEstablishment, createRule, setCertificateRef, updateEstablishmentData, type FormState } from "./actions";
 
 const inputCls = "w-full rounded-xl border border-line bg-bg px-3 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-accent aria-[invalid=true]:border-err";
 const btn = "inline-flex items-center gap-2 rounded-xl bg-fg px-4 py-2.5 font-semibold text-bg disabled:opacity-60";
@@ -193,6 +193,40 @@ export function CertificateRefForm({ id, current }: { id: string; current: strin
       </Field>
       <div className="grid content-end gap-2">
         <button type="submit" disabled={pending} className={`${btn} w-fit`}>Salvar e testar</button>
+        <Feedback state={state} />
+      </div>
+    </form>
+  );
+}
+
+type EstablishmentData = { street: string | null; number: string | null; district: string | null; cep: string | null; city: string | null; stateRegistration: string | null; municipalRegistration: string | null };
+
+export function EstablishmentDataForm({ id, current }: { id: string; current: EstablishmentData }) {
+  const [state, action, pending] = useActionState(
+    (prev: FormState, f: FormData) => updateEstablishmentData(prev, Object.fromEntries(f)),
+    {},
+  );
+  const e = state.errors;
+  const f = (name: keyof EstablishmentData, label: string, hint?: string) => {
+    const fid = `${name}-${id}`;
+    return (
+      <Field id={fid} label={label} error={e?.[name]} hint={hint}>
+        <input {...inputProps(fid, e && { [fid]: e[name] })} name={name} defaultValue={current[name] ?? ""} />
+      </Field>
+    );
+  };
+  return (
+    <form action={action} className="mt-2 grid gap-3 sm:grid-cols-2">
+      <input type="hidden" name="id" value={id} />
+      {f("street", "Logradouro")}
+      {f("number", "Número")}
+      {f("district", "Bairro")}
+      {f("cep", "CEP")}
+      {f("city", "Cidade")}
+      {f("stateRegistration", "Inscrição estadual (IE)", "Só os dígitos, ou ISENTO.")}
+      {f("municipalRegistration", "Inscrição municipal (IM)", "Necessária para a NFS-e na maioria dos municípios.")}
+      <div className="grid content-end gap-2">
+        <button type="submit" disabled={pending} className={`${btn} w-fit`}>Salvar dados</button>
         <Feedback state={state} />
       </div>
     </form>

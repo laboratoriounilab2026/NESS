@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { issuesByPath } from "@/domain/order-input";
-import { establishmentSchema, numberingSchema, ruleSchema } from "@/fiscal/rule-input";
+import { establishmentDataSchema, establishmentSchema, numberingSchema, ruleSchema } from "@/fiscal/rule-input";
 import { CERT_REF, loadEstablishmentCertificate } from "@/emitters/common/certificate-source";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
@@ -28,6 +28,23 @@ export async function createEstablishment(_prev: FormState, raw: unknown): Promi
   });
   revalidatePath(PATH);
   return { ok: "Estabelecimento cadastrado em homologação." };
+}
+
+/** Dados cadastrais da empresa para as notas (endereço, IE, IM). Editáveis pelo ADMIN; cada alteração é auditada. */
+export async function updateEstablishmentData(_prev: FormState, raw: unknown): Promise<FormState> {
+  const user = await requireUser("ADMIN");
+  const id = String((raw as Record<string, unknown> | null)?.id ?? "");
+  const parsed = establishmentDataSchema.safeParse(raw);
+  if (!parsed.success) return { errors: issuesByPath(parsed.error) };
+  const d = parsed.data;
+  const { count } = await db.establishment.updateMany({ where: { id }, data: { ...d, municipalRegistration: d.municipalRegistration || null } });
+  await audit({
+    actor: user.id, action: "estabelecimento.dados", entity: "Establishment", entityId: id, result: count === 1 ? "atualizado" : "ignorado",
+    correlationId: crypto.randomUUID(), data: { campos: Object.keys(d).join(",") },
+  });
+  if (count !== 1) return { errors: { _: "Estabelecimento não encontrado." } };
+  revalidatePath(PATH);
+  return { ok: "Dados da empresa salvos." };
 }
 
 /** Define série e próximo número (NF-e ou DPS) UMA vez. Depois não muda pela tela (evita buraco ou volta na sequência). */
