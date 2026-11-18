@@ -43,6 +43,7 @@ export async function currentUser() {
 export class ForbiddenError extends Error {
   constructor() {
     super("Sem permissão para esta ação");
+    this.name = "ForbiddenError"; // aparece no log estruturado (src/instrumentation.ts)
   }
 }
 
