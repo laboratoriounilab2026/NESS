@@ -73,6 +73,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         orderId={o.id}
         canEmit={(o.state === "PRONTO_REVISAO" || o.state === "EMITINDO") && o.documents.some((d) => d.state === "PENDENTE")}
         uncertain={o.documents.some((d) => d.state === "INCERTO")}
+        blocked={o.state === "BLOQUEADO"}
       />
     </>
   );

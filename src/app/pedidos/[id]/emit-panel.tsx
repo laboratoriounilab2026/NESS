@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, RefreshCw, Send } from "lucide-react";
-import { emitOrderAction, reconcileOrderAction, type ActionResult } from "./actions";
+import { LoaderCircle, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { emitOrderAction, recheckRulesAction, reconcileOrderAction, type ActionResult } from "./actions";
 
 const card = "rounded-tile border border-line bg-surface p-5 sm:p-6";
 
-export function EmitPanel({ orderId, canEmit, uncertain }: { orderId: string; canEmit: boolean; uncertain: boolean }) {
+export function EmitPanel({ orderId, canEmit, uncertain, blocked }: { orderId: string; canEmit: boolean; uncertain: boolean; blocked: boolean }) {
   const [confirmed, setConfirmed] = useState(false);
   const [result, setResult] = useState<ActionResult | null>(null);
   const [pending, startTransition] = useTransition();
@@ -20,7 +20,7 @@ export function EmitPanel({ orderId, canEmit, uncertain }: { orderId: string; ca
       router.refresh();
     });
 
-  if (!canEmit && !uncertain) return null;
+  if (!canEmit && !uncertain && !blocked) return null;
   return (
     <section className={`${card} grid justify-items-start gap-3`} aria-label="Emissão">
       {canEmit && (
@@ -37,6 +37,19 @@ export function EmitPanel({ orderId, canEmit, uncertain }: { orderId: string; ca
           >
             {pending ? <LoaderCircle size={18} aria-hidden="true" className="animate-spin motion-reduce:animate-none" /> : <Send size={18} aria-hidden="true" />}
             Emitir notas
+          </button>
+        </>
+      )}
+      {blocked && (
+        <>
+          <p className="text-sm text-muted">Bloqueado por falta de regra fiscal aprovada e vigente. Se o responsável fiscal já aprovou, verifique de novo.</p>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => run(() => recheckRulesAction(orderId))}
+            className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 font-semibold hover:bg-fg/5 disabled:opacity-60"
+          >
+            <ShieldCheck size={16} aria-hidden="true" /> Verificar regras de novo
           </button>
         </>
       )}

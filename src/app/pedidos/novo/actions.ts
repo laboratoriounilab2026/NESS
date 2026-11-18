@@ -3,7 +3,8 @@
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { issuesByPath, orderSchema, type OrderInput } from "@/domain/order-input";
-import { resolveRule, type Resolution } from "@/fiscal/matrix";
+import type { Resolution } from "@/fiscal/matrix";
+import { resolveOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
 
 export type CheckResult =
@@ -25,13 +26,7 @@ async function resolveBoth(data: OrderInput) {
     return { establishmentId: null, nfse: blocked(reason), nfe: blocked(reason) };
   }
   const establishmentId = establishments[0].id;
-  const rules = await db.fiscalRule.findMany({ where: { establishmentId, approvedAt: { not: null } } });
-  const base = { establishmentId, at: new Date() };
-  return {
-    establishmentId,
-    nfse: resolveRule(rules, { ...base, docType: "NFSE", purpose: "servico-fotografico" }),
-    nfe: resolveRule(rules, { ...base, docType: "NFE", purpose: "album", ufDestino: data.recipient.uf }),
-  };
+  return { establishmentId, ...(await resolveOrderRules(establishmentId, data.recipient.uf)) };
 }
 
 /** Revalida o pedido no servidor e consulta a matriz para as duas notas. */

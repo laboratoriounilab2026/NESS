@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
+import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
 import { emitDocument, reconcileDocument, type Outcome } from "@/orchestrator/emit";
 
@@ -16,6 +17,11 @@ const EMITTABLE = ["PRONTO_REVISAO", "EMITINDO"] as const;
 export async function emitOrderAction(orderId: string, confirmed: boolean): Promise<ActionResult> {
   const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
   if (confirmed !== true) return { ok: false, message: "Confirme a emissão antes de enviar." };
+
+  const exists = await db.emissionOrder.findUnique({ where: { id: orderId }, select: { id: true } });
+  if (!exists) return { ok: false, message: "Pedido não encontrado." };
+  // Regra precisa estar aprovada e vigente AGORA, não só quando o pedido foi salvo.
+  await refreshOrderRules(orderId);
 
   const order = await db.emissionOrder.findUnique({
     where: { id: orderId },
@@ -70,4 +76,23 @@ export async function reconcileOrderAction(orderId: string): Promise<ActionResul
   return Object.keys(out).length
     ? { ok: true, docs: out, message: "Consulta feita. Veja o estado atualizado de cada nota." }
     : { ok: false, message: "Transmissão ao governo ainda não configurada; não há como consultar." };
+}
+
+/** Recalcula as regras de um pedido bloqueado (ex.: o responsável fiscal aprovou a regra depois do cadastro). */
+export async function recheckRulesAction(orderId: string): Promise<ActionResult> {
+  const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
+  const order = await db.emissionOrder.findUnique({ where: { id: orderId }, select: { state: true } });
+  if (!order) return { ok: false, message: "Pedido não encontrado." };
+  if (order.state !== "BLOQUEADO") return { ok: false, message: "Só pedidos bloqueados precisam ser verificados de novo." };
+
+  const r = await refreshOrderRules(orderId);
+  const ok = r.NFSE.status === "ok" && r.NFE.status === "ok";
+  await audit({
+    actor: user.id, action: "pedido.reverificar_regras", entity: "EmissionOrder", entityId: orderId,
+    result: ok ? "liberado" : "bloqueado", correlationId: crypto.randomUUID(), data: { nfse: r.NFSE.status, nfe: r.NFE.status },
+  });
+  revalidatePath(`/pedidos/${orderId}`);
+  if (ok) return { ok: true, message: "Regras encontradas para as duas notas. O pedido está pronto para emitir." };
+  const why = [r.NFSE, r.NFE].flatMap((x, i) => (x.status === "blocked" ? [`${i ? "NF-e" : "NFS-e"}: ${x.reason}`] : []));
+  return { ok: false, message: `Continua bloqueado. ${why.join(" ")}` };
 }
