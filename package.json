@@ -11,7 +11,10 @@
     "test": "node scripts/vitest.mjs run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "user:create": "node scripts/create-user.ts",
+    "user:create": "node scripts/user.ts create",
+    "user:password": "node scripts/user.ts password",
+    "user:disable": "node scripts/user.ts disable",
+    "user:enable": "node scripts/user.ts enable",
     "verify": "npm run lint && npm run typecheck && node scripts/vitest.mjs run --maxWorkers=1",
     "prepare": "git config core.hooksPath .githooks || true"
   },

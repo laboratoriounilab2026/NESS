@@ -13,7 +13,7 @@ Cada pedido gera duas notas: a **NFS-e** do serviço fotográfico (para quem con
 | Responsável fiscal | Tudo do operador + criar e aprovar regras fiscais, liberar nova tentativa de nota rejeitada, ver auditoria |
 | Administrador | Tudo do operador + cadastrar a empresa emissora, liberar nova tentativa, ver auditoria |
 
-Contas são criadas por quem cuida do sistema, pelo terminal (`npm run user:create`). Não existe cadastro pela tela.
+Contas são criadas, desativadas e têm a senha trocada por quem cuida do sistema, pelo terminal (`npm run user:create`, `user:disable`, `user:password`). Desativar ou trocar a senha encerra na hora as sessões abertas daquela pessoa. Não existe cadastro pela tela.
 
 ## Primeira configuração (uma vez por empresa)
 

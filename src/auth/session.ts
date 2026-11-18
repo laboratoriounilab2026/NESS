@@ -13,6 +13,8 @@ const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 export async function createSession(userId: string) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + TTL_MS);
+  // ponytail: limpeza no login (já recusadas na leitura); job agendado se o volume pedir.
+  await db.session.deleteMany({ where: { expiresAt: { lt: new Date() } } });
   await db.session.create({ data: { tokenHash: sha(token), userId, expiresAt } });
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
