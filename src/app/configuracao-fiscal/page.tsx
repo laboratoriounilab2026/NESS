@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
+import { Ban, Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
 import { REGIMES } from "@/fiscal/rule-input";
 import { ApproveForm, EstablishmentForm, RuleForm } from "./forms";
 import { requireUser } from "@/auth/session";
@@ -95,7 +95,10 @@ async function Content() {
                         </details>
                       </td>
                       <td className="border-b border-line px-3 py-2.5 align-top">
-                        {!r.approvedAt ? (
+                        {r.municipioIbge ? (
+                          // Regra antiga com município: a resolução não usa município (docs/ARQUITETURA.md), então nunca é aplicada.
+                          <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-err"><Ban size={14} aria-hidden="true" /> Não aplicada: regra por município não é suportada</span>
+                        ) : !r.approvedAt ? (
                           <div className="grid gap-2">
                             <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-wait"><Clock size={14} aria-hidden="true" /> Aguardando aprovação</span>
                             {user.role === "FISCAL" && <ApproveForm id={r.id} />}
