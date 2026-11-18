@@ -89,8 +89,10 @@ export function RuleForm() {
         ))}
       </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {fields.map((f) => {
+      {[...new Set(fields.map((f) => ("group" in f ? f.group : undefined) ?? "Parâmetros"))].map((g) => (
+      <fieldset key={`${docType}-${g}`} className="grid gap-4 rounded-xl border border-line p-4 sm:grid-cols-2">
+        <legend className="px-1 text-sm font-semibold">{g}</legend>
+        {fields.filter((f) => (("group" in f ? f.group : undefined) ?? "Parâmetros") === g).map((f) => {
           const id = `p_${f.key}`;
           const err = e?.[`params.${f.key}`];
           const props = { ...inputProps(id, e ? { [id]: err ?? "" } : undefined) };
@@ -106,7 +108,8 @@ export function RuleForm() {
             </Field>
           );
         })}
-      </div>
+      </fieldset>
+      ))}
 
       <div className="grid gap-4 sm:grid-cols-2">
         {docType === "NFE" && (

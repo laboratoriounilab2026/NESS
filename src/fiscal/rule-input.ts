@@ -62,33 +62,33 @@ export const MOD_FRETE = {
 } as const;
 export const IND_IE_DEST = { "1": "Contribuinte do ICMS", "2": "Contribuinte isento de inscrição", "9": "Não contribuinte" } as const;
 
-type FieldDef = { key: string; label: string; schema?: z.ZodType; options?: Record<string, string> };
+type FieldDef = { key: string; label: string; schema?: z.ZodType; options?: Record<string, string>; group?: string };
 const enumOf = (o: Record<string, string>) => z.enum(Object.keys(o) as [string, ...string[]], "Selecione");
 export const fieldSchema = (f: FieldDef) => f.schema ?? enumOf(f.options!);
 
 const RATE_3V2_4 = /^\d{1,3},\d{2,4}$/; // formato 3v2-4 do leiaute (percentual)
 
 export const NFE_FIELDS = [
-  { key: "natOp", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },
-  { key: "cfop", label: "CFOP", schema: req(/^\d{4}$/, "CFOP tem 4 dígitos") },
-  { key: "ncm", label: "NCM", schema: req(/^\d{8}$/, "NCM tem 8 dígitos") },
-  { key: "origem", label: "Origem da mercadoria", schema: req(/^\d$/, "Origem é 1 dígito") },
-  { key: "cstIcms", label: "CST ou CSOSN do ICMS", schema: req(/^\d{2,3}$/, "2 ou 3 dígitos") },
-  { key: "cstPis", label: "CST do PIS", schema: req(/^\d{2}$/, "2 dígitos") },
-  { key: "cstCofins", label: "CST da COFINS", schema: req(/^\d{2}$/, "2 dígitos") },
-  { key: "indFinal", label: "Consumidor final (indFinal)", options: IND_FINAL },
-  { key: "indPres", label: "Presença do comprador (indPres)", options: IND_PRES },
-  { key: "finNFe", label: "Finalidade da NF-e (finNFe)", options: FIN_NFE },
-  { key: "modFrete", label: "Modalidade do frete (modFrete)", options: MOD_FRETE },
-  { key: "indIEDest", label: "Destinatário quanto ao ICMS (indIEDest)", options: IND_IE_DEST },
+  { key: "natOp", group: "Operação", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },
+  { key: "cfop", group: "Item e tributos", label: "CFOP", schema: req(/^\d{4}$/, "CFOP tem 4 dígitos") },
+  { key: "ncm", group: "Item e tributos", label: "NCM", schema: req(/^\d{8}$/, "NCM tem 8 dígitos") },
+  { key: "origem", group: "Item e tributos", label: "Origem da mercadoria", schema: req(/^\d$/, "Origem é 1 dígito") },
+  { key: "cstIcms", group: "Item e tributos", label: "CST ou CSOSN do ICMS", schema: req(/^\d{2,3}$/, "2 ou 3 dígitos") },
+  { key: "cstPis", group: "Item e tributos", label: "CST do PIS", schema: req(/^\d{2}$/, "2 dígitos") },
+  { key: "cstCofins", group: "Item e tributos", label: "CST da COFINS", schema: req(/^\d{2}$/, "2 dígitos") },
+  { key: "indFinal", group: "Operação", label: "Consumidor final (indFinal)", options: IND_FINAL },
+  { key: "indPres", group: "Operação", label: "Presença do comprador (indPres)", options: IND_PRES },
+  { key: "finNFe", group: "Operação", label: "Finalidade da NF-e (finNFe)", options: FIN_NFE },
+  { key: "modFrete", group: "Operação", label: "Modalidade do frete (modFrete)", options: MOD_FRETE },
+  { key: "indIEDest", group: "Operação", label: "Destinatário quanto ao ICMS (indIEDest)", options: IND_IE_DEST },
   // IBS/CBS por item (grupo UB, NT 2025.002; MOC online UB13/UB14/UB18/UB37/UB56). Na NF-e o emitente informa as
   // alíquotas (tabela oficial de alíquotas); valores = vBC × alíquota, calculados pelo NESS. Opcionais até o contador definir.
-  { key: "ibsCbsCst", label: "IBS/CBS · CST (opcional)", schema: opt(/^\d{3}$/, "3 dígitos").optional() },
-  { key: "ibsCbsCClassTrib", label: "IBS/CBS · cClassTrib (opcional)", schema: opt(/^\d{6}$/, "6 dígitos").optional() },
-  { key: "pIbsUf", label: "IBS estadual · alíquota % (pIBSUF, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais, ex.: 0,10").optional() },
-  { key: "pIbsMun", label: "IBS municipal · alíquota % (pIBSMun, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais").optional() },
-  { key: "pCbs", label: "CBS · alíquota % (pCBS, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais, ex.: 0,90").optional() },
-  { key: "infCpl", label: "Informações complementares (opcional)", schema: z.string().trim().max(2000) },
+  { key: "ibsCbsCst", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS/CBS · CST (opcional)", schema: opt(/^\d{3}$/, "3 dígitos").optional() },
+  { key: "ibsCbsCClassTrib", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS/CBS · cClassTrib (opcional)", schema: opt(/^\d{6}$/, "6 dígitos").optional() },
+  { key: "pIbsUf", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS estadual · alíquota % (pIBSUF, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais, ex.: 0,10").optional() },
+  { key: "pIbsMun", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS municipal · alíquota % (pIBSMun, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais").optional() },
+  { key: "pCbs", group: "IBS/CBS (opcional até a definição do contador)", label: "CBS · alíquota % (pCBS, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais, ex.: 0,90").optional() },
+  { key: "infCpl", group: "Item e tributos", label: "Informações complementares (opcional)", schema: z.string().trim().max(2000) },
 ] as const;
 
 // Tabelas da DPS conferidas no Anexo VI v1.04.01 (NT 009), aba "LEIAUTE DPS_NFS-e - RT", em 18/11/2026.
@@ -103,20 +103,20 @@ export const REG_ESP_TRIB = {
 export const RETENCAO_ISS = { "1": "Não retido", "2": "Retido pelo tomador", "3": "Retido pelo intermediário" } as const;
 
 export const NFSE_FIELDS = [
-  { key: "cTribNac", label: "Código de tributação nacional", schema: req(/^\d{6}$/, "6 dígitos") },
-  { key: "cTribMun", label: "Código de tributação municipal (opcional)", schema: opt(/^\d{3}$/, "3 dígitos") },
-  { key: "aliquotaIss", label: "Alíquota do ISS em % (opcional)", schema: opt(/^\d(,\d{1,2})?$/, "Ex.: 2,00 (formato 1V2 do leiaute)") },
-  { key: "retencaoIss", label: "Retenção do ISS", options: RETENCAO_ISS },
-  { key: "tribIssqn", label: "Tributação do ISSQN (tribISSQN)", options: TRIB_ISSQN },
-  { key: "opSimpNac", label: "Situação no Simples Nacional (opSimpNac)", options: OP_SIMP_NAC },
-  { key: "regEspTrib", label: "Regime especial de tributação (regEspTrib)", options: REG_ESP_TRIB },
-  { key: "cNbs", label: "Código NBS (opcional)", schema: opt(/^\d{9}$/, "9 dígitos") },
+  { key: "cTribNac", group: "Serviço e ISS", label: "Código de tributação nacional", schema: req(/^\d{6}$/, "6 dígitos") },
+  { key: "cTribMun", group: "Serviço e ISS", label: "Código de tributação municipal (opcional)", schema: opt(/^\d{3}$/, "3 dígitos") },
+  { key: "aliquotaIss", group: "Serviço e ISS", label: "Alíquota do ISS em % (opcional)", schema: opt(/^\d(,\d{1,2})?$/, "Ex.: 2,00 (formato 1V2 do leiaute)") },
+  { key: "retencaoIss", group: "Serviço e ISS", label: "Retenção do ISS", options: RETENCAO_ISS },
+  { key: "tribIssqn", group: "Serviço e ISS", label: "Tributação do ISSQN (tribISSQN)", options: TRIB_ISSQN },
+  { key: "opSimpNac", group: "Prestador", label: "Situação no Simples Nacional (opSimpNac)", options: OP_SIMP_NAC },
+  { key: "regEspTrib", group: "Prestador", label: "Regime especial de tributação (regEspTrib)", options: REG_ESP_TRIB },
+  { key: "cNbs", group: "Serviço e ISS", label: "Código NBS (opcional)", schema: opt(/^\d{9}$/, "9 dígitos") },
   // IBS/CBS no grupo IBSCBS da DPS (Anexo VI v1.04.01 / NT 009). Opcionais até o contador definir se e quando se aplicam;
   // .optional(): regra aprovada antes destes campos continua completa (não bloqueia pedidos por campo opcional).
-  { key: "ibsCbsIndFinal", label: "IBS/CBS · consumo pessoal (indFinal, opcional)", schema: opt(/^[01]$/, "0 ou 1").optional() },
-  { key: "ibsCbsCIndOp", label: "IBS/CBS · indicador da operação (cIndOp, opcional)", schema: opt(/^\d{6}$/, "6 dígitos (Anexo VII)").optional() },
-  { key: "ibsCbsCst", label: "IBS/CBS · CST (opcional)", schema: opt(/^\d{3}$/, "3 dígitos").optional() },
-  { key: "ibsCbsCClassTrib", label: "IBS/CBS · cClassTrib (opcional)", schema: opt(/^\d{6}$/, "6 dígitos").optional() },
+  { key: "ibsCbsIndFinal", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS/CBS · consumo pessoal (indFinal, opcional)", schema: opt(/^[01]$/, "0 ou 1").optional() },
+  { key: "ibsCbsCIndOp", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS/CBS · indicador da operação (cIndOp, opcional)", schema: opt(/^\d{6}$/, "6 dígitos (Anexo VII)").optional() },
+  { key: "ibsCbsCst", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS/CBS · CST (opcional)", schema: opt(/^\d{3}$/, "3 dígitos").optional() },
+  { key: "ibsCbsCClassTrib", group: "IBS/CBS (opcional até a definição do contador)", label: "IBS/CBS · cClassTrib (opcional)", schema: opt(/^\d{6}$/, "6 dígitos").optional() },
 ] as const;
 
 
