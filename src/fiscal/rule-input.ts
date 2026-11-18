@@ -50,7 +50,8 @@ const paramsSchema = (fields: readonly { key: string; schema: z.ZodType }[]) =>
 
 const common = {
   ufDestino: z.union([z.literal(""), z.enum(UFS)]),
-  municipioIbge: opt(/^\d{7}$/, "Código IBGE tem 7 dígitos"),
+  // Pedido ainda não informa município à resolução: regra com município nunca seria aplicada. Recusar, não ignorar.
+  municipioIbge: z.literal("", "Regra por município ainda não é suportada (pendência fiscal: definir município da prestação ou da entrega)."),
   validFrom: date,
   validTo: z.union([z.literal(""), date]),
   justification: text(10, "Explique a origem da regra (mín. 10 caracteres), ex.: parecer do contador de 10/11/2026"),

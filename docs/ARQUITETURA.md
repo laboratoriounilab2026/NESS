@@ -90,7 +90,7 @@ Finalidades usadas hoje: NFS-e `servico-fotografico`, NF-e `album` (`src/fiscal/
 A regra é resolvida ao salvar o pedido **e de novo** antes de cada envio (`refreshOrderRules`): regra vencida bloqueia o pedido.
 
 **Pendência fiscal:** o pedido não informa município à resolução, então regra com município preenchido nunca é aplicada.
-É preciso o responsável fiscal definir qual município vale (prestação do serviço para NFS-e? destino para NF-e?) e o pedido passar a guardar o código IBGE correspondente. Até lá, a tela orienta deixar o campo em branco.
+É preciso o responsável fiscal definir qual município vale (prestação do serviço para NFS-e? destino para NF-e?) e o pedido passar a guardar o código IBGE correspondente. Até lá, o servidor recusa criar regra com município (`src/fiscal/rule-input.ts`) e o campo não aparece no formulário.
 
 ## Auditoria
 

@@ -19,6 +19,9 @@ describe("regra fiscal", () => {
   it("finalidade precisa casar com o tipo de nota", () => {
     expect(ruleSchema.safeParse({ ...nfe, purpose: "servico-fotografico" }).success).toBe(false);
   });
+  it("recusa regra por município (seria ignorada na resolução)", () => {
+    expect(ruleSchema.safeParse({ ...nfe, municipioIbge: "1234567" }).success).toBe(false);
+  });
   it("exige justificativa", () => {
     expect(ruleSchema.safeParse({ ...nfe, justification: "" }).success).toBe(false);
   });

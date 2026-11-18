@@ -67,7 +67,7 @@ export function RuleForm() {
       docType,
       purpose: docType === "NFE" ? "album" : "servico-fotografico",
       ufDestino: f.get("ufDestino") ?? "",
-      municipioIbge: f.get("ruleMunicipio"),
+      municipioIbge: "", // ponytail: regra por município desativada até a decisão fiscal (docs/ARQUITETURA.md)
       validFrom: f.get("validFrom"),
       validTo: f.get("validTo"),
       justification: f.get("justification"),
@@ -114,9 +114,6 @@ export function RuleForm() {
             <select {...inputProps("ufDestino", e)} defaultValue=""><option value="">Todas</option>{UFS.map((u) => <option key={u}>{u}</option>)}</select>
           </Field>
         )}
-        <Field id="ruleMunicipio" label="Município IBGE (opcional)" error={e?.municipioIbge} hint="Deixe em branco. Regra com município ainda não é aplicada aos pedidos (pendente: definir se vale o município da prestação ou da entrega).">
-          <input {...inputProps("ruleMunicipio", e)} inputMode="numeric" />
-        </Field>
         <Field id="validFrom" label="Início da vigência" error={e?.validFrom}><input type="date" {...inputProps("validFrom", e)} /></Field>
         <Field id="validTo" label="Fim da vigência (opcional)" error={e?.validTo}><input type="date" {...inputProps("validTo", e)} /></Field>
       </div>
