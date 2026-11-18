@@ -25,8 +25,9 @@ const ctx = { actor: "teste-orquestrador", correlationId: "00000000-teste" };
 describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
   const { db } = await import("@/lib/db");
   const { discardOrder, emitDocument, emitOrder, markStaleSent, reconcileDocument } = await import("./emit");
+  const { reserveNumber } = await import("@/emitters/numbering");
   const tag = `teste-orq-${crypto.randomUUID()}`;
-  const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
+  const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1", nfeSeries: 1, nfeNextNumber: 1, dpsSeries: 1, dpsNextNumber: 1 } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
   const rule = await db.fiscalRule.create({
     data: { establishmentId: est.id, docType: "NFE", purpose: "teste", version: 1, params: {}, validFrom: new Date(), justification: "teste", createdBy: "teste" },
@@ -48,6 +49,8 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
     const orders = await db.emissionOrder.findMany({ where: { establishmentId: est.id }, select: { id: true } });
     const ids = orders.map((o) => o.id);
     await db.emissionAttempt.deleteMany({ where: { document: { orderId: { in: ids } } } });
+    await db.nfeNumber.deleteMany({ where: { establishmentId: est.id } });
+    await db.dpsNumber.deleteMany({ where: { establishmentId: est.id } });
     await db.emissionDocument.deleteMany({ where: { orderId: { in: ids } } });
     await db.emissionOrder.deleteMany({ where: { id: { in: ids } } });
     await db.fiscalRule.deleteMany({ where: { establishmentId: est.id } });
@@ -112,6 +115,7 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
   async function stuckSent(docId: string, withAttempt: boolean) {
     const old = new Date(Date.now() - 10 * 60_000);
     if (withAttempt) {
+      await reserveNumber(docId); // o envio real reserva na mesma transação que libera o envio
       const doc = await db.emissionDocument.findUniqueOrThrow({ where: { id: docId } });
       await db.emissionAttempt.create({ data: { documentId: docId, seq: 1, idempotencyKey: `${doc.orderId}:${doc.type}:1`, correlationId: "teste", startedAt: old } });
     }
@@ -182,6 +186,37 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
     };
     expect(await reconcileDocument(nfe.id, racing, ctx)).toMatchObject({ state: "AUTORIZADO" });
     expect(await db.emissionDocument.findUniqueOrThrow({ where: { id: nfe.id } })).toMatchObject({ state: "AUTORIZADO", accessKey: key });
+  });
+
+  it("envio recebe série/número reservados; nova tentativa reusa o mesmo número", async () => {
+    const { nfe } = await newOrder();
+    const seen: string[] = [];
+    const capture: EmitterAdapter = {
+      async send(req) {
+        seen.push(`${req.series}/${req.number}`);
+        return seen.length === 1 ? { kind: "rejected", code: "999", message: "teste" } : ok("e");
+      },
+      async query() {
+        return { kind: "unknown" };
+      },
+    };
+    await emitDocument(nfe.id, capture, ctx);
+    await db.emissionDocument.update({ where: { id: nfe.id }, data: { state: "PENDENTE" } }); // nova tentativa liberada
+    expect((await emitDocument(nfe.id, capture, ctx)).state).toBe("AUTORIZADO");
+    expect(seen).toHaveLength(2);
+    expect(seen[0]).toBe(seen[1]);
+  });
+
+  it("sem numeração configurada: nada é enviado, nota segue pendente", async () => {
+    const { nfe } = await newOrder();
+    await db.establishment.update({ where: { id: est.id }, data: { nfeSeries: null } });
+    try {
+      const f = fake([ok("e")]);
+      expect(await emitDocument(nfe.id, f.adapter, ctx)).toMatchObject({ state: "PENDENTE", detail: expect.stringMatching(/não configurados/) });
+      expect(f.calls.send).toHaveLength(0);
+    } finally {
+      await db.establishment.update({ where: { id: est.id }, data: { nfeSeries: 1 } });
+    }
   });
 
   it("nota sem regra fiscal não é enviada", async () => {

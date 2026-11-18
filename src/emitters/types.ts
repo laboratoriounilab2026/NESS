@@ -2,7 +2,8 @@ import type { DocType } from "@/domain/states";
 
 // Contrato que os adaptadores reais (NF-e/SEFAZ, NFS-e/Sefin Nacional) implementarão nas Fases 4 e 5.
 
-export type EmitRequest = { documentId: string; docType: DocType; idempotencyKey: string };
+/** series/number: numeração reservada da nota (NF-e: nNF/serie; NFS-e: nDPS/serie), a mesma em toda nova tentativa. */
+export type EmitRequest = { documentId: string; docType: DocType; idempotencyKey: string; series: number; number: number };
 
 export type SendResult =
   | { kind: "authorized"; accessKey: string; protocol: string }

@@ -23,7 +23,7 @@ send(req)  → authorized{accessKey, protocol} | rejected{code, message} | denie
 query(req) → authorized{…} | rejected{…} | not_found | unknown
 ```
 
-`req` = `{ documentId, docType, idempotencyKey }`. O adaptador deve:
+`req` = `{ documentId, docType, idempotencyKey, series, number }` (série/número reservados da nota; os mesmos em toda nova tentativa e na consulta). O adaptador deve:
 - tratar `idempotencyKey` como identificador da tentativa junto ao governo (consultas usam a mesma chave);
 - devolver `timeout` em qualquer falta de resposta; o orquestrador também converte exceções em `timeout`;
 - nunca devolver `authorized` sem resposta autêntica do governo.
@@ -75,7 +75,7 @@ Antes da emissão: `PRONTO_REVISAO` (as duas notas têm regra) ou `BLOQUEADO`. D
 
 Decisão de projeto (prática comum dos emissores; revisar com o responsável fiscal se a operação exigir outra):
 - **Os dois documentos:** NF-e (série 0–999) e DPS da NFS-e (série 1–99999) têm sequências independentes, cada uma com sua tabela de números usados (`NfeNumber`, `DpsNumber`). Número da DPS limitado ao INTEGER do banco (2.147.483.647); o layout aceita 15 dígitos.
-- **Quando:** o número é reservado no primeiro envio da nota (`reserveNumber`), não ao salvar o pedido. Pedido nunca emitido não consome número.
+- **Quando:** o número é reservado no primeiro envio da nota, não ao salvar o pedido, dentro da trava do pedido e só depois de conferir descarte e regra fiscal (`reserveNumberTx` em `emitDocument`). Pedido nunca emitido, descartado ou sem regra não consome número. Sem numeração configurada, nada é enviado.
 - **Novas tentativas reusam o número:** nota rejeitada não foi autorizada, então o reenvio usa o mesmo (série, número). Assim não sobra lacuna a inutilizar.
 - **Unicidade:** tabela `NfeNumber` com chave primária (estabelecimento, série, número) e `documentId` único; o contador `Establishment.nfeNextNumber` sobe com `UPDATE … RETURNING` dentro da mesma transação. Corrida na mesma nota desfaz a transação perdedora, inclusive o incremento.
 - **Configuração:** série e próximo número não têm padrão; o ADMIN informa uma única vez em *Configuração fiscal* (a empresa pode estar continuando a sequência de outro emissor). Sem isso, a reserva é bloqueada com explicação.

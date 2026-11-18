@@ -17,7 +17,7 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
   const { db } = await import("@/lib/db");
   const { discardOrderAction, emitOrderAction, recheckRulesAction, retryRejectedAction, updateRecipientAction } = await import("./actions");
   const tag = `teste-acao-${crypto.randomUUID()}`;
-  const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
+  const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1", nfeSeries: 1, nfeNextNumber: 1, dpsSeries: 1, dpsNextNumber: 1 } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
   const recipient = await db.recipient.create({ data: { name: tag, cep: "01001000", street: "Rua", number: "1", district: "Centro", city: "São Paulo", uf: "SP" } });
   // Regras de teste nas finalidades que o sistema procura; parâmetros vazios (nenhum valor fiscal inventado).
@@ -51,6 +51,8 @@ describe.skipIf(!process.env.DATABASE_URL)("emitOrderAction (banco)", async () =
     const ids = orders.map((o) => o.id);
     const extraRecipients = orders.flatMap((o) => (o.recipientId && o.recipientId !== recipient.id ? [o.recipientId] : []));
     await db.emissionAttempt.deleteMany({ where: { document: { orderId: { in: ids } } } });
+    await db.nfeNumber.deleteMany({ where: { establishmentId: est.id } });
+    await db.dpsNumber.deleteMany({ where: { establishmentId: est.id } });
     await db.emissionDocument.deleteMany({ where: { orderId: { in: ids } } });
     await db.emissionOrder.deleteMany({ where: { id: { in: ids } } });
     await db.fiscalRule.deleteMany({ where: { establishmentId: est.id } });

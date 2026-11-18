@@ -4,6 +4,7 @@ import type { EmitRequest, EmitterAdapter, QueryResult, SendResult } from "@/emi
 import { assertTransition, deriveOrderState, idempotencyKey, type DocState } from "@/domain/states";
 import { db } from "@/lib/db";
 import { lockOrder } from "@/lib/order-lock";
+import { findReservedNumber, reserveNumberTx } from "@/emitters/numbering";
 
 // Orquestrador de uma nota. Garantias:
 // - uma tentativa por vez (trava PENDENTE→ENVIADO atômica) e chave de idempotência única no banco;
@@ -35,19 +36,25 @@ export async function emitDocument(documentId: string, adapter: EmitterAdapter, 
   const locked = await db.$transaction(async (tx) => {
     await lockOrder(tx, doc.orderId);
     const order = await tx.emissionOrder.findUniqueOrThrow({ where: { id: doc.orderId }, select: { state: true } });
-    if (order.state === "DESCARTADO") return "descartado" as const;
-    // Regra conferida de novo sob a trava: a reverificação (refreshOrderRules) pode tê-la removido há pouco.
-    const { count } = await tx.emissionDocument.updateMany({ where: { id: documentId, state: "PENDENTE", fiscalRuleId: { not: null } }, data: { state: "ENVIADO" } });
-    if (count === 1) return "ok" as const;
+    if (order.state === "DESCARTADO") return { kind: "descartado" } as const;
+    // Sob a trava toda passagem a ENVIADO desta nota é serializada: estado e regra lidos aqui são confiáveis
+    // (a reverificação de regras pode ter removido a regra há pouco).
     const now = await tx.emissionDocument.findUniqueOrThrow({ where: { id: documentId }, select: { state: true, fiscalRuleId: true } });
-    return now.state === "PENDENTE" && !now.fiscalRuleId ? ("sem_regra" as const) : ("em_andamento" as const);
+    if (now.state !== "PENDENTE") return { kind: "em_andamento" } as const;
+    if (!now.fiscalRuleId) return { kind: "sem_regra" } as const;
+    // Número só depois das conferências: pedido descartado ou sem regra não consome número (evita inutilização).
+    const n = await reserveNumberTx(tx, documentId);
+    if (!n.ok) return { kind: "sem_numero", reason: n.reason } as const;
+    await tx.emissionDocument.update({ where: { id: documentId }, data: { state: "ENVIADO" } });
+    return { kind: "ok", series: n.series, number: n.number } as const;
   });
-  if (locked === "descartado") return { state: doc.state, detail: "Pedido descartado; nada enviado." };
-  if (locked === "sem_regra") return { state: "PENDENTE", detail: "Nota sem regra fiscal aprovada; envio bloqueado." };
-  if (locked !== "ok") return { state: "ENVIADO", detail: "Envio já em andamento." };
+  if (locked.kind === "descartado") return { state: doc.state, detail: "Pedido descartado; nada enviado." };
+  if (locked.kind === "sem_regra") return { state: "PENDENTE", detail: "Nota sem regra fiscal aprovada; envio bloqueado." };
+  if (locked.kind === "sem_numero") return { state: "PENDENTE", detail: `${locked.reason} Nada enviado.` };
+  if (locked.kind !== "ok") return { state: "ENVIADO", detail: "Envio já em andamento." };
 
   const seq = doc._count.attempts + 1;
-  const req: EmitRequest = { documentId, docType: doc.type, idempotencyKey: idempotencyKey(doc.orderId, doc.type, seq) };
+  const req: EmitRequest = { documentId, docType: doc.type, idempotencyKey: idempotencyKey(doc.orderId, doc.type, seq), series: locked.series, number: locked.number };
   const attempt = await db.emissionAttempt.create({ data: { documentId, seq, idempotencyKey: req.idempotencyKey, correlationId: ctx.correlationId } });
 
   let result: SendResult;
@@ -93,9 +100,12 @@ export async function reconcileDocument(documentId: string, adapter: EmitterAdap
     return { state: "PENDENTE" };
   }
 
+  // Tentativa registrada implica número reservado (a reserva ocorre na mesma transação que libera o envio).
+  const n = await findReservedNumber(documentId);
   let result: QueryResult;
   try {
-    result = await adapter.query({ documentId, docType: doc.type, idempotencyKey: last.idempotencyKey });
+    if (!n) throw new Error("tentativa sem número reservado");
+    result = await adapter.query({ documentId, docType: doc.type, idempotencyKey: last.idempotencyKey, series: n.series, number: n.number });
   } catch {
     result = { kind: "unknown" };
   }
