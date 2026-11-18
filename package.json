@@ -15,6 +15,7 @@
     "user:password": "node scripts/user.ts password",
     "user:disable": "node scripts/user.ts disable",
     "user:enable": "node scripts/user.ts enable",
+    "customers:merge": "node scripts/merge-customers.ts",
     "verify": "npm run lint && npm run typecheck && node scripts/vitest.mjs run --maxWorkers=1",
     "prepare": "git config core.hooksPath .githooks || true"
   },

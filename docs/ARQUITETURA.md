@@ -103,6 +103,17 @@ A regra é resolvida ao salvar o pedido **e de novo** antes de cada envio (`refr
 **Pendência fiscal:** o pedido não informa município à resolução, então regra com município preenchido nunca é aplicada.
 É preciso o responsável fiscal definir qual município vale (prestação do serviço para NFS-e? destino para NF-e?) e o pedido passar a guardar o código IBGE correspondente. Até lá, o servidor recusa criar regra com município (`src/fiscal/rule-input.ts`) e o campo não aparece no formulário.
 
+## Cliente (tomador)
+
+Um cadastro por CPF/CNPJ, gravado sem pontuação. Ao salvar um pedido, nome e e-mail digitados atualizam o cadastro (`cliente.atualizar`).
+Salvamentos simultâneos do mesmo documento são serializados com `pg_advisory_xact_lock` (`src/app/pedidos/novo/actions.ts`).
+
+**Pendente (exige confirmação humana):** índice `UNIQUE` em `Customer.document`. Antes, fundir duplicados antigos:
+1. backup do banco;
+2. `npm run customers:merge` (só lista) e conferir;
+3. `npm run customers:merge -- --apply` (irreversível: mantém o cadastro mais antigo de cada grupo e repassa os pedidos);
+4. só então criar a migração do índice.
+
 ## Auditoria
 
 Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `cliente.atualizar`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
