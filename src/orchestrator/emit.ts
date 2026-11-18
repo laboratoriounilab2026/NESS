@@ -102,13 +102,19 @@ export async function reconcileDocument(documentId: string, adapter: EmitterAdap
   const state = QUERY_TO_STATE[result.kind];
   if (state !== "INCERTO") {
     assertTransition("INCERTO", state);
-    await db.$transaction([
-      db.emissionAttempt.update({ where: { id: last.id }, data: { resultState: state, responseSummary: summarize(result), finishedAt: new Date() } }),
-      db.emissionDocument.update({
-        where: { id: documentId },
+    // Condicional: outra consulta (ou resposta tardia do envio) pode ter resolvido a nota enquanto esta esperava.
+    const applied = await db.$transaction(async (tx) => {
+      const { count } = await tx.emissionDocument.updateMany({
+        where: { id: documentId, state: "INCERTO" },
         data: { state, ...(result.kind === "authorized" ? { accessKey: result.accessKey, protocol: result.protocol } : {}) },
-      }),
-    ]);
+      });
+      if (count === 1) await tx.emissionAttempt.update({ where: { id: last.id }, data: { resultState: state, responseSummary: summarize(result), finishedAt: new Date() } });
+      return count === 1;
+    });
+    if (!applied) {
+      const now = await db.emissionDocument.findUniqueOrThrow({ where: { id: documentId }, select: { state: true } });
+      return { state: now.state, detail: "A nota já foi resolvida por outra consulta." };
+    }
     await syncOrder(doc.orderId);
   }
   await audit({ actor: ctx.actor, action: "nota.reconciliar", entity: "EmissionDocument", entityId: documentId, result: state, correlationId: ctx.correlationId, data: { consulta: result.kind } });

@@ -166,6 +166,24 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
     expect(await db.auditEvent.count({ where: { action: "nota.resposta_tardia", entityId: nfe.id } })).toBe(1);
   });
 
+  it("consulta não sobrescreve nota resolvida por outra consulta enquanto esperava", async () => {
+    const { nfe } = await newOrder();
+    await emitDocument(nfe.id, fake([{ kind: "timeout" }]).adapter, ctx);
+    const key = `chave-teste-${crypto.randomUUID()}`;
+    const racing: EmitterAdapter = {
+      async send() {
+        return { kind: "timeout" };
+      },
+      async query() {
+        // Outra consulta resolveu primeiro como autorizada.
+        await db.$executeRaw`UPDATE "EmissionDocument" SET state = 'AUTORIZADO', "accessKey" = ${key} WHERE id = ${nfe.id}`;
+        return { kind: "not_found" };
+      },
+    };
+    expect(await reconcileDocument(nfe.id, racing, ctx)).toMatchObject({ state: "AUTORIZADO" });
+    expect(await db.emissionDocument.findUniqueOrThrow({ where: { id: nfe.id } })).toMatchObject({ state: "AUTORIZADO", accessKey: key });
+  });
+
   it("nota sem regra fiscal não é enviada", async () => {
     const { nfe } = await newOrder(false);
     const f = fake([ok("e")]);
