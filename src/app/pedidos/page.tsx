@@ -23,7 +23,7 @@ const FILTERS = {
 } satisfies Record<string, { label: string; where: Prisma.EmissionOrderWhereInput }>;
 type FilterKey = keyof typeof FILTERS;
 
-export default function Pedidos({ searchParams }: { searchParams: Promise<{ situacao?: string }> }) {
+export default function Pedidos({ searchParams }: { searchParams: Promise<{ situacao?: string; q?: string }> }) {
   return (
     <div className="grid gap-3.5">
       <header className="reveal flex flex-wrap items-end justify-between gap-3">
@@ -42,23 +42,34 @@ export default function Pedidos({ searchParams }: { searchParams: Promise<{ situ
   );
 }
 
-async function Orders({ searchParams }: { searchParams: Promise<{ situacao?: string }> }) {
+async function Orders({ searchParams }: { searchParams: Promise<{ situacao?: string; q?: string }> }) {
   await requireUser("OPERADOR", "FISCAL", "ADMIN");
-  const asked = (await searchParams).situacao;
-  const key: FilterKey = asked && asked in FILTERS ? (asked as FilterKey) : "todos";
-  // ponytail: 50 por filtro, sem paginação/busca por nome; adicionar quando o volume pedir.
+  const sp = await searchParams;
+  const key: FilterKey = sp.situacao && sp.situacao in FILTERS ? (sp.situacao as FilterKey) : "todos";
+  const q = (sp.q ?? "").trim().slice(0, 60);
+  // ponytail: 50 por filtro/busca, sem paginação; adicionar quando o volume pedir.
   const orders = await db.emissionOrder.findMany({
-    where: FILTERS[key].where,
+    where: { ...FILTERS[key].where, ...(q ? { customer: { name: { contains: q, mode: "insensitive" } } } : {}) },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: { customer: { select: { name: true } }, documents: { select: { type: true, state: true }, orderBy: { type: "asc" } } },
   });
   const nav = (
+    <>
+    <form role="search" action="/pedidos" className="flex flex-wrap items-end gap-2">
+      {key !== "todos" && <input type="hidden" name="situacao" value={key} />}
+      <div className="grid gap-1.5">
+        <label htmlFor="q" className="text-sm font-semibold">Buscar por cliente</label>
+        <input id="q" name="q" defaultValue={q} placeholder="Nome do tomador" className="w-72 max-w-full rounded-xl border border-line bg-bg px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-accent" />
+      </div>
+      <button type="submit" className="rounded-xl bg-fg px-4 py-2.5 font-semibold text-bg">Buscar</button>
+      {q && <Link href={key === "todos" ? "/pedidos" : `/pedidos?situacao=${key}`} className="px-2 py-2.5 text-sm text-muted hover:text-fg">Limpar</Link>}
+    </form>
     <nav aria-label="Filtrar por situação" className="flex flex-wrap gap-2">
       {(Object.keys(FILTERS) as FilterKey[]).map((k) => (
         <Link
           key={k}
-          href={k === "todos" ? "/pedidos" : `/pedidos?situacao=${k}`}
+          href={`/pedidos?${new URLSearchParams({ ...(k === "todos" ? {} : { situacao: k }), ...(q ? { q } : {}) })}`}
           aria-current={k === key ? "page" : undefined}
           className="rounded-full border border-line px-3 py-1.5 text-sm font-semibold hover:bg-fg/5 aria-[current=page]:border-fg aria-[current=page]:bg-fg aria-[current=page]:text-bg"
         >
@@ -66,14 +77,15 @@ async function Orders({ searchParams }: { searchParams: Promise<{ situacao?: str
         </Link>
       ))}
     </nav>
+    </>
   );
   if (orders.length === 0) {
     return (
       <>
         {nav}
         <div className={`${card} grid justify-items-start gap-2`}>
-          <p className="font-semibold">{key === "todos" ? "Nenhum pedido ainda." : "Nenhum pedido nesta situação."}</p>
-          {key === "todos" && <p className="text-sm text-muted">Cadastre o primeiro pedido para preparar as duas notas.</p>}
+          <p className="font-semibold">{q ? `Nenhum pedido encontrado para “${q}”.` : key === "todos" ? "Nenhum pedido ainda." : "Nenhum pedido nesta situação."}</p>
+          {key === "todos" && !q && <p className="text-sm text-muted">Cadastre o primeiro pedido para preparar as duas notas.</p>}
         </div>
       </>
     );
