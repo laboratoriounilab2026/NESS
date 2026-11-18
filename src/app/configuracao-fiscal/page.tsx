@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Ban, Building2, CalendarX, CircleCheck, Clock, Scale } from "lucide-react";
-import { paramsComplete, REGIMES } from "@/fiscal/rule-input";
+import { describeParam, paramsComplete, REGIMES } from "@/fiscal/rule-input";
 import { loadEstablishmentCertificate } from "@/emitters/common/certificate-source";
 import { ApproveForm, CertificateRefForm, EstablishmentDataForm, EstablishmentForm, NumberingForm, RuleForm } from "./forms";
 import { requireUser } from "@/auth/session";
@@ -102,9 +102,10 @@ async function Content() {
                         <details>
                           <summary className="cursor-pointer text-[12.5px] font-semibold">Ver</summary>
                           <dl className="mt-2 grid min-w-56 gap-1 text-[12.5px]">
-                            {Object.entries(r.params as Record<string, string>).filter(([, v]) => v !== "").map(([k, v]) => (
-                              <div key={k} className="flex gap-2"><dt className="text-muted">{k}</dt><dd className="font-mono">{v}</dd></div>
-                            ))}
+                            {Object.entries(r.params as Record<string, string>).filter(([, v]) => v !== "").map(([k, v]) => {
+                              const d = describeParam(r.docType, k, v);
+                              return <div key={k} className="flex gap-2"><dt className="text-muted">{d.label}</dt><dd className="font-mono">{d.value}</dd></div>;
+                            })}
                             <div className="mt-1"><dt className="text-muted">Justificativa</dt><dd>{r.justification}</dd></div>
                           </dl>
                         </details>

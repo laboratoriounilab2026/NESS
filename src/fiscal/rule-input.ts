@@ -144,3 +144,10 @@ export const ruleSchema = z
   .refine((r) => r.validTo === "" || r.validTo > r.validFrom, { path: ["validTo"], message: "Fim da vigência deve ser depois do início" });
 
 export type RuleInput = z.output<typeof ruleSchema>;
+
+/** Rótulo do parâmetro e significado do código (listas), para exibir uma regra salva como no formulário. */
+export function describeParam(docType: "NFE" | "NFSE", key: string, value: string): { label: string; value: string } {
+  const f = (docType === "NFE" ? NFE_FIELDS : NFSE_FIELDS).find((x) => x.key === key) as FieldDef | undefined;
+  const meaning = f?.options?.[value];
+  return { label: f?.label ?? key, value: meaning ? `${value} · ${meaning}` : value };
+}

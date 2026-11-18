@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { establishmentDataSchema, establishmentSchema, paramsComplete, ruleSchema } from "./rule-input";
+import { describeParam, establishmentDataSchema, establishmentSchema, paramsComplete, ruleSchema } from "./rule-input";
 
 // Valores abaixo são só de formato para teste — não são orientação fiscal.
 const nfe = {
@@ -67,5 +67,13 @@ describe("dados cadastrais da empresa", () => {
   it("recusa IE com letras e CEP incompleto", () => {
     expect(establishmentDataSchema.safeParse({ ...ok, stateRegistration: "12AB" }).success).toBe(false);
     expect(establishmentDataSchema.safeParse({ ...ok, cep: "0100" }).success).toBe(false);
+  });
+});
+
+describe("exibição de parâmetros", () => {
+  it("usa o rótulo do formulário e o significado do código", () => {
+    expect(describeParam("NFE", "modFrete", "9")).toEqual({ label: "Modalidade do frete (modFrete)", value: "9 · Sem frete" });
+    expect(describeParam("NFE", "cfop", "1234")).toEqual({ label: "CFOP", value: "1234" });
+    expect(describeParam("NFSE", "chaveDesconhecida", "x")).toEqual({ label: "chaveDesconhecida", value: "x" });
   });
 });
