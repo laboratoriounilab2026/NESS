@@ -36,6 +36,7 @@ npm run dev
 - [docs/GUIA_DE_USO.md](docs/GUIA_DE_USO.md): uso por papel (operador, fiscal, administrador)
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): contratos, estados, idempotência, reconciliação, numeração
 - [docs/PLANO_NESS.md](docs/PLANO_NESS.md): plano e situação das fases
+- [docs/PERGUNTAS_CONTADOR.md](docs/PERGUNTAS_CONTADOR.md): perguntas fiscais para o contador (pendências da emissão)
 - [CLAUDE.md](CLAUDE.md): regras do projeto (fiscais, segurança, UI) e notas de ambiente
 
 ## Regras que não mudam
