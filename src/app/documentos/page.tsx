@@ -33,7 +33,11 @@ async function Docs() {
     where: { accessKey: { not: null } },
     orderBy: { updatedAt: "desc" },
     take: 100,
-    include: { order: { select: { customer: { select: { name: true } } } } },
+    include: {
+      order: { select: { customer: { select: { name: true } } } },
+      nfeNumber: { select: { series: true, number: true } },
+      dpsNumber: { select: { series: true, number: true } },
+    },
   });
   if (docs.length === 0) {
     return (
@@ -48,7 +52,7 @@ async function Docs() {
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="text-left text-xs uppercase tracking-wide text-muted">
-            {["Atualizada", "Nota", "Pedido", "Situação", "Chave de acesso", "Protocolo"].map((h) => (
+            {["Atualizada", "Nota", "Número / série", "Pedido", "Situação", "Chave de acesso", "Protocolo"].map((h) => (
               <th key={h} className="whitespace-nowrap border-b border-line px-3 py-2 font-semibold">{h}</th>
             ))}
           </tr>
@@ -58,6 +62,12 @@ async function Docs() {
             <tr key={d.id}>
               <td className="whitespace-nowrap border-b border-line px-3 py-2.5 tabular-nums">{when(d.updatedAt)}</td>
               <td className="border-b border-line px-3 py-2.5 font-semibold">{DOC_LABEL[d.type]}</td>
+              <td className="whitespace-nowrap border-b border-line px-3 py-2.5 tabular-nums">
+                {(() => {
+                  const n = d.nfeNumber ?? d.dpsNumber;
+                  return n ? `${n.number} / ${n.series}` : "—";
+                })()}
+              </td>
               <td className="border-b border-line px-3 py-2.5">
                 <Link href={`/pedidos/${d.orderId}`} className="hover:underline">{d.order.customer.name}</Link>
               </td>
