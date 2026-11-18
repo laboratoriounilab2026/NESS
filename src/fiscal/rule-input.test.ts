@@ -40,6 +40,10 @@ describe("regra fiscal", () => {
     expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, aliquotaIss: "10,00" } }).success).toBe(false);
     expect(ruleSchema.safeParse({ ...nfse, params: { ...nfse.params, regEspTrib: "7" } }).success).toBe(false); // regra sem as chaves de IBS/CBS continua completa
   });
+  it("IBS/CBS da NF-e opcionais; alíquotas no formato 3v2-4", () => {
+    expect(ruleSchema.safeParse({ ...nfe, params: { ...nfe.params, pCbs: "0,90", pIbsUf: "0,10", pIbsMun: "0,00" } }).success).toBe(true);
+    expect(ruleSchema.safeParse({ ...nfe, params: { ...nfe.params, pCbs: "0,9" } }).success).toBe(false);
+  });
   it("exige justificativa", () => {
     expect(ruleSchema.safeParse({ ...nfe, justification: "" }).success).toBe(false);
   });

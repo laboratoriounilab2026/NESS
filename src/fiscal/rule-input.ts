@@ -66,6 +66,8 @@ type FieldDef = { key: string; label: string; schema?: z.ZodType; options?: Reco
 const enumOf = (o: Record<string, string>) => z.enum(Object.keys(o) as [string, ...string[]], "Selecione");
 export const fieldSchema = (f: FieldDef) => f.schema ?? enumOf(f.options!);
 
+const RATE_3V2_4 = /^\d{1,3},\d{2,4}$/; // formato 3v2-4 do leiaute (percentual)
+
 export const NFE_FIELDS = [
   { key: "natOp", label: "Natureza da operação", schema: text(3, "Informe a natureza da operação") },
   { key: "cfop", label: "CFOP", schema: req(/^\d{4}$/, "CFOP tem 4 dígitos") },
@@ -79,6 +81,13 @@ export const NFE_FIELDS = [
   { key: "finNFe", label: "Finalidade da NF-e (finNFe)", options: FIN_NFE },
   { key: "modFrete", label: "Modalidade do frete (modFrete)", options: MOD_FRETE },
   { key: "indIEDest", label: "Destinatário quanto ao ICMS (indIEDest)", options: IND_IE_DEST },
+  // IBS/CBS por item (grupo UB, NT 2025.002; MOC online UB13/UB14/UB18/UB37/UB56). Na NF-e o emitente informa as
+  // alíquotas (tabela oficial de alíquotas); valores = vBC × alíquota, calculados pelo NESS. Opcionais até o contador definir.
+  { key: "ibsCbsCst", label: "IBS/CBS · CST (opcional)", schema: opt(/^\d{3}$/, "3 dígitos").optional() },
+  { key: "ibsCbsCClassTrib", label: "IBS/CBS · cClassTrib (opcional)", schema: opt(/^\d{6}$/, "6 dígitos").optional() },
+  { key: "pIbsUf", label: "IBS estadual · alíquota % (pIBSUF, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais, ex.: 0,10").optional() },
+  { key: "pIbsMun", label: "IBS municipal · alíquota % (pIBSMun, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais").optional() },
+  { key: "pCbs", label: "CBS · alíquota % (pCBS, opcional)", schema: opt(RATE_3V2_4, "Até 3 dígitos e 2 a 4 decimais, ex.: 0,90").optional() },
   { key: "infCpl", label: "Informações complementares (opcional)", schema: z.string().trim().max(2000) },
 ] as const;
 

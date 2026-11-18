@@ -49,7 +49,12 @@ Os quatro campos já existem na regra da NFS-e como **opcionais** (só formato, 
 
 ## NF-e (álbum)
 
-Códigos de indFinal, indPres, finNFe, indIEDest e modFrete **conferidos no MOC online** (moc.sped.fazenda.pr.gov.br) em 18/11/2026; finNFe ganhou 5 (nota de crédito) e 6 (nota de débito) com a Reforma. O grupo UB (IBS/CBS) da NF-e — NT 2025.002, hoje na v1.53 (30/10/2026) — ainda precisa ser levantado para a regra, como na NFS-e.
+Códigos de indFinal, indPres, finNFe, indIEDest e modFrete **conferidos no MOC online** (moc.sped.fazenda.pr.gov.br) em 18/11/2026; finNFe ganhou 5 (nota de crédito) e 6 (nota de débito) com a Reforma. **IBS/CBS da NF-e (grupo UB, NT 2025.002 — v1.53 de 30/10/2026; lido no MOC online):** diferente da NFS-e, aqui o
+**emitente informa as alíquotas**. Por item: CST (3), cClassTrib (6), vBC, pIBSUF, pIBSMun, pCBS (formato 3v2-4,
+"preencher de acordo com a tabela de alíquotas do IBS e CBS") e os valores (vIBSUF, vIBSMun, vIBS, vCBS = vBC × alíquota).
+CST, cClassTrib e as três alíquotas já estão na regra da NF-e como **opcionais, sem padrão**; o NESS calcularia os valores.
+Grupos de diferimento, redução, crédito presumido, compra governamental, monofásico e Imposto Seletivo ficaram de fora
+(confirmar com o contador). Os totais de IBS/CBS (grupo W) ainda não foram lidos.
 
 | Grupo / campo | Situação | Observação |
 |---|---|---|
