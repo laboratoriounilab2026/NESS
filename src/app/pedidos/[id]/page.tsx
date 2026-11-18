@@ -46,7 +46,8 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       documents: { orderBy: { type: "asc" }, include: {
           fiscalRule: { select: { version: true } },
           _count: { select: { attempts: true } },
-          attempts: { orderBy: { seq: "desc" }, take: 1, select: { responseSummary: true } },
+          // ponytail: últimas 10 tentativas por nota; a lista completa está em Emissões.
+          attempts: { orderBy: { seq: "desc" }, take: 10, select: { id: true, seq: true, startedAt: true, resultState: true, responseSummary: true } },
         },
       },
     },
@@ -71,7 +72,22 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
             <p className="text-sm text-muted">
               {d.fiscalRule ? `Regra fiscal versão ${d.fiscalRule.version}` : "Sem regra fiscal aprovada: emissão bloqueada até o responsável fiscal aprovar."}
             </p>
-            <p className="text-sm text-muted">Tentativas de envio: {d._count.attempts}</p>
+            {d._count.attempts === 0 ? (
+              <p className="text-sm text-muted">Nenhuma tentativa de envio.</p>
+            ) : (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted">Tentativas de envio: {d._count.attempts}</summary>
+                <ol className="mt-2 grid gap-1.5">
+                  {d.attempts.map((a) => (
+                    <li key={a.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="tabular-nums text-muted">{a.seq}ª · {a.startedAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })}</span>
+                      {a.resultState ? <StatusBadge {...DOC_BADGE[a.resultState]} /> : <StatusBadge status="wait" label="Sem resposta" />}
+                      {(a.resultState === "REJEITADO" || a.resultState === "DENEGADO") && <span className="text-muted">{govReason(a.responseSummary)}</span>}
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            )}
             {(d.state === "REJEITADO" || d.state === "DENEGADO") && (
               <p className="text-sm text-err">Motivo informado pelo governo: {govReason(d.attempts[0]?.responseSummary)}</p>
             )}
