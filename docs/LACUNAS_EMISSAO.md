@@ -19,6 +19,22 @@ Antes de escrever os XMLs, o responsável fiscal/contador precisa definir, para 
 - cClassTrib, indicador de operação e CST de IBS/CBS aplicáveis, e as alíquotas do período;
 - como fica o NBS do serviço (passa a ser relevante na correlação).
 
+**O que a DPS pede ao emitente no grupo `IBSCBS`** (lido do Anexo VI v1.04.01 / NT 009, aba "LEIAUTE DPS_NFS-e - RT",
+em 18/11/2026), para um serviço comum:
+
+| Campo | Ocorrência | Formato | Descrição (do anexo) |
+|---|---|---|---|
+| `IBSCBS/indFinal` | 0-1 | 1 dígito | operação de uso ou consumo pessoal (0 = não, 1 = sim) |
+| `IBSCBS/cIndOp` | 0-1 | 6 dígitos | código indicador da operação de fornecimento (tabela do Anexo VII) |
+| `IBSCBS/valores/trib/CST` | 1-1 | 3 dígitos | Código de Situação Tributária do IBS e da CBS |
+| `IBSCBS/valores/trib/cClassTrib` | 1-1 | 6 dígitos | Código de Classificação Tributária do IBS e da CBS |
+
+Alíquotas, base e totais do IBS/CBS são **calculados pelo sistema nacional** na NFS-e (grupo `infNFSe/IBSCBS`), não informados
+pelo emitente. Os demais subgrupos da DPS são de casos especiais (imóveis, condomínios, compras governamentais, doação,
+diferimento, crédito presumido, notas de ajuste) — confirmar com o contador que não se aplicam ao estúdio.
+Observação do anexo para o Simples Nacional: "os grupos IBSCBS só serão obrigatórios a partir de 202…" — **o texto da
+célula vem truncado no próprio arquivo oficial**; confirmar o ano com o contador ou na NT 009.
+
 Esses campos entram na regra fiscal como os demais: **sem valor padrão** e com aprovação. Fontes oficiais:
 - Página RTC da NFS-e: https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/rtc
 - Documentação técnica (manuais, leiautes, XSD): https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica
