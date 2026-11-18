@@ -10,6 +10,7 @@ import {
   type OrderDraft,
 } from "@/domain/order-input";
 import type { Resolution } from "@/fiscal/matrix";
+import { municipiosOf } from "@/domain/municipios";
 import { checkOrder, lookupCustomer, saveOrder, type CheckResult } from "./actions";
 
 type Section = keyof OrderDraft;
@@ -164,7 +165,7 @@ export function OrderWizard() {
     setStep(0);
   }
 
-  function field<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, opts: { hint?: string; inputMode?: "numeric" | "decimal" | "email"; disabled?: boolean; className?: string; onBlur?: () => void } = {}) {
+  function field<S extends Section>(section: S, key: keyof OrderDraft[S] & string, label: string, opts: { hint?: string; inputMode?: "numeric" | "decimal" | "email"; disabled?: boolean; className?: string; onBlur?: () => void; list?: string } = {}) {
     const id = `${section}-${key}`;
     const err = errors[`${section}.${key}`];
     return (
@@ -176,6 +177,7 @@ export function OrderWizard() {
           value={String(draft[section][key] ?? "")}
           onChange={(e) => set(section, key, e.target.value)}
           onBlur={opts.onBlur}
+          list={opts.list}
           inputMode={opts.inputMode}
           disabled={opts.disabled}
           aria-invalid={err ? true : undefined}
@@ -255,7 +257,10 @@ export function OrderWizard() {
             {field("recipient", "street", "Rua")}
             {field("recipient", "number", "Número")}
             {field("recipient", "district", "Bairro")}
-            {field("recipient", "city", "Cidade")}
+            {field("recipient", "city", "Cidade", { list: "cidades-uf", hint: draft.recipient.uf ? "Escolha da lista: o código IBGE vai para a NF-e." : "Selecione a UF para ver as cidades." })}
+            <datalist id="cidades-uf">
+              {draft.recipient.uf && municipiosOf(draft.recipient.uf).map((c) => <option key={c} value={c} />)}
+            </datalist>
             <div className="grid gap-1.5">
               <label htmlFor="recipient-uf" className="text-sm font-semibold">UF</label>
               <select

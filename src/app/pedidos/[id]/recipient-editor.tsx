@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LoaderCircle, MapPin } from "lucide-react";
+import { municipiosOf } from "@/domain/municipios";
 import { UFS } from "@/domain/order-input";
 import { updateRecipientAction, type RecipientEdit } from "./actions";
 
@@ -21,6 +22,7 @@ const FIELDS: [keyof RecipientEdit, string][] = [
 /** Correção do destinatário enquanto a NF-e não foi enviada ou foi rejeitada (servidor revalida tudo). */
 export function RecipientEditor({ orderId, initial }: { orderId: string; initial: RecipientEdit }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uf, setUf] = useState<string>(initial.uf);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -46,13 +48,14 @@ export function RecipientEditor({ orderId, initial }: { orderId: string; initial
         {FIELDS.map(([k, label]) => (
           <div key={k} className="grid gap-1.5">
             <label htmlFor={`rcp-${k}`} className="text-sm font-semibold">{label}</label>
-            <input id={`rcp-${k}`} name={k} defaultValue={initial[k]} className={inputCls} {...aria(k)} />
+            <input id={`rcp-${k}`} name={k} defaultValue={initial[k]} className={inputCls} {...aria(k)} list={k === "city" ? "rcp-cidades" : undefined} />
             {err(k)}
           </div>
         ))}
         <div className="grid gap-1.5">
           <label htmlFor="rcp-uf" className="text-sm font-semibold">UF</label>
-          <select id="rcp-uf" name="uf" defaultValue={initial.uf} className={inputCls} {...aria("uf")}>
+          <datalist id="rcp-cidades">{municipiosOf(uf).map((c) => <option key={c} value={c} />)}</datalist>
+          <select id="rcp-uf" name="uf" defaultValue={initial.uf} onChange={(ev) => setUf(ev.target.value)} className={inputCls} {...aria("uf")}>
             {UFS.map((u) => <option key={u}>{u}</option>)}
           </select>
           {err("uf")}

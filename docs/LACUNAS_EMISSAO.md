@@ -22,7 +22,7 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 | emit: IE (inscrição estadual) | ✅ | cadastro da empresa (só formato: dígitos ou ISENTO) |
 | dest: CPF/CNPJ, nome | ✅ | destinatário (documento opcional hoje — **confirmar se a operação exige**) |
 | dest: endereço | ✅ parcial | rua, nº, bairro, cidade, UF, CEP |
-| dest: cMun (código IBGE do município) | 🟡 | **guardamos só o nome da cidade**; precisa do código IBGE |
+| dest: cMun (código IBGE do município) | ✅ | cidade validada contra a tabela do IBGE embarcada (`src/domain/municipios.ts`); código gravado em `Recipient.cityIbge` |
 | dest: indIEDest, IE | 🔷 🟡 | contribuinte de ICMS? (pessoa física: não contribuinte) |
 | det/prod: xProd, qCom, vUnCom, vProd | ✅ | guardados no pedido desde `f8ab6bd` |
 | det/prod: cProd, uCom/uTrib (unidade), cEAN | 🟡 | código interno do produto e unidade (ex.: UN) — **definir** |
@@ -56,7 +56,7 @@ Legenda: ✅ já existe · 🟡 falta no cadastro (dado operacional) · 🔷 dec
 ## O que fazer (proposta, em ordem)
 
 1. ~~**Cadastro do estabelecimento (ADMIN):** endereço completo, IE, IM~~ — feito. Regime especial (regEspTrib) é decisão fiscal: vai para a regra.
-2. **Código IBGE do município do destinatário:** escolher a cidade de uma lista pela UF (tabela pública do IBGE embarcada no sistema), em vez de texto livre. Evita consultar serviço externo com dados do cliente.
+2. ~~**Código IBGE do município do destinatário**~~ — feito: lista por UF com a tabela pública do IBGE embarcada (sem consulta externa com dados do cliente).
 3. **Pedido:** forma de pagamento, data e local do serviço.
 4. **Regra fiscal (responsável fiscal + contador):** acrescentar à regra os campos 🔷 que faltam — indFinal, indPres, finNFe, modFrete, indIEDest, bases/alíquotas conforme o CST, tribISSQN, NBS, totTrib — **sem valores padrão**, como os demais.
 5. Só então escrever os montadores de XML, validando contra o XSD oficial.

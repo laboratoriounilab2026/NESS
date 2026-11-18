@@ -15,7 +15,7 @@ const params = { natOp: "teste", cfop: "1234", ncm: "12345678", origem: "0", cst
 const rule = { docType: "NFE", purpose: "album", ufDestino: "SP", municipioIbge: "", validFrom: "2020-01-01", validTo: "", justification: "Teste automatizado de fluxo", params };
 const order = {
   customer: { document: "529.982.247-25", name: "Cliente Teste", email: "" },
-  recipient: { same: false, name: "Dest", document: "", cep: "01001-000", street: "Rua", number: "1", district: "Centro", city: "Cidade", uf: "SP" },
+  recipient: { same: false, name: "Dest", document: "", cep: "01001-000", street: "Rua", number: "1", district: "Centro", city: "São Paulo", uf: "SP" },
   service: { description: "Ensaio", value: "100" },
   goods: { description: "Álbum", quantity: "1", unitValue: "50" },
 };
@@ -69,7 +69,7 @@ describe.skipIf(!process.env.DATABASE_URL)("configuração fiscal (banco)", asyn
     r = await checkOrder(order);
     expect(r).toMatchObject({ ok: true, nfe: { status: "ok", version: 2 }, nfse: { status: "blocked" } });
     // Outra UF continua bloqueada: a regra é só para SP.
-    r = await checkOrder({ ...order, recipient: { ...order.recipient, uf: "PR" } });
+    r = await checkOrder({ ...order, recipient: { ...order.recipient, uf: "PR", city: "Curitiba" } });
     expect(r.ok && r.nfe.status).toBe("blocked");
   });
 

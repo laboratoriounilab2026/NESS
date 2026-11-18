@@ -120,6 +120,7 @@ model Recipient {
   number    String
   district  String
   city      String
+  cityIbge  String?  // código IBGE do município (NF-e dest/cMun); nulo só em registros antigos
   uf        String   @db.Char(2)
   createdAt DateTime @default(now())
   orders    EmissionOrder[]

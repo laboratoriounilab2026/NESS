@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { findMunicipio } from "./municipios";
 
 // Entrada do pedido: mesmo schema no cliente (validação inline) e no servidor (fonte de verdade).
 // O operador não informa nenhum parâmetro fiscal técnico — eles vêm da regra aprovada.
@@ -60,7 +61,7 @@ export const customerSchema = z.object({
   email: z.union([z.literal(""), z.email("E-mail inválido")]),
 });
 
-export const recipientSchema = z.object({
+const recipientFields = z.object({
   same: z.boolean(),
   name: text(2, "o nome de quem recebe"),
   document: z.string().refine((s) => s === "" || isValidDocument(s), "CPF ou CNPJ inválido").transform(normalizeDocument),
@@ -71,6 +72,20 @@ export const recipientSchema = z.object({
   city: text(2, "a cidade"),
   uf: z.enum(UFS, "Selecione a UF"),
 });
+// Cidade precisa existir na UF (tabela do IBGE): grava o nome oficial e o código IBGE exigido pela NF-e (dest/cMun).
+function withMunicipio<T extends { uf: string; city: string }>(r: T, ctx: z.RefinementCtx) {
+  const m = findMunicipio(r.uf, r.city);
+  if (!m) {
+    ctx.addIssue({ code: "custom", path: ["city"], message: "Cidade não encontrada nesta UF. Escolha da lista." });
+    return z.NEVER;
+  }
+  return { ...r, city: m.name, cityIbge: m.code };
+}
+
+export const recipientSchema = recipientFields.transform(withMunicipio);
+/** Correção do destinatário no pedido salvo (sem a opção "mesma pessoa"). */
+export const recipientEditSchema = recipientFields.omit({ same: true }).transform(withMunicipio);
+
 
 export const serviceSchema = z.object({ description: text(3, "a descrição do serviço"), value: money });
 

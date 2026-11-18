@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
-import { issuesByPath, recipientSchema } from "@/domain/order-input";
+import { issuesByPath, recipientEditSchema } from "@/domain/order-input";
 import { audit } from "@/audit/audit";
 import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
@@ -108,7 +108,7 @@ export async function retryRejectedAction(orderId: string, confirmed: boolean): 
   return { ok: true, message: "Nota liberada para nova tentativa. Confira e emita de novo." };
 }
 
-const recipientEdit = recipientSchema.omit({ same: true });
+const recipientEdit = recipientEditSchema;
 export type RecipientEdit = z.input<typeof recipientEdit>;
 const EDITABLE_NFE = ["PENDENTE", "REJEITADO"];
 
@@ -129,7 +129,7 @@ export async function updateRecipientAction(orderId: string, raw: unknown): Prom
     if (nfe.order.state === "DESCARTADO") return "Pedido descartado.";
     if (!EDITABLE_NFE.includes(nfe.state)) return "A NF-e já foi enviada; o destinatário não pode mais ser alterado aqui.";
     const rec = await tx.recipient.create({
-      data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, uf: r.uf },
+      data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, cityIbge: r.cityIbge, uf: r.uf },
     });
     await tx.emissionOrder.update({ where: { id: orderId }, data: { recipientId: rec.id } });
     return null;

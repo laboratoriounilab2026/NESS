@@ -93,7 +93,7 @@ export async function saveOrder(raw: unknown, ref: string): Promise<SaveResult> 
       }
       const r = d.recipient;
       const recipient = await tx.recipient.create({
-        data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, uf: r.uf },
+        data: { name: r.name, document: r.document || null, cep: r.cep, street: r.street, number: r.number, district: r.district, city: r.city, cityIbge: r.cityIbge, uf: r.uf },
       });
       const order = await tx.emissionOrder.create({
         data: {
