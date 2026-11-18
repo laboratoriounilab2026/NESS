@@ -80,8 +80,7 @@ function Sidebar() {
               </span>
             );
           }
-          const active =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+          const active = isActive(pathname, href);
           return (
             <Link
               key={label}
@@ -110,7 +109,10 @@ function Sidebar() {
   );
 }
 
-/** Navegação compacta em telas pequenas. */
+// Mesma regra na lateral e no celular: seção ativa inclui as subpáginas (ex.: /pedidos/123).
+const isActive = (pathname: string, href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
+
+/** Navegação compacta em telas pequenas (inclui tema e sair: sem eles não há como encerrar a sessão no celular). */
 function MobileNav() {
   const pathname = usePathname();
   if (pathname === "/login") return null;
@@ -127,12 +129,20 @@ function MobileNav() {
         <Link
           key={label}
           href={href!}
-          aria-current={pathname === href ? "page" : undefined}
+          aria-current={isActive(pathname, href!) ? "page" : undefined}
           className="shrink-0 rounded-md px-2 py-1 text-sm text-muted aria-[current=page]:bg-fg/10 aria-[current=page]:text-fg"
         >
           {label}
         </Link>
       ))}
+      <div className="ml-auto flex shrink-0 items-center">
+        <ThemeToggle />
+        <form action={logout}>
+          <button type="submit" className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm text-muted hover:bg-fg/5 hover:text-fg">
+            <LogOut size={16} aria-hidden="true" /> Sair
+          </button>
+        </form>
+      </div>
     </header>
   );
 }
