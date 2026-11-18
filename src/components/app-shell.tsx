@@ -12,6 +12,7 @@ import {
   Send,
   ShoppingBag,
   Truck,
+  UserCog,
   type LucideIcon,
 } from "lucide-react";
 import { logout } from "@/app/login/actions";
@@ -29,6 +30,7 @@ const NAV: NavItem[] = [
   { label: "Rastreio", Icon: Truck, href: "/rastreio" },
   { label: "Configuração fiscal", Icon: Scale, href: "/configuracao-fiscal" },
   { label: "Auditoria", Icon: History, href: "/auditoria" },
+  { label: "Usuários", Icon: UserCog, href: "/usuarios" },
 ];
 
 // Só os componentes que leem a rota ficam em <Suspense>: rotas com parâmetro dinâmico

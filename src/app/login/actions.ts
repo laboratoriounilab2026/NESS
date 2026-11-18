@@ -10,7 +10,7 @@ import { db } from "@/lib/db";
 
 export type LoginState = { error?: string };
 
-const schema = z.object({ email: z.email().max(200).transform((s) => s.toLowerCase()), password: z.string().min(1).max(200) });
+const schema = z.object({ email: z.string().trim().max(200).regex(/^[^\s@]+@[^\s@]+$/).transform((s) => s.toLowerCase()), password: z.string().min(1).max(200) });
 const MAX_FAILS = 5;
 const WINDOW_MS = 15 * 60 * 1000;
 // Hash fixo para gastar o mesmo tempo quando o e-mail não existe (não revela quais e-mails têm conta).
