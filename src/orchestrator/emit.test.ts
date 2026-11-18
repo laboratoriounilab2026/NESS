@@ -24,7 +24,7 @@ const ctx = { actor: "teste-orquestrador", correlationId: "00000000-teste" };
 
 describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
   const { db } = await import("@/lib/db");
-  const { emitDocument, emitOrder, reconcileDocument } = await import("./emit");
+  const { emitDocument, emitOrder, markStaleSent, reconcileDocument } = await import("./emit");
   const tag = `teste-orq-${crypto.randomUUID()}`;
   const est = await db.establishment.create({ data: { cnpj: tag, name: "Teste", uf: "SP", municipioIbge: "0000000", regime: "1" } });
   const customer = await db.customer.create({ data: { document: "00000000000", name: tag } });
@@ -106,6 +106,36 @@ describe.skipIf(!process.env.DATABASE_URL)("orquestrador (banco)", async () => {
     const [a, b] = await Promise.all([emitDocument(nfe.id, f.adapter, ctx), emitDocument(nfe.id, f.adapter, ctx)]);
     expect(f.calls.send).toHaveLength(1);
     expect([a.state, b.state].sort()).toEqual(["AUTORIZADO", "ENVIADO"]);
+  });
+
+  // Simula processo que caiu durante o envio: nota presa em ENVIADO desde "dez minutos atrás".
+  async function stuckSent(docId: string, withAttempt: boolean) {
+    const old = new Date(Date.now() - 10 * 60_000);
+    if (withAttempt) {
+      const doc = await db.emissionDocument.findUniqueOrThrow({ where: { id: docId } });
+      await db.emissionAttempt.create({ data: { documentId: docId, seq: 1, idempotencyKey: `${doc.orderId}:${doc.type}:1`, correlationId: "teste", startedAt: old } });
+    }
+    await db.$executeRaw`UPDATE "EmissionDocument" SET state = 'ENVIADO', "updatedAt" = ${old} WHERE id = ${docId}`;
+  }
+
+  it("envio interrompido (ENVIADO sem resposta): vira INCERTO e só sai por consulta, sem reenviar", async () => {
+    const { order, nfe } = await newOrder();
+    await stuckSent(nfe.id, true);
+    expect(await markStaleSent(order.id, ctx, 60 * 60_000)).toBe(0); // ainda dentro do prazo
+    expect(await markStaleSent(order.id, ctx)).toBe(1);
+    const f = fake([], [{ kind: "authorized", accessKey: `chave-teste-${crypto.randomUUID()}`, protocol: "p" }]);
+    expect((await reconcileDocument(nfe.id, f.adapter, ctx)).state).toBe("AUTORIZADO");
+    expect(f.calls.query).toEqual([`${order.id}:NFE:1`]);
+    expect(f.calls.send).toHaveLength(0);
+  });
+
+  it("caiu antes de registrar a tentativa: nada foi enviado, volta a PENDENTE", async () => {
+    const { order, nfe } = await newOrder();
+    await stuckSent(nfe.id, false);
+    expect(await markStaleSent(order.id, ctx)).toBe(1);
+    const f = fake([]);
+    expect((await reconcileDocument(nfe.id, f.adapter, ctx)).state).toBe("PENDENTE");
+    expect(f.calls.query).toHaveLength(0);
   });
 
   it("nota sem regra fiscal não é enviada", async () => {

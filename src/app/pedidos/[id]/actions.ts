@@ -8,7 +8,7 @@ import { requireUser } from "@/auth/session";
 import { getAdapter } from "@/emitters/registry";
 import { refreshOrderRules } from "@/fiscal/resolve-order";
 import { db } from "@/lib/db";
-import { emitDocument, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
+import { emitDocument, markStaleSent, reconcileDocument, reopenRejected, type Outcome } from "@/orchestrator/emit";
 
 export type ActionResult = { ok: boolean; message: string; docs?: Partial<Record<"NFSE" | "NFE", Outcome>> };
 
@@ -66,9 +66,13 @@ export async function emitOrderAction(orderId: string, confirmed: boolean): Prom
 /** Consulta o governo sobre notas sem resposta (INCERTO) antes de qualquer reenvio. */
 export async function reconcileOrderAction(orderId: string): Promise<ActionResult> {
   const user = await requireUser("OPERADOR", "FISCAL", "ADMIN");
-  const docs = await db.emissionDocument.findMany({ where: { orderId, state: "INCERTO" }, orderBy: { type: "asc" } });
-  if (docs.length === 0) return { ok: false, message: "Nenhuma nota aguardando confirmação." };
   const ctx = { actor: user.id, correlationId: crypto.randomUUID() };
+  await markStaleSent(orderId, ctx); // envio interrompido vira INCERTO e entra na consulta abaixo
+  const docs = await db.emissionDocument.findMany({ where: { orderId, state: "INCERTO" }, orderBy: { type: "asc" } });
+  if (docs.length === 0) {
+    const sending = await db.emissionDocument.count({ where: { orderId, state: "ENVIADO" } });
+    return { ok: false, message: sending ? "Envio em andamento. Se não houver resposta em alguns minutos, consulte de novo." : "Nenhuma nota aguardando confirmação." };
+  }
   const out: ActionResult["docs"] = {};
   for (const d of docs) {
     const adapter = getAdapter(d.type);

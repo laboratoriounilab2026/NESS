@@ -88,6 +88,8 @@ Decisão de projeto (prática comum dos emissores; revisar com o responsável fi
    - `not_found` → `PENDENTE` (governo confirmou que não recebeu; o próximo envio usa `seq+1`);
    - `unknown` ou erro → continua `INCERTO`.
 
+**Envio interrompido** (processo caiu ou deploy no meio do envio): nota em `ENVIADO` cuja última tentativa não terminou há mais de 5 minutos (`STALE_SENT_MS`) vira `INCERTO` ao pedir a consulta (`markStaleSent`) e segue o fluxo acima. Se nem a tentativa chegou a ser registrada, nada foi enviado: a consulta a devolve a `PENDENTE`.
+
 Timeouts de rede (valores e mTLS) ficam a cargo dos adaptadores reais (Fases 4/5); ainda não definidos.
 
 ## Resolução de regra fiscal (`src/fiscal/matrix.ts`)
@@ -103,7 +105,7 @@ A regra é resolvida ao salvar o pedido **e de novo** antes de cada envio (`refr
 
 ## Auditoria
 
-Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
+Eventos gravados: `auth.login`, `pedido.verificacao_fiscal`, `pedido.criar`, `pedido.emitir` (bloqueado sem emissor), `pedido.reverificar_regras`, `pedido.corrigir_destinatario`, `nota.enviar`, `nota.reconciliar`, `nota.reabrir`, `nota.envio_interrompido`, `regra_fiscal.criar`, `regra_fiscal.aprovar`, `estabelecimento.criar`, `estabelecimento.numeracao_nfe`.
 `data` aceita só valores escalares; nunca CPF/CNPJ, endereço, senha ou certificado. E-mail no login entra como hash.
 
 ## Pontos de extensão (Fases 4/5)

@@ -62,7 +62,15 @@ export async function emitDocument(documentId: string, adapter: EmitterAdapter, 
 export async function reconcileDocument(documentId: string, adapter: EmitterAdapter, ctx: Ctx): Promise<Outcome> {
   const doc = await db.emissionDocument.findUniqueOrThrow({ where: { id: documentId }, include: { attempts: { orderBy: { seq: "desc" }, take: 1 } } });
   const last = doc.attempts[0];
-  if (doc.state !== "INCERTO" || !last) return { state: doc.state, detail: "Nada a reconciliar." };
+  if (doc.state !== "INCERTO") return { state: doc.state, detail: "Nada a reconciliar." };
+  if (!last) {
+    // Processo caiu entre a trava e o registro da tentativa: nada foi enviado e não há chave para consultar.
+    assertTransition("INCERTO", "PENDENTE");
+    await db.emissionDocument.updateMany({ where: { id: documentId, state: "INCERTO" }, data: { state: "PENDENTE" } });
+    await syncOrder(doc.orderId);
+    await audit({ actor: ctx.actor, action: "nota.reconciliar", entity: "EmissionDocument", entityId: documentId, result: "PENDENTE", correlationId: ctx.correlationId, data: { consulta: "sem_tentativa" } });
+    return { state: "PENDENTE" };
+  }
 
   let result: QueryResult;
   try {
@@ -84,6 +92,28 @@ export async function reconcileDocument(documentId: string, adapter: EmitterAdap
   }
   await audit({ actor: ctx.actor, action: "nota.reconciliar", entity: "EmissionDocument", entityId: documentId, result: state, correlationId: ctx.correlationId, data: { consulta: result.kind } });
   return { state };
+}
+
+/** Tempo sem resposta após o qual um envio é considerado interrompido. */
+export const STALE_SENT_MS = 5 * 60_000;
+
+/**
+ * Envio interrompido (processo caiu, deploy no meio do envio): nota ENVIADO cuja última tentativa não terminou
+ * há mais de `staleMs` vira INCERTO e, como timeout, só sai por consulta ao emissor. Nunca reenvia.
+ */
+export async function markStaleSent(orderId: string, ctx: Ctx, staleMs = STALE_SENT_MS): Promise<number> {
+  assertTransition("ENVIADO", "INCERTO");
+  const cutoff = new Date(Date.now() - staleMs);
+  const docs = await db.emissionDocument.findMany({
+    where: { orderId, state: "ENVIADO", updatedAt: { lt: cutoff } },
+    include: { attempts: { orderBy: { seq: "desc" }, take: 1 } },
+  });
+  const stale = docs.filter((d) => !d.attempts[0] || (d.attempts[0].finishedAt === null && d.attempts[0].startedAt < cutoff)).map((d) => d.id);
+  if (stale.length === 0) return 0;
+  const { count } = await db.emissionDocument.updateMany({ where: { id: { in: stale }, state: "ENVIADO" }, data: { state: "INCERTO" } });
+  await syncOrder(orderId);
+  await audit({ actor: ctx.actor, action: "nota.envio_interrompido", entity: "EmissionOrder", entityId: orderId, result: "INCERTO", correlationId: ctx.correlationId, data: { notas: count } });
+  return count;
 }
 
 /** Emite as duas notas do pedido, uma após a outra. Falha de uma não impede a outra. */
