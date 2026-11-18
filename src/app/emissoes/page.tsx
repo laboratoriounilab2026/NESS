@@ -61,7 +61,7 @@ async function Attempts() {
               </td>
               <td className="border-b border-line px-3 py-2.5 tabular-nums">{a.seq}ª</td>
               <td className="border-b border-line px-3 py-2.5">
-                {a.resultState ? <StatusBadge {...DOC_BADGE[a.resultState]} /> : <StatusBadge status="wait" label="Em andamento" />}
+                {a.resultState ? <StatusBadge {...DOC_BADGE[a.resultState]} /> : <StatusBadge status="wait" label="Sem resposta" />}
               </td>
               <td className="border-b border-line px-3 py-2.5 font-mono text-[12px] text-muted">{a.correlationId.slice(0, 8)}</td>
             </tr>
